@@ -1,0 +1,15 @@
+# Dependencies & Build Output
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Local env & OS junk
+.env
+.env.*
+.DS_Store
+Thumbs.db
+
+# Legacy unused v1-v6 heavy 3D/artwork assets (NOESIS v7 is 100% WebGL-free!)
+public/models/
+public/draco/
+public/artworks/

@@ -1,0 +1,664 @@
+import { useEffect, useRef, useState } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { ArrowDown, ArrowUpRight, X } from 'lucide-react';
+import { useExplorer } from '../context/ExplorerContext';
+import { ScholarMarginDuel } from './ScholarMarginalia';
+
+gsap.registerPlugin(ScrollTrigger);
+
+interface Chapter1MaryRoomProps {
+  onHudThemeChange: (theme: 'light' | 'dark') => void;
+  onActiveChange: (active: boolean) => void;
+  onNextChapter: () => void;
+}
+
+const MARY_BEATS = [
+  {
+    kicker: 'ГЛАВА I · ЧАСТЬ 1/4 · КОМНАТА МЭРИ (Ф. ДЖЕКСОН, 1982)',
+    headlineMain: 'Она знает о красном всё —',
+    headlineAccent: 'кроме того, каково его видеть.',
+    note: 'Нейробиолог Мэри выросла в абсолютно чёрно-белой лаборатории. Она знает длину волны 650 нм, реакцию колбочек L и траекторию каждого импульса в зоне V4 — но никогда не видела ни единого цветного луча.',
+  },
+  {
+    kicker: 'ГЛАВА I · ЧАСТЬ 2/4 · ФИЗИКА БЕЗ ОПЫТА',
+    headlineMain: 'В спектре нет красного —',
+    headlineAccent: 'там есть только частота 461 ТГц.',
+    note: 'В объективном мире свет бесцветен: это электромагнитные колебания разной длины. Можно выучить до микрона разницу между бумагой «слоновая кость» (Bone) и «яичная скорлупа» (Eggshell) — но это всё ещё сухие числа, а не сам оттенок перед глазами.',
+  },
+  {
+    kicker: 'ГЛАВА I · ЧАСТЬ 3/4 · МОМЕНТ ПОРОГА',
+    headlineMain: 'Дверь открывается.',
+    headlineAccent: 'Мозг получает сигнал, который уже знал по учебникам…',
+    note: 'По зрительному нерву бежит точно тот каскад импульсов, который Мэри сто раз чертила на доске. Ни одной новой формулы физика ей не дала. Но происходит нечто, чего не было ни в одной книге.',
+  },
+  {
+    kicker: 'ГЛАВА I · ЧАСТЬ 4/4 · РОЖДЕНИЕ КВАЛИА',
+    headlineMain: 'Красный обрушивается на неё.',
+    headlineAccent: 'Это и есть Трудная проблема сознания.',
+    note: 'Субъективное качество переживания — «красность красного», боль ожога, вкус кофе — философы называют квалиа. Почему физическая химия в темноте черепа вообще сопровождается внутренним кино?',
+  },
+];
+
+const SCHOOLS = [
+  {
+    name: 'Аргумент знания (Антифизикализм)',
+    author: 'Фрэнк Джексон, 1982',
+    stance: 'Если Мэри узнаёт о мире нечто новое, увидев алую розу, — значит, физическое описание Вселенной принципиально неполно.',
+  },
+  {
+    name: 'Трудная проблема сознания',
+    author: 'Дэвид Чалмерс, 1995',
+    stance: 'Объяснить, как мозг различает длины волн, — «лёгкая» инженерная задача. Объяснить, почему это вообще переживается изнутри, — «трудная» проблема.',
+  },
+  {
+    name: 'Иллюзионизм (Ничего не случилось)',
+    author: 'Дэниел Деннет, 1991–2024',
+    stance: 'Мы просто недооцениваем слово «знала ВСЁ». Если бы Мэри правда знала всю нейродинамику до атома, цветная роза её бы не удивила — её обмануть было бы невозможно.',
+  },
+  {
+    name: 'Гипотеза способностей',
+    author: 'Дэвид Льюис, 1988',
+    stance: 'Мэри не узнала новый факт о Вселенной — она просто приобрела новый практический навык: узнавать и воображать красный цвет, как учатся ездить на велосипеде.',
+  },
+];
+
+function wavelengthToHex(nm: number) {
+  const rawL = Math.exp(-Math.pow((nm - 595) / 58, 2));
+  const rawM = Math.exp(-Math.pow((nm - 538) / 45, 2));
+  const rawS = Math.exp(-Math.pow((nm - 442) / 34, 2));
+  const maxC = Math.max(rawL, rawM, rawS, 0.001);
+  const l = Math.round((rawL / maxC) * 100);
+  const m = Math.round((rawM / maxC) * 100);
+  const s = Math.round((rawS / maxC) * 100);
+
+  if (nm < 455) return { hex: '#4338CA', name: 'Индиго-фиолетовый', lCone: l, mCone: m, sCone: s };
+  if (nm < 495) return { hex: '#1D4ED8', name: 'Кобальтово-синий', lCone: l, mCone: m, sCone: s };
+  if (nm < 545) return { hex: '#0D7A5F', name: 'Изумрудно-зелёный', lCone: l, mCone: m, sCone: s };
+  if (nm < 585) return { hex: '#CA8A04', name: 'Янтарно-золотой', lCone: l, mCone: m, sCone: s };
+  if (nm < 625) return { hex: '#EA580C', name: 'Киноварь', lCone: l, mCone: m, sCone: s };
+  return { hex: '#C92A2A', name: 'Живой алый', lCone: l, mCone: m, sCone: s };
+}
+
+const DEFAULT_650 = wavelengthToHex(650);
+
+export function Chapter1MaryRoom({
+  onHudThemeChange,
+  onActiveChange,
+  onNextChapter,
+}: Chapter1MaryRoomProps) {
+  const { state, setMaryBet } = useExplorer();
+
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const runwayRef = useRef<HTMLDivElement | null>(null);
+  const stageRootRef = useRef<HTMLDivElement | null>(null);
+  const colorLayerRef = useRef<HTMLDivElement | null>(null);
+  const cobaltWashRef = useRef<HTMLDivElement | null>(null);
+  const prismSpectrumRef = useRef<SVGGElement | null>(null);
+  const rayWavePathRef = useRef<SVGPathElement | null>(null);
+  const spikePathRef = useRef<SVGPathElement | null>(null);
+  const kineticDotRef = useRef<HTMLDivElement | null>(null);
+  const qualiaValueRef = useRef<HTMLSpanElement | null>(null);
+  const progressBarRef = useRef<HTMLDivElement | null>(null);
+  const hudDarkFlagRef = useRef(false);
+
+  const [activeBeat, setActiveBeat] = useState(0);
+  const [isColoredPhase, setIsColoredPhase] = useState(false);
+  const [dossierOpen, setDossierOpen] = useState(false);
+  const [wavelength, setWavelength] = useState(650);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    const runway = runwayRef.current;
+    if (!section || !runway) return;
+
+    const visObserver = new IntersectionObserver(
+      ([entry]) => {
+        onActiveChange(entry.isIntersecting);
+      },
+      { threshold: 0.08 },
+    );
+    visObserver.observe(section);
+
+    const trigger = ScrollTrigger.create({
+      trigger: runway,
+      start: 'top top',
+      end: 'bottom bottom',
+      scrub: 0.55,
+      onLeave: () => {
+        if (hudDarkFlagRef.current) {
+          hudDarkFlagRef.current = false;
+          onHudThemeChange('light');
+        }
+      },
+      onLeaveBack: () => {
+        if (hudDarkFlagRef.current) {
+          hudDarkFlagRef.current = false;
+          onHudThemeChange('light');
+        }
+      },
+      onUpdate: (self) => {
+        const p = self.progress;
+
+        const nextBeat = p < 0.25 ? 0 : p < 0.52 ? 1 : p < 0.72 ? 2 : 3;
+        setActiveBeat((prev) => (prev === nextBeat ? prev : nextBeat));
+
+        if (rayWavePathRef.current) {
+          const len = rayWavePathRef.current.getTotalLength();
+          const waveT = Math.max(0, Math.min(1, (p - 0.04) / 0.28));
+          rayWavePathRef.current.style.strokeDasharray = `${len}`;
+          rayWavePathRef.current.style.strokeDashoffset = `${len * (1 - waveT)}`;
+        }
+        if (spikePathRef.current) {
+          const len = spikePathRef.current.getTotalLength();
+          const spikeT = Math.max(0, Math.min(1, (p - 0.24) / 0.32));
+          spikePathRef.current.style.strokeDasharray = `${len}`;
+          spikePathRef.current.style.strokeDashoffset = `${len * (1 - spikeT)}`;
+        }
+
+        // Signature Monochrome -> Radial Crimson + Klein Cobalt Flood centered directly on the rose!
+        const colorT = Math.max(0, Math.min(1, (p - 0.56) / 0.34));
+        const easedColor = colorT * colorT * (3 - 2 * colorT);
+        const radiusPct = easedColor * 145;
+
+        if (colorLayerRef.current) {
+          colorLayerRef.current.style.clipPath = `circle(${radiusPct.toFixed(2)}% at 63.5% 57%)`;
+        }
+        if (cobaltWashRef.current) {
+          cobaltWashRef.current.style.clipPath = `circle(${radiusPct.toFixed(2)}% at 63.5% 57%)`;
+          cobaltWashRef.current.style.opacity = `${(easedColor * 0.92).toFixed(3)}`;
+        }
+        if (prismSpectrumRef.current) {
+          prismSpectrumRef.current.style.opacity = `${easedColor.toFixed(3)}`;
+        }
+
+        if (kineticDotRef.current) {
+          const travelT = Math.max(0, Math.min(1, p / 0.62));
+          const xPct = 28.5 + travelT * 34.3;
+          const yPct = 70.5 - travelT * 15.0;
+          const igniteScale = 1 + easedColor * 0.35;
+
+          kineticDotRef.current.style.left = `${xPct.toFixed(2)}%`;
+          kineticDotRef.current.style.top = `${yPct.toFixed(2)}%`;
+          kineticDotRef.current.style.transform = `translate(-50%, -50%) scale(${igniteScale.toFixed(3)})`;
+          kineticDotRef.current.style.opacity = `${(0.2 + Math.min(1, p * 4) * 0.8).toFixed(2)}`;
+        }
+
+        if (progressBarRef.current) {
+          progressBarRef.current.style.transform = `scaleX(${p.toFixed(4)})`;
+        }
+        if (qualiaValueRef.current) {
+          qualiaValueRef.current.textContent =
+            easedColor > 0.35
+              ? `${Math.round(easedColor * 100)}% · живой алый`
+              : '0% · только числа';
+        }
+
+        const shouldBeColored = easedColor > 0.36;
+        if (stageRootRef.current) {
+          stageRootRef.current.dataset.colored = shouldBeColored ? 'true' : 'false';
+        }
+        setIsColoredPhase((prev) => (prev === shouldBeColored ? prev : shouldBeColored));
+        if (shouldBeColored !== hudDarkFlagRef.current) {
+          hudDarkFlagRef.current = shouldBeColored;
+          onHudThemeChange(shouldBeColored ? 'dark' : 'light');
+        }
+      },
+    });
+
+    return () => {
+      visObserver.disconnect();
+      trigger.kill();
+    };
+  }, [onHudThemeChange, onActiveChange]);
+
+  const beat = MARY_BEATS[activeBeat] ?? MARY_BEATS[0];
+  const spec = wavelengthToHex(wavelength);
+  const frequencyThz = Math.round(299792 / wavelength);
+
+  return (
+    <section
+      id="ch-1"
+      ref={sectionRef}
+      className="relative bg-[#FAF9F5] text-[#141413]"
+      aria-label="Глава I — Загадка цвета и Комната Мэри"
+    >
+      {/* PRE-EXIT BET SPREAD: Reader takes a philosophical stand BEFORE opening Mary's door! */}
+      <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20 py-20 md:py-28">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#141413]/12 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
+          <span className="text-[#FC4109] font-semibold">ЧАСТЬ I · ИЗНУТРИ · ГЛАВА I</span>
+          <span>ЗАГАДКА ЦВЕТА · стр. 08</span>
+        </div>
+
+        <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
+          {/* Left: Crisp Editorial Setup + Pre-Exit Bet */}
+          <div className="lg:col-span-7 space-y-6">
+            <h2 className="text-[clamp(32px,4.4vw,56px)] leading-[1.06] tracking-[-0.03em]">
+              <span className="font-display font-bold block">Ставка перед дверью:</span>
+              <span className="font-serif-editorial italic font-normal text-[#30302E] block mt-1">
+                узнает ли Мэри что-то новое?
+              </span>
+            </h2>
+
+            <p className="text-[16px] md:text-[17px] leading-[1.65] text-[#30302E]">
+              Представьте учёную, которая всю жизнь провела в безупречно чёрно-белой комнате. Она выучила всю физику света и анатомию мозга — знает до микрона разницу между бумагой{' '}
+              <span className="font-serif-editorial italic text-[#141413]">«слоновая кость» (Bone)</span> и{' '}
+              <span className="font-serif-editorial italic text-[#141413]">«яичная скорлупа» (Eggshell)</span>.
+              Сегодня дверь впервые откроется, и перед ней окажется алая роза.
+            </p>
+
+            {/* Two Sharp Pre-Exit Bet Cards */}
+            <div className="pt-2 space-y-3">
+              <div className="font-mono-tech text-[11px] uppercase tracking-[0.12em] text-[#5E5D59]">
+                Сделайте ставку, прежде чем прокрутить вниз и выпустить её из комнаты:
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <button
+                  type="button"
+                  onClick={() => setMaryBet('learns_new')}
+                  className={`v6-pill text-left p-5 rounded-2xl border cursor-pointer transition-all ${
+                    state.maryBet === 'learns_new'
+                      ? 'bg-[#141413] text-[#FAF9F5] border-[#141413] shadow-[0_14px_34px_rgba(20,20,19,0.16)]'
+                      : 'bg-[#F4F2EA] hover:bg-[#ECE9DF] text-[#141413] border-[#141413]/12'
+                  }`}
+                >
+                  <div className="flex items-center justify-between font-mono-tech text-[10.5px] uppercase tracking-[0.12em]">
+                    <span className={state.maryBet === 'learns_new' ? 'text-[#FC4109]' : 'text-[#5E5D59]'}>
+                      ПОЗИЦИЯ A · ЧАЛМЕРС / ДЖЕКСОН
+                    </span>
+                    <span>{state.maryBet === 'learns_new' ? '● ВЫБРАНО' : '○'}</span>
+                  </div>
+                  <div className="font-display font-bold text-[17px] mt-2">
+                    Да, она узнает новое
+                  </div>
+                  <p
+                    className={`text-[13.5px] leading-[1.52] mt-1.5 ${
+                      state.maryBet === 'learns_new' ? 'text-[#FAF9F5]/80' : 'text-[#4F4E4A]'
+                    }`}
+                  >
+                    Формулы не передают само ощущение красного. В мире есть нечто сверх чистой физики.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setMaryBet('knows_all')}
+                  className={`v6-pill text-left p-5 rounded-2xl border cursor-pointer transition-all ${
+                    state.maryBet === 'knows_all'
+                      ? 'bg-[#141413] text-[#FAF9F5] border-[#141413] shadow-[0_14px_34px_rgba(20,20,19,0.16)]'
+                      : 'bg-[#F4F2EA] hover:bg-[#ECE9DF] text-[#141413] border-[#141413]/12'
+                  }`}
+                >
+                  <div className="flex items-center justify-between font-mono-tech text-[10.5px] uppercase tracking-[0.12em]">
+                    <span className={state.maryBet === 'knows_all' ? 'text-[#FC4109]' : 'text-[#5E5D59]'}>
+                      ПОЗИЦИЯ B · ДЕННЕТ
+                    </span>
+                    <span>{state.maryBet === 'knows_all' ? '● ВЫБРАНО' : '○'}</span>
+                  </div>
+                  <div className="font-display font-bold text-[17px] mt-2">
+                    Нет, она уже всё знала
+                  </div>
+                  <p
+                    className={`text-[13.5px] leading-[1.52] mt-1.5 ${
+                      state.maryBet === 'knows_all' ? 'text-[#FAF9F5]/80' : 'text-[#4F4E4A]'
+                    }`}
+                  >
+                    Если она правда знала всю работу нейронов, цвет не сможет её удивить — магии нет.
+                  </p>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Margin: Reactive New Yorker Pencil Duel (Chalmers vs Dennett!) */}
+          <div className="lg:col-span-5 lg:pt-8">
+            <ScholarMarginDuel
+              first={{
+                scholar: 'chalmers',
+                gesture: 'eyebrow',
+                quote:
+                  state.maryBet === 'knows_all'
+                    ? 'Смело! Вы встали на сторону Деннета — но признайтесь честно: неужели учебник по оптике правда заменяет первый взгляд на алый закат? Здесь есть нефизический остаток.'
+                    : 'Никакое число формул о длине волны не заменит одного взгляда на алый цветок. Это доказывает существование нефизического опыта — квалиа.',
+              }}
+              struckWord="нефизического"
+              second={{
+                scholar: 'dennett',
+                gesture: 'slash',
+                quote:
+                  state.maryBet === 'learns_new'
+                    ? 'Классическая ловушка воображения! Вы записали ставку в пользу магии — я запомню это и проверю вас в Главе VII, когда перед вами окажется ИИ.'
+                    : 'Браво! Почти все попадаются на трюк Джексона, потому что не умеют по-настоящему представить «знать ВСЮ физику мозга». Мэри бы даже не моргнула.',
+              }}
+            />
+
+            <div className="mt-4 flex items-center justify-between px-2 font-mono-tech text-[11px] text-[#5E5D59]">
+              <span>
+                {state.maryBet
+                  ? '✓ Ставка записана в ваш Паспорт книги'
+                  : '↓ Можно прокрутить и без ставки, но со ставкой острее'}
+              </span>
+              <span className="text-[#FC4109]">↓ Откройте дверь</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* PINNED 360vh SCROLL METAMORPHOSIS: Monochrome -> Radial Crimson Rose + Klein Cobalt Flood! */}
+      <div ref={runwayRef} className="relative h-[340vh] bg-[#ECEAE4]">
+        <div
+          ref={stageRootRef}
+          data-colored={isColoredPhase ? 'true' : 'false'}
+          className="sticky top-0 h-[100svh] w-full overflow-hidden group/mary"
+        >
+          {/* LAYER A: Stark 100% Monochrome Studio Photograph */}
+          <div className="absolute inset-0">
+            <img
+              src="/v6/mary-still-life.jpg"
+              alt=""
+              className="w-full h-full object-cover object-bottom select-none"
+              style={{ filter: 'grayscale(1) contrast(1.06) brightness(0.98)' }}
+            />
+          </div>
+
+          {/* LAYER B: Full Vivid Color Photograph revealed radially from the Crimson Rose */}
+          <div
+            ref={colorLayerRef}
+            className="absolute inset-0 will-change-[clip-path]"
+            style={{ clipPath: 'circle(0% at 63.5% 57%)' }}
+          >
+            <img
+              src="/v6/mary-still-life.jpg"
+              alt="Хрустальная призма, алая роза и оптическая линза"
+              className="w-full h-full object-cover object-bottom select-none"
+              style={{ filter: 'saturate(1.16) contrast(1.03)' }}
+            />
+          </div>
+
+          {/* LAYER C: Klein Cobalt (#004EDF) Upper Wall Wash */}
+          <div
+            ref={cobaltWashRef}
+            className="absolute inset-0 pointer-events-none will-change-[clip-path,opacity]"
+            style={{
+              opacity: 0,
+              clipPath: 'circle(0% at 63.5% 57%)',
+              background:
+                'linear-gradient(180deg, rgba(0, 78, 223, 0.94) 0%, rgba(0, 78, 223, 0.86) 48%, rgba(0, 78, 223, 0.25) 68%, rgba(0, 78, 223, 0) 80%)',
+              mixBlendMode: 'multiply',
+            }}
+          />
+
+          {/* LAYER D: Optical Vector Overlay (650nm Sine Wave -> Prism -> Cortical Spikes) */}
+          <svg
+            viewBox="0 0 1440 900"
+            preserveAspectRatio="xMidYMax slice"
+            className="absolute inset-0 w-full h-full pointer-events-none"
+            aria-hidden="true"
+          >
+            <path
+              ref={rayWavePathRef}
+              d="M 0 650 Q 25 620 50 650 T 100 650 T 150 650 T 200 650 T 250 650 T 300 650"
+              fill="none"
+              stroke={isColoredPhase ? '#FAF9F5' : '#141413'}
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              opacity="0.72"
+              style={{ strokeDasharray: 500, strokeDashoffset: 500 }}
+            />
+            <path
+              ref={spikePathRef}
+              d="M 420 635 L 490 618 L 502 572 L 514 636 L 526 606 L 570 595 L 582 544 L 594 612 L 606 584 L 665 568 L 677 518 L 689 586 L 702 558 L 855 516"
+              fill="none"
+              stroke={isColoredPhase ? '#FAF9F5' : '#141413'}
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity="0.78"
+              style={{ strokeDasharray: 900, strokeDashoffset: 900 }}
+            />
+            <g ref={prismSpectrumRef} style={{ opacity: 0 }}>
+              <line x1="405" y1="635" x2="885" y2="486" stroke="#FC4109" strokeWidth="3.5" opacity="0.65" />
+              <line x1="408" y1="642" x2="890" y2="514" stroke="#F59E0B" strokeWidth="2.6" opacity="0.55" />
+              <line x1="412" y1="648" x2="892" y2="544" stroke="#10B981" strokeWidth="2.2" opacity="0.45" />
+              <line x1="415" y1="654" x2="892" y2="574" stroke="#60A5FA" strokeWidth="2.2" opacity="0.45" />
+            </g>
+          </svg>
+
+          {/* LAYER E: Delicate Optical Reticle */}
+          <div
+            ref={kineticDotRef}
+            className="absolute z-20 pointer-events-none will-change-transform flex items-center justify-center"
+            style={{
+              left: '28.5%',
+              top: '70.5%',
+              transform: 'translate(-50%, -50%) scale(1)',
+              opacity: 0.2,
+            }}
+          >
+            <span
+              className="w-7 h-7 rounded-full border transition-all duration-500 flex items-center justify-center"
+              style={{
+                borderColor: isColoredPhase ? 'rgba(250, 249, 245, 0.78)' : 'rgba(20, 20, 19, 0.45)',
+                backgroundColor: isColoredPhase ? 'rgba(252, 65, 9, 0.24)' : 'rgba(250, 249, 245, 0.25)',
+                boxShadow: isColoredPhase ? '0 0 36px 8px rgba(252, 65, 9, 0.42)' : 'none',
+              }}
+            >
+              <span
+                className="w-2.5 h-2.5 rounded-full transition-colors duration-300"
+                style={{ backgroundColor: isColoredPhase ? '#FC4109' : '#141413' }}
+              />
+            </span>
+          </div>
+
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-28 z-20"
+            style={{
+              background: 'linear-gradient(180deg, rgba(20,18,16,0) 0%, rgba(28,24,19,0.44) 100%)',
+            }}
+          />
+
+          {/* LAYER F: Editorial Typography */}
+          <div className="relative z-30 max-w-[1360px] mx-auto px-5 md:px-12 lg:px-20 pt-20 md:pt-24">
+            <div className="max-w-2xl lg:max-w-[740px]">
+              <div className="font-mono-tech text-[11px] md:text-[12px] tracking-[0.06em] uppercase transition-colors duration-300 text-[#5E5D59] group-data-[colored=true]/mary:text-[#FAF9F5]/85">
+                {beat.kicker}
+              </div>
+
+              <h3
+                key={activeBeat}
+                className="mt-3 text-[clamp(26px,3.6vw,52px)] leading-[1.09] tracking-[-0.026em] transition-colors duration-300 text-[#141413] group-data-[colored=true]/mary:text-[#FAF9F5] animate-[beatRise_420ms_cubic-bezier(0.22,1,0.36,1)]"
+              >
+                <span className="font-display font-bold block">{beat.headlineMain}</span>
+                <span className="font-serif-editorial italic font-normal block mt-1 text-[#3B3A37] group-data-[colored=true]/mary:text-[#FFE4D6]">
+                  {beat.headlineAccent}
+                </span>
+              </h3>
+
+              <p
+                key={`note-${activeBeat}`}
+                className="mt-3.5 max-w-lg text-[14.5px] md:text-[15.5px] leading-[1.58] transition-colors duration-300 text-[#3B3A37] group-data-[colored=true]/mary:text-[#FAF9F5]/92 animate-[beatRise_480ms_cubic-bezier(0.22,1,0.36,1)]"
+              >
+                {beat.note}
+              </p>
+            </div>
+          </div>
+
+          {/* LAYER G: Bottom Telemetry & Slide-Over Research Dossier */}
+          <div className="absolute bottom-5 md:bottom-7 inset-x-0 z-30">
+            <div className="max-w-[1360px] mx-auto px-5 md:px-12 lg:px-20 flex flex-wrap items-end justify-between gap-4">
+              <div className="inline-flex flex-wrap items-center gap-4 md:gap-6 px-4 py-2.5 rounded-2xl bg-[#FAF9F5]/92 backdrop-blur-md border border-[#141413]/12 text-[#141413] shadow-[0_8px_28px_rgba(20,20,19,0.08)]">
+                <div>
+                  <div className="font-mono-tech text-[10px] uppercase tracking-[0.12em] text-[#5E5D59]">
+                    Длина волны
+                  </div>
+                  <div className="font-mono-tech text-[13px] font-semibold">650 нм · 461 ТГц</div>
+                </div>
+                <div className="h-6 w-[1px] bg-[#141413]/12" />
+                <div>
+                  <div className="font-mono-tech text-[10px] uppercase tracking-[0.12em] text-[#5E5D59]">
+                    Колбочки сетчатки
+                  </div>
+                  <div className="font-mono-tech text-[13px] font-semibold">
+                    L: {DEFAULT_650.lCone}% · M: {DEFAULT_650.mCone}%
+                  </div>
+                </div>
+                <div className="h-6 w-[1px] bg-[#141413]/12 hidden sm:block" />
+                <div className="hidden sm:block min-w-[144px]">
+                  <div className="font-mono-tech text-[10px] uppercase tracking-[0.12em] text-[#5E5D59]">
+                    Переживание (Квалиа)
+                  </div>
+                  <span
+                    ref={qualiaValueRef}
+                    className="font-mono-tech text-[13px] font-semibold text-[#FC4109]"
+                  >
+                    0% · только числа
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="hidden md:block w-28 h-[3px] rounded-full bg-[#141413]/18 overflow-hidden">
+                  <div
+                    ref={progressBarRef}
+                    className="h-full w-full origin-left bg-[#FC4109]"
+                    style={{ transform: 'scaleX(0)' }}
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setDossierOpen(true)}
+                  className="v6-pill h-10 px-4 rounded-full bg-[#FAF9F5]/94 hover:bg-[#FAF9F5] text-[#141413] border border-[#141413]/15 shadow-[0_8px_24px_rgba(20,20,19,0.10)] backdrop-blur-md inline-flex items-center gap-2 text-[13px] font-medium cursor-pointer"
+                >
+                  <span>Справочник и спектр</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 text-[#FC4109]" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Domino Bridge Strip -> Chapter II */}
+      <div className="bg-[#FAF9F5] border-b border-[#141413]/10">
+        <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20 py-10 flex flex-wrap items-center justify-between gap-4">
+          <p className="font-serif-editorial italic text-[16px] text-[#353431] max-w-2xl">
+            Если мир внутри головы не равен физике снаружи — кто вообще сидит внутри и смотрит это кино? Есть ли там единый «директор»?
+          </p>
+          <button
+            type="button"
+            onClick={onNextChapter}
+            className="font-mono-tech text-[11px] uppercase tracking-[0.12em] text-[#141413] hover:text-[#FC4109] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+          >
+            <span>К Главе II · Расколотый штурвал</span>
+            <ArrowDown className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Slide-Over Research Dossier */}
+      {dossierOpen && (
+        <div
+          className="fixed inset-0 z-[75] flex justify-end"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Справочник к Главе I — Комната Мэри"
+        >
+          <button
+            type="button"
+            onClick={() => setDossierOpen(false)}
+            className="absolute inset-0 bg-[#141413]/38 backdrop-blur-xs cursor-default"
+            aria-label="Закрыть справочник"
+          />
+
+          <aside
+            data-lenis-prevent
+            className="relative z-10 w-full max-w-xl h-full overflow-y-auto bg-[#FAF9F5] text-[#141413] border-l border-[#141413]/12 shadow-2xl p-6 md:p-10 space-y-8"
+          >
+            <div className="flex items-start justify-between gap-4 pb-5 border-b border-[#141413]/10">
+              <div>
+                <div className="font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#FC4109]">
+                  ПРИМЕЧАНИЯ К ГЛАВЕ I · СПЕКТР И ШКОЛЫ
+                </div>
+                <h3 className="font-serif-editorial text-2xl md:text-3xl mt-2 leading-snug">
+                  Почему философы спорят о Мэри уже 44 года
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDossierOpen(false)}
+                className="v6-pill w-9 h-9 rounded-full bg-[#E8E6DC] hover:bg-[#DFDCD0] flex items-center justify-center shrink-0 cursor-pointer"
+                aria-label="Закрыть"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Interactive Wavelength Explorer */}
+            <div className="rounded-2xl bg-[#F0EEE6] border border-[#141413]/10 p-5 space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-mono-tech text-[11px] uppercase tracking-[0.12em] text-[#5E5D59]">
+                  Длина волны фотона
+                </span>
+                <span className="inline-flex items-center gap-2 font-mono-tech text-xs font-semibold">
+                  <span
+                    className="w-3.5 h-3.5 rounded-full border border-[#141413]/20"
+                    style={{ backgroundColor: spec.hex }}
+                  />
+                  <span>
+                    {wavelength} нм · {spec.name}
+                  </span>
+                </span>
+              </div>
+
+              <input
+                type="range"
+                min={420}
+                max={690}
+                value={wavelength}
+                onChange={(e) => setWavelength(Number(e.target.value))}
+                className="v6-wavelength-slider w-full cursor-pointer"
+              />
+
+              <div className="grid grid-cols-4 gap-2 pt-1 font-mono-tech text-[11px]">
+                <div className="p-2.5 rounded-xl bg-[#FAF9F5] border border-[#141413]/8">
+                  <div className="text-[#5E5D59]">Частота</div>
+                  <div className="font-semibold text-sm mt-0.5">{frequencyThz} ТГц</div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-[#FAF9F5] border border-[#141413]/8">
+                  <div className="text-[#5E5D59]">L-колб.</div>
+                  <div className="font-semibold text-sm mt-0.5">{spec.lCone}%</div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-[#FAF9F5] border border-[#141413]/8">
+                  <div className="text-[#5E5D59]">M-колб.</div>
+                  <div className="font-semibold text-sm mt-0.5">{spec.mCone}%</div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-[#FAF9F5] border border-[#141413]/8">
+                  <div className="text-[#5E5D59]">S-колб.</div>
+                  <div className="font-semibold text-sm mt-0.5">{spec.sCone}%</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="divide-y divide-[#141413]/10 border-t border-b border-[#141413]/10">
+              {SCHOOLS.map((school) => (
+                <div key={school.author} className="py-4 space-y-1.5">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <h4 className="font-display font-semibold text-[15px] text-[#141413]">
+                      {school.name}
+                    </h4>
+                    <span className="font-mono-tech text-[11px] text-[#5E5D59]">
+                      {school.author}
+                    </span>
+                  </div>
+                  <p className="text-[14px] leading-[1.6] text-[#4B4A46]">{school.stance}</p>
+                </div>
+              ))}
+            </div>
+          </aside>
+        </div>
+      )}
+    </section>
+  );
+}

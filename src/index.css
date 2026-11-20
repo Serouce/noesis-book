@@ -1,0 +1,240 @@
+@import "tailwindcss";
+
+:root {
+  /* Anthropic Warm Ivory Editorial System */
+  --ivory: #faf9f5;
+  --paper: #f4efe8;
+  --oat: #f0eee6;
+  --sand: #e8e6dc;
+  --ink: #141413;
+  --ink-soft: #30302e;
+  --ink-muted: #5e5d59;
+  --hairline: rgba(20, 20, 19, 0.10);
+  --hairline-strong: rgba(20, 20, 19, 0.18);
+
+  /* HUMAN.md Theatrical Room Pigments */
+  --cobalt: #004edf;
+  --qualia: #fc4109;
+  --crimson: #c92a2a;
+  --terracotta: #c84319;
+  --ochre: #b5812b;
+  --emerald: #0d7a5f;
+  --sky: #6a9bcc;
+  --clay: #d97757;
+  --obsidian: #141413;
+
+  /* Typography Families */
+  --font-display: 'Golos Text Variable', 'Inter Variable', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: 'Literata Variable', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Inter Variable', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@layer base {
+  html {
+    background-color: var(--ivory);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+
+  .lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--ivory);
+    color: var(--ink);
+    overflow-x: clip;
+  }
+
+  ::selection {
+    background-color: rgba(252, 65, 9, 0.18);
+    color: var(--ink);
+  }
+}
+
+/* Editorial Typography Helpers */
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.032em;
+}
+
+.font-serif-editorial {
+  font-family: var(--font-serif);
+  font-optical-sizing: auto;
+  letter-spacing: -0.014em;
+}
+
+.font-sans-ui {
+  font-family: var(--font-sans);
+}
+
+.font-mono-tech {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tactile Analog Film Grain Overlay (HUMAN.md inspired, 0 GPU overhead) */
+.v6-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.032;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px 180px;
+}
+
+/* Tactile Pill Micro-Interaction (Emil Kowalski / Rauno Freiberg standard) */
+.v6-pill {
+  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1),
+              background-color 200ms ease,
+              border-color 200ms ease,
+              color 200ms ease,
+              box-shadow 200ms ease;
+}
+
+.v6-pill:active {
+  transform: scale(0.97);
+}
+
+/* Clean custom range slider for the Dossier wavelength explorer */
+input[type='range'].v6-wavelength-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    #4c1d95 0%,
+    #2563eb 22%,
+    #059669 44%,
+    #eab308 62%,
+    #ea580c 78%,
+    #dc2626 100%
+  );
+  outline: none;
+}
+
+input[type='range'].v6-wavelength-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #faf9f5;
+  border: 2.5px solid #141413;
+  box-shadow: 0 2px 8px rgba(20, 20, 19, 0.22);
+  cursor: pointer;
+  transition: transform 140ms ease;
+}
+
+input[type='range'].v6-wavelength-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+}
+
+@keyframes beatRise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes fadeScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Subtle New Yorker-style SVG Scholar Marginalia micro-animations (zero mouse-chasing!) */
+@keyframes browRaise {
+  0%, 72%, 100% {
+    transform: translateY(0);
+  }
+  84% {
+    transform: translateY(-2.2px);
+  }
+}
+
+@keyframes redSlashDraw {
+  from {
+    stroke-dasharray: 40;
+    stroke-dashoffset: 40;
+  }
+  to {
+    stroke-dasharray: 40;
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes glassClink {
+  0%, 75%, 100% {
+    transform: rotate(0deg);
+  }
+  85% {
+    transform: rotate(-8deg);
+  }
+  92% {
+    transform: rotate(3deg);
+  }
+}
+
+@keyframes strikeDraw {
+  from {
+    transform: scaleX(0) rotate(-2deg);
+  }
+  to {
+    transform: scaleX(1) rotate(-2deg);
+  }
+}
+
+.v7-brow-raise {
+  animation: browRaise 4.8s ease-in-out infinite;
+}
+
+.v7-red-slash {
+  animation: redSlashDraw 650ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.v7-glass-clink {
+  transform-origin: 51px 52px;
+  animation: glassClink 4.2s ease-in-out infinite;
+}
+
+.v7-strike-line {
+  animation: strikeDraw 750ms cubic-bezier(0.22, 1, 0.36, 1) 350ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v6-grain,
+  .v7-brow-raise,
+  .v7-glass-clink {
+    animation: none;
+  }
+  .v6-grain {
+    display: none;
+  }
+}
