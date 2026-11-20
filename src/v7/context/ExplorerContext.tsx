@@ -18,13 +18,15 @@ export const ICU_TRUTH: Record<'p1' | 'p2' | 'p3', IcuVerdict> = {
 };
 
 export interface ExplorerState {
-  // Табл. 00 — Иллюзия Муни
+  // Табл. 00 — Иллюзия Муни + Пролог
   mooneyExposed: boolean;
   mooneySeconds: number | null;
+  prologueExplored: boolean;
   // Гл. I — Комната Мэри
   maryBet: MaryBet;
   // Гл. II — Разрезанный корешок
   splitBrainCut: boolean;
+  splitBrainEverCut: boolean;
   splitBrainCard: SplitBrainCard;
   // Гл. III — Сдвиг кальки («Три пальца»)
   vellumTriggered: boolean;
@@ -37,8 +39,7 @@ export interface ExplorerState {
   propofolExperienced: boolean;
   // Гл. VI — Дежурство в реанимации (3 пациента)
   icuDiagnoses: Partial<Record<'p1' | 'p2' | 'p3', IcuVerdict>>;
-  // Гл. VII — Красная закладка-ляссе (0..6: число видов СПРАВА от черты или индекс раздела)
-  // boundaryIndex = сколько видов СЛЕВА считаются «биороботами» (1 = сразу после Губки Боба!)
+  // Гл. VII — Красная закладка-ляссе (0..5: сколько видов СЛЕВА считаются «биороботами», 1 = сразу после Губки Боба!)
   ribbonBoundaryIndex: number;
   ribbonChecked: boolean;
   // Гл. VII — Трибунал ИИ (5 модулей Butlin 2025)
@@ -51,11 +52,13 @@ export interface ConsistencyVerdict {
   stampSubtitle: string;
   commentary: string;
   isContradiction: boolean;
+  isIncomplete?: boolean;
 }
 
 interface ExplorerContextValue {
   state: ExplorerState;
   setMooneyResult: (seconds: number) => void;
+  setPrologueExplored: (v: boolean) => void;
   setMaryBet: (bet: Exclude<MaryBet, null>) => void;
   setSplitBrainCut: (cut: boolean) => void;
   setSplitBrainCard: (card: Exclude<SplitBrainCard, null>) => void;
@@ -67,15 +70,18 @@ interface ExplorerContextValue {
   setRibbonBoundaryIndex: (idx: number) => void;
   setRibbonChecked: (v: boolean) => void;
   toggleTribunalModule: (moduleId: string) => void;
+  setTribunalModules: (modules: Record<string, boolean>) => void;
   icuStats: { attempted: number; correct: number; total: number };
   activeTribunalCount: number;
+  completedCount: number;
   consistency: ConsistencyVerdict;
   completedChapters: Record<string, boolean>;
 }
 
+// Scientifically honest 2026 baseline: modern transformer LLMs lack true recurrent loops, global workspace, embodiment, and valence!
 const DEFAULT_MODULES: Record<string, boolean> = {
-  recurrent: true,
-  workspace: true,
+  recurrent: false,
+  workspace: false,
   selfModel: false,
   embodiment: false,
   valence: false,
@@ -84,9 +90,11 @@ const DEFAULT_MODULES: Record<string, boolean> = {
 const INITIAL_STATE: ExplorerState = {
   mooneyExposed: false,
   mooneySeconds: null,
+  prologueExplored: false,
   maryBet: null,
   splitBrainCut: false,
-  splitBrainCard: null,
+  splitBrainEverCut: false,
+  splitBrainCard: 'snow', // Pre-select first scene so reader immediately sees the Whole Brain baseline -> then cuts!
   vellumTriggered: false,
   wagerUnsealed: false,
   cogitateBet: null,
@@ -94,7 +102,7 @@ const INITIAL_STATE: ExplorerState = {
   remExperienced: false,
   propofolExperienced: false,
   icuDiagnoses: {},
-  ribbonBoundaryIndex: 3, // По умолчанию ставит черту посередине (до осьминога) — читатель двигает сам!
+  ribbonBoundaryIndex: 3,
   ribbonChecked: false,
   tribunalModules: DEFAULT_MODULES,
 };
@@ -111,11 +119,18 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
       mooneySeconds: prev.mooneySeconds ?? Math.max(0.4, Number(seconds.toFixed(1))),
     }));
 
+  const setPrologueExplored = (prologueExplored: boolean) =>
+    setState((prev) => ({ ...prev, prologueExplored }));
+
   const setMaryBet = (maryBet: Exclude<MaryBet, null>) =>
     setState((prev) => ({ ...prev, maryBet }));
 
   const setSplitBrainCut = (splitBrainCut: boolean) =>
-    setState((prev) => ({ ...prev, splitBrainCut }));
+    setState((prev) => ({
+      ...prev,
+      splitBrainCut,
+      splitBrainEverCut: prev.splitBrainEverCut || splitBrainCut,
+    }));
 
   const setSplitBrainCard = (splitBrainCard: Exclude<SplitBrainCard, null>) =>
     setState((prev) => ({ ...prev, splitBrainCard }));
@@ -144,7 +159,7 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
     }));
 
   const setRibbonBoundaryIndex = (ribbonBoundaryIndex: number) =>
-    setState((prev) => ({ ...prev, ribbonBoundaryIndex }));
+    setState((prev) => ({ ...prev, ribbonBoundaryIndex: Math.max(0, Math.min(5, ribbonBoundaryIndex)) }));
 
   const setRibbonChecked = (ribbonChecked: boolean) =>
     setState((prev) => ({ ...prev, ribbonChecked }));
@@ -157,6 +172,9 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
         [moduleId]: !prev.tribunalModules[moduleId],
       },
     }));
+
+  const setTribunalModules = (tribunalModules: Record<string, boolean>) =>
+    setState((prev) => ({ ...prev, tribunalModules }));
 
   const icuStats = useMemo(() => {
     const ids: Array<'p1' | 'p2' | 'p3'> = ['p1', 'p2', 'p3'];
@@ -177,7 +195,40 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
     [state.tribunalModules],
   );
 
+  const completedChapters = useMemo<Record<string, boolean>>(
+    () => ({
+      'plate-00': state.mooneyExposed,
+      prologue: state.prologueExplored,
+      'ch-1': state.maryBet !== null,
+      'ch-2': state.splitBrainEverCut,
+      'ch-3': state.vellumTriggered,
+      'ch-4': state.cogitateBet !== null,
+      'ch-5': state.remExperienced || state.propofolExperienced,
+      'ch-6': icuStats.attempted === 3,
+      'ch-7': state.ribbonChecked,
+      'ch-8': true,
+    }),
+    [state, icuStats.attempted],
+  );
+
+  const completedCount = useMemo(() => {
+    const experimentKeys = ['plate-00', 'ch-1', 'ch-2', 'ch-3', 'ch-4', 'ch-5', 'ch-6', 'ch-7'];
+    return experimentKeys.filter((k) => completedChapters[k]).length;
+  }, [completedChapters]);
+
   const consistency = useMemo<ConsistencyVerdict>(() => {
+    // 0. Honest check: don't award "Strict Consistency" if reader skipped almost everything!
+    if (completedCount < 3) {
+      return {
+        author: 'seth',
+        stampTitle: 'НЕЗАПОЛНЕННЫЙ ПРОТОКОЛ',
+        stampSubtitle: `Пройдено ${completedCount} из 8 опытов`,
+        commentary:
+          'Вы пролистали книгу насквозь, пропустив большую часть экспериментов. Чтобы получить философский штамп редакции, сделайте хотя бы 3 ставки или проверки в главах выше — и вернитесь на форзац.',
+        isContradiction: false,
+        isIncomplete: true,
+      };
+    }
     // 1. Классическое противоречие: в Гл. I поверил в нематериальность квалиа, но в Гл. VII собрал ИИ из 4-5 софт-модулей!
     if (state.maryBet === 'learns_new' && activeTribunalCount >= 4) {
       return {
@@ -189,7 +240,7 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
         isContradiction: true,
       };
     }
-    // 2. Обратный парадокс: отрицал квалиа Мэри, но строго отказал ИИ даже при 3+ модулях и оставил границу высоко у человека
+    // 2. Обратный парадокс: отрицал квалиа Мэри, но строго отказал животным и оставил границу высоко у человека
     if (state.maryBet === 'knows_all' && state.ribbonBoundaryIndex >= 4) {
       return {
         author: 'chalmers',
@@ -217,29 +268,15 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
       stampTitle: 'СТРОГАЯ ПОСЛЕДОВАТЕЛЬНОСТЬ',
       stampSubtitle: 'Редкий штамп редакции NOESIS',
       commentary:
-        'Ваши интуиции в Комнате Мэри, в реанимации и перед Трибуналом ИИ не поспорили друг с другом. Остался последний экзамен — переверните карточку и проверьте свои синапсы.',
+        'Ваши интуиции в Комнате Мэри, в реанимации и перед Трибуналом ИИ не поспорили друг с другом. Остался последний экзамен — переверните карточку и проверьте собственный мозг.',
       isContradiction: false,
     };
-  }, [state.maryBet, state.cogitateBet, state.ribbonBoundaryIndex, activeTribunalCount]);
-
-  const completedChapters = useMemo<Record<string, boolean>>(
-    () => ({
-      'plate-00': state.mooneyExposed,
-      'ch-1': state.maryBet !== null,
-      'ch-2': state.splitBrainCard !== null,
-      'ch-3': state.vellumTriggered,
-      'ch-4': state.cogitateBet !== null,
-      'ch-5': state.remExperienced || state.propofolExperienced,
-      'ch-6': icuStats.attempted === 3,
-      'ch-7': state.ribbonChecked,
-      'ch-8': true,
-    }),
-    [state, icuStats.attempted],
-  );
+  }, [completedCount, state.maryBet, state.cogitateBet, state.ribbonBoundaryIndex, activeTribunalCount]);
 
   const value: ExplorerContextValue = {
     state,
     setMooneyResult,
+    setPrologueExplored,
     setMaryBet,
     setSplitBrainCut,
     setSplitBrainCard,
@@ -251,8 +288,10 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
     setRibbonBoundaryIndex,
     setRibbonChecked,
     toggleTribunalModule,
+    setTribunalModules,
     icuStats,
     activeTribunalCount,
+    completedCount,
     consistency,
     completedChapters,
   };

@@ -12,6 +12,7 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
   const [flashActive, setFlashActive] = useState(false);
   const [elapsedSec, setElapsedSec] = useState(0);
   const mountTimeRef = useRef<number>(Date.now());
+  const pointerDownAtRef = useRef<number>(0);
   const flashTimerRef = useRef<number | null>(null);
 
   // Subtle stopwatch tracking how long the reader stared at abstract ink blots before revealing!
@@ -31,6 +32,9 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
   }, []);
 
   const revealStart = () => {
+    pointerDownAtRef.current = Date.now();
+    if (flashTimerRef.current) window.clearTimeout(flashTimerRef.current);
+    setFlashActive(false);
     setHolding(true);
     if (!state.mooneyExposed) {
       const secs = (Date.now() - mountTimeRef.current) / 1000;
@@ -38,12 +42,26 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
     }
   };
 
+  // Clean separation of press-and-hold vs quick tap (zero double-flash conflict!)
   const revealEnd = () => {
+    if (!holding) return;
+    const heldMs = Date.now() - pointerDownAtRef.current;
+    setHolding(false);
+    if (heldMs < 260) {
+      // Quick click -> crisp 1.05s photographic contact exposure
+      setFlashActive(true);
+      if (flashTimerRef.current) window.clearTimeout(flashTimerRef.current);
+      flashTimerRef.current = window.setTimeout(() => {
+        setFlashActive(false);
+      }, 1050);
+    }
+  };
+
+  const revealCancel = () => {
     setHolding(false);
   };
 
-  // Supports BOTH press-and-hold AND a single quick click (1.1s photographic contact exposure!)
-  const handleQuickFlash = () => {
+  const handleKeyboardActivate = () => {
     if (!state.mooneyExposed) {
       const secs = (Date.now() - mountTimeRef.current) / 1000;
       setMooneyResult(Math.max(0.6, secs));
@@ -52,7 +70,7 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
     if (flashTimerRef.current) window.clearTimeout(flashTimerRef.current);
     flashTimerRef.current = window.setTimeout(() => {
       setFlashActive(false);
-    }, 1150);
+    }, 1050);
   };
 
   const showingKey = holding || flashActive;
@@ -109,15 +127,11 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
                   <strong className="font-semibold text-[#141413]">
                     Ни один пиксель на экране не изменился
                   </strong>{' '}
-                  — изменились синапсы у вас в затылке.
+                  — но ваше переживание этого снимка изменилось навсегда.
                 </p>
 
                 <p className="text-[15px] leading-[1.62] text-[#4D4C48] max-w-lg">
-                  Мозг за долю секунды загрузил зрительный шаблон — нейробиологи называют его{' '}
-                  <em className="font-serif-editorial text-[#141413] not-italic font-medium">
-                    приором
-                  </em>
-                  . Попробуйте снова увидеть просто бессмысленный шум. Не получается? Вы уже не сможете развидеть этот снимок — и мы проверим это в самом конце книги.
+                  Вы только что поймали собственный мозг за работой: за долю секунды он склеил бессмысленный шум в живой образ. Попробуйте снова «развидеть» его — не получится. И мы проверим это на последней странице книги.
                 </p>
               </div>
             )}
@@ -128,8 +142,13 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
                 type="button"
                 onPointerDown={revealStart}
                 onPointerUp={revealEnd}
-                onPointerLeave={revealEnd}
-                onClick={handleQuickFlash}
+                onPointerLeave={revealCancel}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleKeyboardActivate();
+                  }
+                }}
                 className="v6-pill h-12 px-6 rounded-full bg-[#141413] hover:bg-[#2A2A28] text-[#FAF9F5] font-sans-ui text-[14px] font-medium inline-flex items-center gap-2.5 shadow-[0_12px_30px_rgba(20,20,19,0.16)] cursor-pointer select-none"
               >
                 <Eye className="w-4 h-4 text-[#FC4109]" />
@@ -148,7 +167,7 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
                   onClick={onContinueToCh1}
                   className="v6-pill h-12 px-6 rounded-full bg-[#FC4109] hover:bg-[#E43906] text-[#FAF9F5] font-sans-ui text-[14px] font-medium inline-flex items-center gap-2 cursor-pointer animate-[fadeScaleIn_350ms_ease]"
                 >
-                  <span>Открыть Главу I</span>
+                  <span>Что только что произошло?</span>
                   <ArrowDown className="w-4 h-4" />
                 </button>
               )}
@@ -215,7 +234,7 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
               </div>
 
               <div className="mt-3 flex items-center justify-between font-mono-tech text-[10.5px] text-[#5E5D59]">
-                <span>Craig Mooney (1957) · Принцип перцептивного замыкания</span>
+                <span>Крейг Муни (1957) · Необратимое узнавание</span>
                 <span>1 : 1</span>
               </div>
             </div>
@@ -223,17 +242,17 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
         </div>
       </div>
 
-      {/* Domino Bridge to Chapter I */}
+      {/* Domino Bridge to Prologue */}
       <div className="max-w-[1240px] mx-auto w-full mt-12 pt-5 border-t border-[#141413]/10 flex flex-wrap items-center justify-between gap-4">
         <p className="font-serif-editorial italic text-[15px] text-[#4B4A46]">
-          Глаза получили чёрные пятна, но внутри вспыхнул живой образ. Откуда вообще берётся само личное переживание — «каково это, видеть цвет»?
+          Экран не изменился — изменилось само ваше ощущение картинки. С этого и начинается главная загадка науки: что вообще такое сознание?
         </p>
         <button
           type="button"
           onClick={onContinueToCh1}
           className="font-mono-tech text-[11px] uppercase tracking-[0.12em] text-[#141413] hover:text-[#FC4109] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
         >
-          <span>К Главе I · Загадка цвета</span>
+          <span>К Прологу · Что такое сознание?</span>
           <ArrowDown className="w-3.5 h-3.5" />
         </button>
       </div>

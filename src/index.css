@@ -99,13 +99,11 @@
   background-size: 180px 180px;
 }
 
-/* Tactile Pill Micro-Interaction (Emil Kowalski / Rauno Freiberg standard) */
+/* Tactile Pill Micro-Interaction — atomic color/bg swap prevents muddy grey-on-dark midpoints! */
 .v6-pill {
   transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1),
-              background-color 200ms ease,
-              border-color 200ms ease,
-              color 200ms ease,
-              box-shadow 200ms ease;
+              border-color 140ms ease,
+              box-shadow 180ms ease;
 }
 
 .v6-pill:active {

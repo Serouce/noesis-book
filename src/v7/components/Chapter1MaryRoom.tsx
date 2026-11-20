@@ -19,7 +19,7 @@ const MARY_BEATS = [
     kicker: 'ГЛАВА I · ЧАСТЬ 1/4 · КОМНАТА МЭРИ (Ф. ДЖЕКСОН, 1982)',
     headlineMain: 'Она знает о\u00A0красном всё —',
     headlineAccent: 'кроме того, каково его видеть.',
-    note: 'Нейробиолог Мэри выросла в абсолютно чёрно-белой лаборатории. Она знает длину волны 650\u00A0нм, реакцию колбочек L и траекторию каждого импульса в зоне V4 — но никогда не видела ни единого цветного луча.',
+    note: 'Нейробиолог Мэри выросла в абсолютно чёрно-белой лаборатории. Она знает длину волны 650\u00A0нм, реакцию цветовых датчиков глаза и путь каждого импульса в зрительной коре — но никогда не видела ни единого цветного луча.',
   },
   {
     kicker: 'ГЛАВА I · ЧАСТЬ 2/4 · ФИЗИКА БЕЗ ОПЫТА',
@@ -212,12 +212,12 @@ export function Chapter1MaryRoom({
           progressBarRef.current.style.transform = `scaleX(${barFill.toFixed(4)})`;
         }
         if (qualiaValueRef.current) {
-          if (easedColor > 0.02) {
+          if (easedColor >= 0.74) {
             const pct = Math.max(1, Math.round(easedColor * 100));
-            qualiaValueRef.current.textContent =
-              easedColor > 0.35
-                ? `${pct}% · живой алый`
-                : `${pct}% · порог цвета`;
+            qualiaValueRef.current.textContent = `${pct}% · квалиа (живой алый)`;
+          } else if (easedColor > 0.02) {
+            const pct = Math.max(1, Math.round(easedColor * 100));
+            qualiaValueRef.current.textContent = `${pct}% · вспышка цвета`;
           } else {
             qualiaValueRef.current.textContent = '0% · только числа';
           }
@@ -259,7 +259,7 @@ export function Chapter1MaryRoom({
       <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20 py-20 md:py-28">
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#141413]/12 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
           <span className="text-[#FC4109] font-semibold">ЧАСТЬ I · ИЗНУТРИ · ГЛАВА I</span>
-          <span>ЗАГАДКА ЦВЕТА · стр. 08</span>
+          <span>ЗАГАДКА ЦВЕТА · стр. 10</span>
         </div>
 
         <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
@@ -273,16 +273,16 @@ export function Chapter1MaryRoom({
             </h2>
 
             <p className="text-[16px] md:text-[17px] leading-[1.65] text-[#30302E]">
-              Представьте учёную, которая всю жизнь провела в безупречно чёрно-белой комнате. Она выучила всю физику света и анатомию мозга — знает до микрона разницу между бумагой{' '}
-              <span className="font-serif-editorial italic text-[#141413]">«слоновая кость» (Bone)</span> и{' '}
-              <span className="font-serif-editorial italic text-[#141413]">«яичная скорлупа» (Eggshell)</span>.
+              Представьте учёную, которая всю жизнь провела в безупречно чёрно-белой комнате. Она выучила всю физику света и анатомию глаза — знает даже точные цифры, отличающие белую бумагу{' '}
+              <span className="font-serif-editorial italic text-[#141413]">«слоновая кость» (Bone)</span> от{' '}
+              <span className="font-serif-editorial italic text-[#141413]">«яичной скорлупы» (Eggshell)</span>.
               Сегодня дверь впервые откроется, и перед ней окажется алая роза.
             </p>
 
-            {/* Two Sharp Pre-Exit Bet Cards */}
+            {/* Two Sharp Pre-Exit Bet Cards — crystal clear who each philosopher represents */}
             <div className="pt-2 space-y-3">
               <div className="font-mono-tech text-[11px] uppercase tracking-[0.12em] text-[#5E5D59]">
-                Сделайте ставку, прежде чем прокрутить вниз и выпустить её из комнаты:
+                Шаг 1 · Сделайте ставку, прежде чем медленно прокрутить вниз и открыть дверь:
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -297,7 +297,7 @@ export function Chapter1MaryRoom({
                 >
                   <div className="flex items-center justify-between gap-2 min-h-[18px] font-mono-tech text-[10.5px] uppercase tracking-[0.1em]">
                     <span className={`whitespace-nowrap ${state.maryBet === 'learns_new' ? 'text-[#FC4109]' : 'text-[#5E5D59]'}`}>
-                      ПОЗИЦИЯ A · ЧАЛМЕРС
+                      ЛАГЕРЬ A · ЧАЛМЕРС
                     </span>
                     <span className="whitespace-nowrap shrink-0">
                       {state.maryBet === 'learns_new' ? '● ВЫБРАНО' : '○'}
@@ -311,7 +311,7 @@ export function Chapter1MaryRoom({
                       state.maryBet === 'learns_new' ? 'text-[#FAF9F5]/80' : 'text-[#4F4E4A]'
                     }`}
                   >
-                    Формулы не передают само ощущение красного. В мире есть нечто сверх чистой физики.
+                    Формулы не передают само ощущение красного. Внутренний опыт не сводится к сухим цифрам.
                   </p>
                 </button>
 
@@ -326,7 +326,7 @@ export function Chapter1MaryRoom({
                 >
                   <div className="flex items-center justify-between gap-2 min-h-[18px] font-mono-tech text-[10.5px] uppercase tracking-[0.1em]">
                     <span className={`whitespace-nowrap ${state.maryBet === 'knows_all' ? 'text-[#FC4109]' : 'text-[#5E5D59]'}`}>
-                      ПОЗИЦИЯ B · ДЕННЕТ
+                      ЛАГЕРЬ B · ДЕННЕТ
                     </span>
                     <span className="whitespace-nowrap shrink-0">
                       {state.maryBet === 'knows_all' ? '● ВЫБРАНО' : '○'}
@@ -340,14 +340,14 @@ export function Chapter1MaryRoom({
                       state.maryBet === 'knows_all' ? 'text-[#FAF9F5]/80' : 'text-[#4F4E4A]'
                     }`}
                   >
-                    Если она правда знала всю работу нейронов, цвет не сможет её удивить — магии нет.
+                    Если она правда знала всю работу нейронов, цвет не сможет её удивить — никакой магии нет.
                   </p>
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Right Margin: Reactive New Yorker Pencil Duel (Chalmers vs Dennett!) */}
+          {/* Right Margin: Reactive New Yorker Pencil Duel (ZERO premature 'квалиа' jargon!) */}
           <div className="lg:col-span-5 lg:pt-8">
             <ScholarMarginDuel
               first={{
@@ -356,7 +356,7 @@ export function Chapter1MaryRoom({
                 quote:
                   state.maryBet === 'knows_all'
                     ? 'Смело! Вы встали на сторону Деннета — но признайтесь честно: неужели учебник по оптике правда заменяет первый взгляд на алый закат? Здесь есть нефизический остаток.'
-                    : 'Никакое число формул о длине волны не заменит одного взгляда на алый цветок. Это доказывает существование нефизического опыта — квалиа.',
+                    : 'Никакое число формул о длине волны не заменит одного живого взгляда на алый цветок. Это доказывает существование нефизического внутреннего переживания.',
               }}
               struckWord={state.maryBet === 'knows_all' ? 'нефизический' : 'нефизического'}
               second={{
@@ -365,7 +365,7 @@ export function Chapter1MaryRoom({
                 quote:
                   state.maryBet === 'learns_new'
                     ? 'Классическая ловушка воображения! Вы записали ставку в пользу магии — я запомню это и проверю вас в Главе VII, когда перед вами окажется ИИ.'
-                    : 'Браво! Почти все попадаются на трюк Джексона, потому что не умеют по-настоящему представить «знать ВСЮ физику мозга». Мэри бы даже не моргнула.',
+                    : 'Браво! Почти все попадаются на этот трюк, потому что не умеют по-настоящему представить «знать ВСЮ физику мозга». Мэри бы даже не моргнула.',
               }}
             />
 
@@ -373,9 +373,9 @@ export function Chapter1MaryRoom({
               <span>
                 {state.maryBet
                   ? '✓ Ставка записана в ваш Паспорт книги'
-                  : '↓ Можно прокрутить и без ставки, но со ставкой острее'}
+                  : '↓ Шаг 2 · Медленно прокручивайте вниз, открывая дверь'}
               </span>
-              <span className="text-[#FC4109]">↓ Откройте дверь</span>
+              <span className="text-[#FC4109] font-semibold">↓ Открыть дверь</span>
             </div>
           </div>
         </div>
@@ -538,9 +538,9 @@ export function Chapter1MaryRoom({
                   </div>
                 </div>
                 <div className="h-6 w-[1px] bg-[#141413]/12 hidden sm:block" />
-                <div className="hidden sm:block min-w-[168px]">
+                <div className="hidden sm:block min-w-[190px]">
                   <div className="font-mono-tech text-[10px] uppercase tracking-[0.12em] text-[#5E5D59]">
-                    Переживание (Квалиа)
+                    {isColoredPhase ? 'Переживание (Квалиа)' : 'Внутренний опыт'}
                   </div>
                   <span
                     ref={qualiaValueRef}
@@ -574,20 +574,83 @@ export function Chapter1MaryRoom({
         </div>
       </div>
 
-      {/* Domino Bridge Strip -> Chapter II */}
+      {/* INLINE HANDS-ON SPECTRUM EXPLORER + EASY vs HARD PROBLEM SUMMARY (Brought out of hidden drawer!) */}
       <div className="bg-[#FAF9F5] border-b border-[#141413]/10">
-        <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20 py-10 flex flex-wrap items-center justify-between gap-4">
-          <p className="font-serif-editorial italic text-[16px] text-[#353431] max-w-2xl">
-            Если мир внутри головы не равен физике снаружи — кто вообще сидит внутри и смотрит это кино? Есть ли там единый «директор»?
-          </p>
-          <button
-            type="button"
-            onClick={onNextChapter}
-            className="font-mono-tech text-[11px] uppercase tracking-[0.12em] text-[#141413] hover:text-[#FC4109] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-          >
-            <span>К Главе II · Расколотый штурвал</span>
-            <ArrowDown className="w-3.5 h-3.5" />
-          </button>
+        <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20 py-14 space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-5 space-y-3">
+              <div className="font-mono-tech text-[10.5px] uppercase tracking-[0.14em] text-[#FC4109]">
+                ОПЫТ РУКАМИ · КАК ЧИСЛО СТАНОВИТСЯ ЦВЕТОМ
+              </div>
+              <h3 className="font-display font-bold text-[24px] leading-tight text-[#141413]">
+                Подвигайте длину волны — в природе нет красок
+              </h3>
+              <p className="text-[14.5px] leading-[1.62] text-[#454440]">
+                В глазу живут три типа микро-датчиков — <strong className="text-[#141413]">колбочки L, M и S</strong>. Они лишь считают энергию бесцветных волн. «Лёгкая» задача науки — измерить эти проценты. «Трудная» проблема Чалмерса — объяснить, почему эта арифметика вдруг <em className="font-serif-editorial text-[#141413]">сияет алым</em>.
+              </p>
+            </div>
+
+            <div className="lg:col-span-7 rounded-2xl bg-[#F3F1E9] border border-[#141413]/12 p-5 md:p-6 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span className="font-mono-tech text-[10.5px] uppercase tracking-[0.12em] text-[#5E5D59]">
+                  ПОЛЗУНОК СПЕКТРА · 420–690 НМ
+                </span>
+                <span className="inline-flex items-center gap-2 font-mono-tech text-[12.5px] font-semibold">
+                  <span
+                    className="w-4 h-4 rounded-full border border-[#141413]/20 shadow-xs"
+                    style={{ backgroundColor: spec.hex }}
+                  />
+                  <span>
+                    {wavelength} нм · {spec.name}
+                  </span>
+                </span>
+              </div>
+
+              <input
+                type="range"
+                min={420}
+                max={690}
+                value={wavelength}
+                onChange={(e) => setWavelength(Number(e.target.value))}
+                className="v6-wavelength-slider w-full cursor-pointer"
+                aria-label="Длина волны фотона от 420 до 690 нанометров"
+              />
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 font-mono-tech text-[11px]">
+                <div className="p-2.5 rounded-xl bg-[#FAF9F5] border border-[#141413]/10">
+                  <div className="text-[#5E5D59]">Частота</div>
+                  <div className="font-semibold text-sm mt-0.5">{frequencyThz} ТГц</div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-[#FAF9F5] border border-[#141413]/10">
+                  <div className="text-[#5E5D59]">L-колб. (длин.)</div>
+                  <div className="font-semibold text-sm mt-0.5">{spec.lCone}%</div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-[#FAF9F5] border border-[#141413]/10">
+                  <div className="text-[#5E5D59]">M-колб. (сред.)</div>
+                  <div className="font-semibold text-sm mt-0.5">{spec.mCone}%</div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-[#FAF9F5] border border-[#141413]/10">
+                  <div className="text-[#5E5D59]">S-колб. (корот.)</div>
+                  <div className="font-semibold text-sm mt-0.5">{spec.sCone}%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Domino Bridge Strip -> Chapter II */}
+          <div className="pt-6 border-t border-[#141413]/10 flex flex-wrap items-center justify-between gap-4">
+            <p className="font-serif-editorial italic text-[16px] text-[#353431] max-w-2xl">
+              Если мир внутри головы не равен физике снаружи — кто вообще сидит внутри и смотрит это кино? Есть ли там единый «директор»?
+            </p>
+            <button
+              type="button"
+              onClick={onNextChapter}
+              className="font-mono-tech text-[11px] uppercase tracking-[0.12em] text-[#141413] hover:text-[#FC4109] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>К Главе II · Расколотый штурвал</span>
+              <ArrowDown className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </div>
 

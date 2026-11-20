@@ -19,7 +19,7 @@ export function BookIndexDrawer({
 
   if (!open) return null;
 
-  const threshold = BOOK_CHAPTERS[0];
+  const openingSpreads = BOOK_CHAPTERS.filter((c) => c.partNum === 0);
 
   return (
     <div
@@ -60,45 +60,48 @@ export function BookIndexDrawer({
             </button>
           </div>
 
-          {/* Table 00 */}
-          <div className="mt-5 pb-4 border-b border-[#141413]/10">
-            <button
-              type="button"
-              onClick={() => {
-                onNavigate(threshold.id);
-                onClose();
-              }}
-              className={`w-full text-left p-3.5 rounded-xl border transition-colors cursor-pointer flex items-start justify-between gap-3 ${
-                activeChapterId === threshold.id
-                  ? 'bg-[#141413] text-[#FAF9F5] border-[#141413]'
-                  : 'bg-[#F3F1E9] hover:bg-[#ECE9DF] border-[#141413]/10 text-[#141413]'
-              }`}
-            >
-              <div>
-                <div
-                  className={`font-mono-tech text-[10px] uppercase tracking-[0.12em] ${
-                    activeChapterId === threshold.id ? 'text-[#FC4109]' : 'text-[#5E5D59]'
-                  }`}
-                >
-                  {threshold.code} · {threshold.folio}
+          {/* Table 00 + Prologue */}
+          <div className="mt-5 pb-4 border-b border-[#141413]/10 space-y-2.5">
+            {openingSpreads.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  onNavigate(item.id);
+                  onClose();
+                }}
+                className={`w-full text-left p-3.5 rounded-xl border transition-colors cursor-pointer flex items-start justify-between gap-3 ${
+                  activeChapterId === item.id
+                    ? 'bg-[#141413] text-[#FAF9F5] border-[#141413]'
+                    : 'bg-[#F3F1E9] hover:bg-[#ECE9DF] border-[#141413]/10 text-[#141413]'
+                }`}
+              >
+                <div>
+                  <div
+                    className={`font-mono-tech text-[10px] uppercase tracking-[0.12em] ${
+                      activeChapterId === item.id ? 'text-[#FC4109]' : 'text-[#5E5D59]'
+                    }`}
+                  >
+                    {item.code} · {item.folio}
+                  </div>
+                  <div className="font-display font-semibold text-[15px] mt-0.5">
+                    {item.fullTitle}
+                  </div>
+                  <div
+                    className={`text-[12px] mt-0.5 ${
+                      activeChapterId === item.id ? 'text-[#FAF9F5]/72' : 'text-[#5E5D59]'
+                    }`}
+                  >
+                    {item.mechanic}
+                  </div>
                 </div>
-                <div className="font-display font-semibold text-[15px] mt-0.5">
-                  {threshold.fullTitle}
-                </div>
-                <div
-                  className={`text-[12px] mt-0.5 ${
-                    activeChapterId === threshold.id ? 'text-[#FAF9F5]/72' : 'text-[#5E5D59]'
-                  }`}
-                >
-                  {threshold.mechanic}
-                </div>
-              </div>
-              {completedChapters[threshold.id] && (
-                <span className="mt-1 w-5 h-5 rounded-full bg-[#FC4109] text-[#FAF9F5] flex items-center justify-center shrink-0">
-                  <Check className="w-3 h-3" />
-                </span>
-              )}
-            </button>
+                {completedChapters[item.id] && (
+                  <span className="mt-1 w-5 h-5 rounded-full bg-[#FC4109] text-[#FAF9F5] flex items-center justify-center shrink-0">
+                    <Check className="w-3 h-3" />
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
 
           {/* 3 Monumental Book Parts */}
@@ -182,8 +185,8 @@ export function BookIndexDrawer({
 
         {/* Colophon Footnote */}
         <div className="mt-8 pt-4 border-t border-[#141413]/10 flex items-center justify-between font-mono-tech text-[10.5px] text-[#5E5D59]">
-          <span>8 ГЛАВ · 9 МЕХАНИЗМОВ</span>
-          <span>12–15 МИН ЧТЕНИЯ</span>
+          <span>ПРОЛОГ · 8 ГЛАВ · 11 МЕХАНИЗМОВ</span>
+          <span>18–22 МИН ЧТЕНИЯ</span>
         </div>
       </aside>
     </div>

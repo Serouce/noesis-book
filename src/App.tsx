@@ -9,10 +9,12 @@ import { BookHud } from './v7/components/BookHud';
 import { BookIndexDrawer } from './v7/components/BookIndexDrawer';
 import { BookInterlude } from './v7/components/BookInterlude';
 import { Plate00Mooney } from './v7/components/Plate00Mooney';
+import { PrologueConsciousness } from './v7/components/PrologueConsciousness';
 import { Chapter1MaryRoom } from './v7/components/Chapter1MaryRoom';
 import { Chapter2SplitSpine } from './v7/components/Chapter2SplitSpine';
 import { Chapter3VellumError } from './v7/components/Chapter3VellumError';
 import { Chapter4WagerAndDiopter } from './v7/components/Chapter4WagerAndDiopter';
+import { ScrollMicroZoom } from './v7/components/ScrollMicroZoom';
 import { Chapter5CajalTurntable } from './v7/components/Chapter5CajalTurntable';
 import { Chapter6IcuJournal } from './v7/components/Chapter6IcuJournal';
 import { Chapter7OtherMinds } from './v7/components/Chapter7OtherMinds';
@@ -26,6 +28,7 @@ function NoesisBookShell() {
   const [ch1DarkHud, setCh1DarkHud] = useState(false);
   const [ch1CanvasInHud, setCh1CanvasInHud] = useState(false);
   const [ch6DarkHud, setCh6DarkHud] = useState(false);
+  const [halDarkHud, setHalDarkHud] = useState(false);
   const [footerDarkHud, setFooterDarkHud] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -76,8 +79,11 @@ function NoesisBookShell() {
       const probeY = 32;
 
       const runwayEl = document.getElementById('ch-1-runway');
+      // Hide solid header backdrop ONLY while the full-bleed Mary's Room canvas is pinned;
+      // as soon as it unsticks and scrolls upward, turn the solid frosted Swiss header ON so prism rays/brass never pass behind HUD pills!
       const nextCh1Canvas = runwayEl
-        ? runwayEl.getBoundingClientRect().top <= probeY && runwayEl.getBoundingClientRect().bottom > probeY
+        ? runwayEl.getBoundingClientRect().top <= probeY &&
+          runwayEl.getBoundingClientRect().bottom >= window.innerHeight - 16
         : false;
       setCh1CanvasInHud((prev) => (prev === nextCh1Canvas ? prev : nextCh1Canvas));
 
@@ -86,6 +92,12 @@ function NoesisBookShell() {
         ? ch6El.getBoundingClientRect().top <= probeY && ch6El.getBoundingClientRect().bottom > probeY
         : false;
       setCh6DarkHud((prev) => (prev === nextCh6Dark ? prev : nextCh6Dark));
+
+      const halEl = document.getElementById('hal-monolith-runway');
+      const nextHalDark = halEl
+        ? halEl.getBoundingClientRect().top <= probeY && halEl.getBoundingClientRect().bottom > probeY
+        : false;
+      setHalDarkHud((prev) => (prev === nextHalDark ? prev : nextHalDark));
 
       const footerEl = document.getElementById('book-colophon-footer');
       const nextFooterDark = footerEl
@@ -158,7 +170,7 @@ function NoesisBookShell() {
 
   // 100% deterministic contrast strictly matching what is physically under the top 60px HUD bar!
   const hudTheme: 'light' | 'dark' = (() => {
-    if (ch6DarkHud || footerDarkHud) return 'dark';
+    if (ch6DarkHud || halDarkHud || footerDarkHud) return 'dark';
     if (ch1CanvasInHud && ch1DarkHud) return 'dark';
     return 'light';
   })();
@@ -173,7 +185,7 @@ function NoesisBookShell() {
         activeChapterId={activeChapterId}
         hudTheme={hudTheme}
         isScrolled={isScrolled}
-        immersiveCanvas={ch1CanvasInHud}
+        immersiveCanvas={ch1CanvasInHud || halDarkHud}
         scrollProgress={scrollProgress}
         onOpenIndex={() => setIndexOpen(true)}
         onScrollTop={handleScrollTop}
@@ -181,19 +193,31 @@ function NoesisBookShell() {
 
       <main>
         {/* TABLE 00: Cold Human Threshold — Mooney Contact-Sheet Exposure (0 jargon!) */}
-        <Plate00Mooney onContinueToCh1={() => handleNavigate('ch-1')} />
+        <Plate00Mooney onContinueToCh1={() => handleNavigate('prologue')} />
 
-        {/* PART I · CHAPTER I: Qualia & Mary's Room (Pre-exit Bet + Monochrome -> Cobalt Bloom + Chalmers vs Dennett) */}
+        {/* PROLOGUE: Human Definition of Consciousness, 3 Common Traps & 3 21st-Century Stakes */}
+        <PrologueConsciousness onContinueToPart1={() => handleNavigate('interlude-part-1')} />
+
+        {/* QUIET HALF-TITLE INTERLUDE 0: Part I Symmetry! */}
+        <BookInterlude
+          id="interlude-part-1"
+          partCode="ЧАСТЬ I · ИЗНУТРИ"
+          title="Мир глазами субъекта"
+          statement="Прежде чем вскрывать череп, посмотрим на сознание из единственной точки, откуда оно реально существует — изнутри первого лица."
+          footnote="Главы I–III · Загадка цвета, расщеплённое «Я» и управляемая галлюцинация"
+        />
+
+        {/* PART I · CHAPTER I: Qualia & Mary's Room (Scroll Setpiece #1 + Inline Wavelength Explorer!) */}
         <Chapter1MaryRoom
           onHudThemeChange={handleCh1HudTheme}
           onActiveChange={noopBool}
           onNextChapter={() => handleNavigate('ch-2')}
         />
 
-        {/* PART I · CHAPTER II: Split-Spine Book (Corpus Callosum Split-Brain + 1-line Mr. Robot) */}
+        {/* PART I · CHAPTER II: Split-Spine Book (Optic Chiasm Primer + Whole->Cut Snapping Fibers + Mr. Robot) */}
         <Chapter2SplitSpine onNextChapter={() => handleNavigate('ch-3')} />
 
-        {/* PART I · CHAPTER III: Controlled Hallucination (Risograph Vellum Registration Shift · "Drei Gläser") */}
+        {/* PART I · CHAPTER III: Controlled Hallucination (35mm Leica Monochrom Noir POV + Live Bayesian Prior!) */}
         <Chapter3VellumError onNextChapter={() => handleNavigate('interlude-part-2')} />
 
         {/* QUIET HALF-TITLE INTERLUDE I (80% calm air, 0 buttons) */}
@@ -205,13 +229,16 @@ function NoesisBookShell() {
           footnote="Главы IV–VI · Биология, химия и клинический порог"
         />
 
-        {/* PART II · CHAPTER IV: The 25-Year Wager (Perforated Tear-Strip) + Studio Brain & Swiss Optical Diopter (COGITATE 2025) */}
-        <Chapter4WagerAndDiopter onNextChapter={() => handleNavigate('ch-5')} />
+        {/* PART II · CHAPTER IV: The 25-Year Wager (Zero Spoiler + GNWT/IIT Metaphors + Optical Diopter) */}
+        <Chapter4WagerAndDiopter onNextChapter={() => handleNavigate('micro-zoom')} />
 
-        {/* PART II · CHAPTER V: Micro-Zoom x1000 — Cajal Layer-5 Neuron × Dieter Rams Turntable (Club Silencio + Sopranos Cut-to-Black) */}
+        {/* SCROLL SETPIECE #2 (~210vh): Macro-to-Micro x1000 Optical Dive (10 см -> 2 мм -> 200 мкм Cajal Neuron!) */}
+        <ScrollMicroZoom />
+
+        {/* PART II · CHAPTER V: Cajal Layer-5 Neuron × Dieter Rams Turntable (2.2s Sopranos Propofol Cutoff + Smooth Lights-Out Bridge!) */}
         <Chapter5CajalTurntable onNextChapter={() => handleNavigate('ch-6')} />
 
-        {/* PART II · CHAPTER VI: Single Deliberate Dark Clinical Spread — ICU Shift (3 Patients, NEJM 2024 CMD 25%, PCI* = 0.31) */}
+        {/* PART II · CHAPTER VI: Single Deliberate Dark Clinical Spread — 3-Pole PCI* Prelude + Honest 3-Patient ICU Shift */}
         <Chapter6IcuJournal
           onDarkInView={noopBool}
           onNextChapter={() => handleNavigate('interlude-part-3')}
@@ -227,10 +254,10 @@ function NoesisBookShell() {
           fromDark
         />
 
-        {/* PART III · CHAPTER VII: Crimson Bookmark Ribbon (NY Declaration 2024 + SpongeBob/Squidward/Mr. Krabs) + AI Tribunal (HAL 9000) */}
+        {/* PART III · CHAPTER VII: Crimson Bookmark + Engraved Sea-Sponge Stamp + Scroll Setpiece #3 (HAL 9000 Monolith) + AI Tribunal */}
         <Chapter7OtherMinds onNextChapter={() => handleNavigate('ch-8')} />
 
-        {/* PART III · CHAPTER VIII: Endpaper 3D-Flippable Cotton Bone Card ("Контрольная проба №0") + Bibliography & Colophon */}
+        {/* PART III · CHAPTER VIII: 5-Takeaway Synthesis + 3D-Flippable Cotton Bone Card + Bibliography & Colophon */}
         <Chapter8BoneEndpaper
           onFooterInView={noopBool}
           onScrollTop={handleScrollTop}

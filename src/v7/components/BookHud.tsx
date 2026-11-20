@@ -59,11 +59,11 @@ export function BookHud({
           />
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 top-[60px] h-2.5"
+            className="pointer-events-none absolute inset-x-0 top-[60px] h-3.5"
             style={{
               background: isDark
-                ? 'linear-gradient(180deg, rgba(17,20,25,0.82) 0%, rgba(17,20,25,0) 100%)'
-                : 'linear-gradient(180deg, rgba(250,249,245,0.88) 0%, rgba(250,249,245,0) 100%)',
+                ? 'linear-gradient(180deg, rgba(17,20,25,0.88) 0%, rgba(17,20,25,0) 100%)'
+                : 'linear-gradient(180deg, rgba(250,249,245,0.94) 0%, rgba(250,249,245,0) 100%)',
             }}
           />
         </>

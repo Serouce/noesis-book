@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { scaleLinear } from 'd3-scale';
 import { line, curveMonotoneX } from 'd3-shape';
-import { ArrowDown, CheckCircle2, XCircle, Zap } from 'lucide-react';
+import { ArrowDown, CheckCircle2, Lock, XCircle, Zap } from 'lucide-react';
 import { ICU_TRUTH, useExplorer, type IcuVerdict } from '../context/ExplorerContext';
 
 interface Chapter6IcuJournalProps {
@@ -22,45 +22,90 @@ interface PatientCase {
   revealFact: string;
 }
 
+interface PciAnalogyCase {
+  id: 'pillow' | 'bell' | 'orchestra';
+  title: string;
+  stateLabel: string;
+  pci: number;
+  zipRatio: string;
+  explain: string;
+  wavePath: string;
+  above: boolean;
+}
+
+// Scientifically rigorous 3-pole PCI* intuition (No integration / No differentiation / Both!)
+const PCI_ANALOGIES: PciAnalogyCase[] = [
+  {
+    id: 'pillow',
+    title: '1. Удар по подушке',
+    stateLabel: 'Кома / Пропофол · нет связности',
+    pci: 0.18,
+    zipRatio: 'ZIP сжал на 82%',
+    explain: 'Магнитный импульс даёт глухой, короткий всплеск в одной точке и сразу гаснет. Простой узор сжимается как крошечный ZIP-файл — внутри темно.',
+    wavePath: 'M 4 22 L 26 22 L 36 8 L 48 25 L 62 21 L 196 22',
+    above: false,
+  },
+  {
+    id: 'bell',
+    title: '2. Один большой колокол',
+    stateLabel: 'Глубокий сон без снов · нет разнообразия',
+    pci: 0.24,
+    zipRatio: 'ZIP сжал на 76%',
+    explain: 'Волна разлетается по всей коре, НО все зоны гудят монотонно в унисон. Повторяющийся ритм ZIP снова легко сжимает — сознания всё ещё нет.',
+    wavePath: 'M 4 22 Q 20 6, 36 22 T 68 22 T 100 22 T 132 22 T 164 22 T 196 22',
+    above: false,
+  },
+  {
+    id: 'orchestra',
+    title: '3. Оркестр колокольчиков',
+    stateLabel: 'Бодрствование / Скрытое сознание',
+    pci: 0.54,
+    zipRatio: 'ZIP почти бессилен',
+    explain: 'Импульс запускает сложный, неповторяющийся перезвон по обоим полушариям: есть и связность, и разнообразие. Сжать это невозможно — внутри кто-то есть!',
+    wavePath: 'M 4 22 L 22 22 L 30 6 L 40 34 L 52 12 L 66 28 L 80 9 L 94 31 L 110 14 L 126 26 L 142 11 L 158 29 L 176 17 L 196 22',
+    above: true,
+  },
+];
+
 const PATIENTS: PatientCase[] = [
   {
     id: 'p1',
     code: 'ПАЦИЕНТ № 01',
     genitive: 'ПАЦИЕНТА № 01',
-    bedTitle: 'Койка 04 · ЧМТ · 6 сут.',
-    clinicalChart: 'Глаза закрыты, на голос и болевые стимулы не реагирует. Родственники спрашивают, слышит ли он их.',
+    bedTitle: 'Койка 04 · Травма головы · 6 сут.',
+    clinicalChart: 'Глаза закрыты, на голос и прикосновения не реагирует. Родственники спрашивают, слышит ли он их.',
     pci: 0.21,
     decay: 3.1,
     complexity: 0.14,
     spread: 0.24,
     revealFact:
-      'Верно: это глубокая бессознательная кома (PCI* = 0.21 < 0.31). Магнитный импульс вызывает лишь глухой локальный удар без эха по коре.',
+      'Это глубокая бессознательная кома (PCI* = 0.21 < 0.31). Магнитный импульс вызывает лишь глухой локальный удар («подушка») без сложного эха по коре.',
   },
   {
     id: 'p2',
     code: 'ПАЦИЕНТ № 02',
     genitive: 'ПАЦИЕНТА № 02',
     bedTitle: 'Койка 09 · Инсульт ствола · 19 сут.',
-    clinicalChart: 'Полная внешняя неподвижность. По шкале Глазго поставлен диагноз «вегетативное состояние».',
+    clinicalChart: 'Полная внешняя неподвижность. По внешним тестам поставлен диагноз «вегетативное состояние».',
     pci: 0.44,
     decay: 0.72,
     complexity: 0.92,
     spread: 0.95,
     revealFact:
-      'Скрытое сознание (CMD, PCI* = 0.44 > 0.31)! Как показало эпохальное исследование NEJM (август 2024), каждый четвёртый такой пациент (60 из 241 — ровно 25%) полностью понимает речь врача внутри неподвижного тела.',
+      'Скрытое сознание (PCI* = 0.44 > 0.31)! Как доказало исследование NEJM (август 2024), каждый четвёртый такой пациент (60 из 241 — ровно 25%) полностью понимает речь врача внутри парализованного тела.',
   },
   {
     id: 'p3',
     code: 'ПАЦИЕНТ № 03',
     genitive: 'ПАЦИЕНТА № 03',
     bedTitle: 'Койка 12 · Остановка сердца',
-    clinicalChart: 'Внешне нет ни моргания, ни сжатия руки по команде. Пограничный случай — решайте строго по ЭЭГ.',
+    clinicalChart: 'Внешне нет ни моргания, ни сжатия руки по команде. Пограничный случай — решайте строго по индексу эха.',
     pci: 0.37,
     decay: 0.96,
     complexity: 0.76,
     spread: 0.84,
     revealFact:
-      'Выше золотого порога Массимини (PCI* = 0.37 > 0.31)! Сложная волна пересекает оба полушария: здесь сохраняется остров внутреннего опыта, и пациент нуждается в бережном общении и нейрореабилитации.',
+      'Выше золотого порога Массимини (PCI* = 0.37 > 0.31)! Сложная волна пересекает оба полушария: здесь сохраняется остров внутреннего опыта, и пациенту нужны бережное общение и нейрореабилитация.',
   },
 ];
 
@@ -69,30 +114,38 @@ const SAMPLES = 96;
 
 /**
  * CHAPTER VI: "Тихий свет в реанимации" (Single deliberate dark spread #111419).
- * Interactive ICU Shift: Zap 3 anonymous patients with TMS, read their D3 EEG vs PCI* = 0.31,
- * and file your clinical diagnosis (NEJM Aug 2024 CMD 25%!).
+ * Upgraded v8:
+ * 1. NEW 15-second interactive 3-pole PCI* = 0.31 Prelude ("Подушка / Один колокол / Оркестр + ZIP") ABOVE the ICU console!
+ * 2. ZERO COLOR SPOILER before user picks a diagnosis (neutral clinical amber-ivory EEG until verdict is submitted!)
+ * 3. Step 2 diagnosis buttons gated cleanly until Step 1 (ZAP) is fired
+ * 4. Fixed Patient #01 reveal text (no hardcoded "Верно:" when user got it wrong!)
+ * 5. Plain Russian clinical labels + clinically accurate 10-20 midline Fz-Cz-Pz montage ("Вид сверху · нос вверху")!
  */
 export function Chapter6IcuJournal({ onDarkInView, onNextChapter }: Chapter6IcuJournalProps) {
   const { state, setIcuDiagnosis, icuStats } = useExplorer();
   const sectionRef = useRef<HTMLElement | null>(null);
+  const [analogyId, setAnalogyId] = useState<'pillow' | 'bell' | 'orchestra'>('orchestra');
   const [activeId, setActiveId] = useState<'p1' | 'p2' | 'p3'>('p1');
   const [zappedMap, setZappedMap] = useState<Record<string, boolean>>({});
   const [pulseKey, setPulseKey] = useState(0);
   const [sweepProgress, setSweepProgress] = useState(0);
 
+  const analogy = PCI_ANALOGIES.find((a) => a.id === analogyId) ?? PCI_ANALOGIES[2];
   const patient = PATIENTS.find((p) => p.id === activeId) ?? PATIENTS[0];
   const isZapped = Boolean(zappedMap[patient.id]);
   const userVerdict = state.icuDiagnoses[patient.id];
+  const isDiagnosed = Boolean(userVerdict);
   const truth = ICU_TRUTH[patient.id];
   const isAbove = patient.pci >= 0.31;
+
+  // Neutral clinical ivory-amber UNTIL diagnosed (zero green/grey spoiler!), then reveal true diagnostic color!
+  const activeWaveColor = isDiagnosed ? (isAbove ? '#34D399' : '#94A3B8') : '#E5C67A';
 
   useEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        onDarkInView(entry.isIntersecting);
-      },
+      ([entry]) => onDarkInView(entry.isIntersecting),
       { rootMargin: '-8% 0px -75% 0px', threshold: 0 },
     );
     observer.observe(el);
@@ -127,10 +180,7 @@ export function Chapter6IcuJournal({ onDarkInView, onNextChapter }: Chapter6IcuJ
   };
 
   const handleDiagnose = (verdict: IcuVerdict) => {
-    if (!isZapped) {
-      setZappedMap((prev) => ({ ...prev, [patient.id]: true }));
-      setPulseKey((k) => k + 1);
-    }
+    if (!isZapped) return;
     setIcuDiagnosis(patient.id, verdict);
   };
 
@@ -180,37 +230,113 @@ export function Chapter6IcuJournal({ onDarkInView, onNextChapter }: Chapter6IcuJ
     <section
       id="ch-6"
       ref={sectionRef}
-      className="relative bg-[#111419] text-[#FAF9F5] pt-28 pb-20 md:pt-32 md:pb-24 overflow-hidden scroll-mt-0"
+      className="relative bg-[#111419] text-[#FAF9F5] pt-24 pb-20 md:pt-28 md:pb-24 overflow-hidden scroll-mt-0"
       aria-label="Глава VI — Тихий свет в реанимации"
     >
       <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20">
-        {/* Dark Folio Header (generous clearance below fixed HUD) */}
+        {/* Dark Folio Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-[#FAF9F5]/14 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#8E98A8]">
           <span className="text-[#34D399] font-semibold">ЧАСТЬ II · ПОД ЧЕРЕПОМ · ГЛАВА VI</span>
-          <span>ДЕЖУРСТВО В РЕАНИМАЦИИ · NEJM 2024 · стр. 84</span>
+          <span>ДЕЖУРСТВО В РЕАНИМАЦИИ · NEJM 2024 · стр. 86</span>
         </div>
 
-        {/* Clinical Opening — proportioned so entire console fits comfortably inside 1440×900 */}
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-end">
+        {/* Clinical Opening */}
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
           <div className="lg:col-span-7">
-            <h2 className="text-[clamp(28px,3.6vw,46px)] leading-[1.06] tracking-[-0.03em]">
+            <h2 className="text-[clamp(30px,4vw,52px)] leading-[1.06] tracking-[-0.03em]">
               <span className="font-display font-bold block text-[#FAF9F5]">Постучать по мозгу</span>
-              <span className="font-serif-editorial italic font-normal text-[#C8D0DC] block mt-0.5">
+              <span className="font-serif-editorial italic font-normal text-[#C8D0DC] block mt-1">
                 и услышать эхо разума.
               </span>
             </h2>
           </div>
-          <div className="lg:col-span-5 text-[14.5px] leading-[1.58] text-[#A4AEBD]">
+          <div className="lg:col-span-5 text-[15px] leading-[1.62] text-[#A8B2C1]">
             <p>
               В августе 2024 года журнал <strong className="text-[#FAF9F5]">NEJM</strong> потряс медицину: у{' '}
-              <strong className="text-[#34D399]">25% пациентов в глубокой коме</strong> (60 из 241) сохраняется скрытое сознание. Метод Марчелло Массимини бьёт мягким магнитным импульсом по коре и считает сложность эха — индекс <code className="text-[#FACC15]">PCI*</code> (порог: <strong className="text-[#FACC15]">0.31</strong>).
+              <strong className="text-[#34D399]">25% неподвижных пациентов в коме</strong> (60 из 241) сохраняется скрытое сознание — они слышат врачей, но не могут подать знак. Как их найти?
             </p>
           </div>
         </div>
 
-        {/* 3 ANONYMOUS PATIENT TABS + LIVE SHIFT SCORE */}
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+        {/* NEW 15-SECOND PRELUDE: "КАК РАБОТАЕТ РАДАР СОЗНАНИЯ PCI* = 0.31 (Подушка / Один колокол / Оркестр + ZIP)" */}
+        <div className="mt-9 rounded-[22px] bg-[#181C23] border border-[#FAF9F5]/12 p-5 md:p-6 space-y-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <div>
+              <div className="font-mono-tech text-[10.5px] uppercase tracking-[0.14em] text-[#FACC15] font-semibold">
+                КАК РАБОТАЕТ ИНДЕКС PCI* И ОТКУДА ВЗЯЛОСЬ ЧИСЛО 0.31 (15 СЕК)
+              </div>
+              <p className="text-[14px] leading-[1.6] text-[#C8D0DC] mt-1.5 max-w-3xl">
+                Врач подносит к голове магнитную катушку (<strong className="text-[#FAF9F5]">ТМС</strong> — безболезненный щелчок), а датчики на коже (<strong className="text-[#FAF9F5]">ЭЭГ</strong>) записывают эхо. Затем компьютер сжимает запись как <strong className="text-[#FAF9F5]">ZIP-архив</strong> и выдаёт число от 0 до 1 — <code className="text-[#FACC15]">PCI*</code>. Команда Марчелло Массимини проверила прибор на 150 людях в сознании и под наркозом: ровно на отметке <strong className="text-[#FACC15]">0.31</strong> прошла почти безошибочная граница.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+            <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              {PCI_ANALOGIES.map((item) => {
+                const active = item.id === analogy.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setAnalogyId(item.id)}
+                    className={`v6-pill text-left p-3.5 rounded-xl border cursor-pointer transition-all ${
+                      active
+                        ? 'bg-[#FAF9F5] text-[#141413] border-[#FAF9F5]'
+                        : 'bg-[#111419] hover:bg-[#1E232C] text-[#D8DEE9] border-[#FAF9F5]/12'
+                    }`}
+                  >
+                    <div className="font-display font-bold text-[13.5px]">{item.title}</div>
+                    <div className={`font-mono-tech text-[10px] mt-1 ${active ? 'text-[#4B4A46]' : 'text-[#B5BECD]'}`}>
+                      {item.stateLabel}
+                    </div>
+                    <div
+                      className={`font-mono-tech text-[12px] font-bold mt-2 ${
+                        item.above
+                          ? active
+                            ? 'text-[#0D7A5F]'
+                            : 'text-[#34D399]'
+                          : active
+                            ? 'text-[#C83509]'
+                            : 'text-[#CBD5E1]'
+                      }`}
+                    >
+                      PCI* = {item.pci.toFixed(2)} {item.above ? '> 0.31' : '< 0.31'}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="lg:col-span-5 rounded-xl bg-[#0D1015] border border-[#FAF9F5]/10 p-4 space-y-2.5">
+              <div className="flex items-center justify-between font-mono-tech text-[10px] uppercase tracking-[0.11em]">
+                <span className="text-[#FACC15]">{analogy.zipRatio}</span>
+                <span className={analogy.above ? 'text-[#34D399] font-semibold' : 'text-[#94A3B8]'}>
+                  {analogy.above ? 'ВЫШЕ ПОРОГА 0.31 · СОЗНАНИЕ' : 'НИЖЕ ПОРОГА 0.31 · ТИШИНА'}
+                </span>
+              </div>
+              <svg viewBox="0 0 200 42" className="w-full h-10 block">
+                <line x1="0" y1="22" x2="200" y2="22" stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" />
+                <path
+                  d={analogy.wavePath}
+                  fill="none"
+                  stroke={analogy.above ? '#34D399' : '#94A3B8'}
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <p className="text-[12.5px] leading-[1.52] text-[#B7C0CE]">{analogy.explain}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* NOW THE HANDS-ON ICU SHIFT: 3 ANONYMOUS PATIENTS + LIVE SHIFT SCORE */}
+        <div className="mt-10 flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-2.5">
+            <span className="font-mono-tech text-[10.5px] uppercase tracking-[0.12em] text-[#8E98A8] mr-1">
+              ВАШЕ ДЕЖУРСТВО:
+            </span>
             {PATIENTS.map((p) => {
               const active = p.id === activeId;
               const verdict = state.icuDiagnoses[p.id];
@@ -247,15 +373,14 @@ export function Chapter6IcuJournal({ onDarkInView, onNextChapter }: Chapter6IcuJ
 
         {/* MAIN CLINICAL CONSOLE */}
         <div className="mt-5 grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-          {/* Left 4 cols: Patient Chart + Clinically Accurate 10-20 Midline Montage (Fz-Cz-Pz) + ZAP Trigger */}
+          {/* Left 4 cols: Patient Chart + 10-20 Midline Montage + ZAP Trigger */}
           <div className="lg:col-span-4 rounded-[22px] bg-[#181C23] border border-[#FAF9F5]/10 p-5 flex flex-col justify-between gap-4">
             <div className="space-y-1.5">
               <div className="flex items-center justify-between gap-2 font-mono-tech text-[10.5px] text-[#9AA3B2]">
                 <span className="min-w-0 truncate">{patient.bedTitle}</span>
                 <span
-                  className={`whitespace-nowrap shrink-0 ${
-                    isZapped ? (isAbove ? 'text-[#34D399]' : 'text-[#94A3B8]') : 'text-[#64748B]'
-                  }`}
+                  className="whitespace-nowrap shrink-0 font-semibold"
+                  style={{ color: isZapped ? activeWaveColor : '#64748B' }}
                 >
                   {isZapped ? `PCI* = ${patient.pci.toFixed(2)}` : 'НЕТ ЗАМЕРА'}
                 </span>
@@ -263,11 +388,10 @@ export function Chapter6IcuJournal({ onDarkInView, onNextChapter }: Chapter6IcuJ
               <p className="text-[13px] leading-[1.52] text-[#C8D0DC]">{patient.clinicalChart}</p>
             </div>
 
-            {/* 10-20 Top-Down Cortical Montage: strictly aligned midline Fz - Cz - Pz (ZAP on Pz matching highlighted EEG channel!) */}
-            <div className="relative mx-auto w-44 h-44 flex items-center justify-center">
-              <svg viewBox="0 0 220 220" className="w-full h-full">
-                {/* Nose orientation marker */}
-                <path d="M 102 14 L 110 4 L 118 14" fill="none" stroke="rgba(255,255,255,0.22)" strokeWidth="1.2" />
+            {/* 10-20 Top-Down Cortical Montage: strictly aligned midline Fz - Cz - Pz */}
+            <div className="relative mx-auto w-44 h-48 flex flex-col items-center justify-center">
+              <svg viewBox="0 0 220 220" className="w-44 h-44 block">
+                <path d="M 102 14 L 110 4 L 118 14" fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth="1.2" />
                 <path
                   d="M 107 20 C 66 22, 34 58, 34 110 C 34 162, 64 198, 107 200 Z"
                   fill="rgba(255,255,255,0.035)"
@@ -281,7 +405,6 @@ export function Chapter6IcuJournal({ onDarkInView, onNextChapter }: Chapter6IcuJ
                   strokeWidth="1.2"
                 />
 
-                {/* TMS wave rings radiating cleanly from Pz (midline parietal target x=110, y=152) */}
                 {isZapped &&
                   [0.32, 0.62, 0.94].map((ringRatio, i) => {
                     const r = 10 + sweepProgress * 84 * patient.spread * ringRatio;
@@ -293,7 +416,7 @@ export function Chapter6IcuJournal({ onDarkInView, onNextChapter }: Chapter6IcuJ
                         cy="152"
                         r={r}
                         fill="none"
-                        stroke={isAbove ? '#34D399' : '#94A3B8'}
+                        stroke={activeWaveColor}
                         strokeWidth={i === 0 ? 2.2 : 1.3}
                         opacity={alpha}
                       />
@@ -316,13 +439,13 @@ export function Chapter6IcuJournal({ onDarkInView, onNextChapter }: Chapter6IcuJ
                         cx={node.x}
                         cy={node.y}
                         r={node.isZap ? 5.5 : 3.8}
-                        fill={node.isZap ? '#FC4109' : reached ? (isAbove ? '#34D399' : '#94A3B8') : '#343D4D'}
+                        fill={node.isZap ? '#FC4109' : reached ? activeWaveColor : '#343D4D'}
                       />
                       <text
                         x={node.x + node.dx}
                         y={node.y + node.dy}
                         textAnchor={node.anchor}
-                        fill={node.isZap ? '#FF9B7D' : 'rgba(255,255,255,0.52)'}
+                        fill={node.isZap ? '#FF9B7D' : 'rgba(255,255,255,0.55)'}
                         fontSize="8.5"
                         fontFamily="JetBrains Mono Variable, monospace"
                       >
@@ -332,6 +455,9 @@ export function Chapter6IcuJournal({ onDarkInView, onNextChapter }: Chapter6IcuJ
                   );
                 })}
               </svg>
+              <span className="font-mono-tech text-[9.5px] uppercase tracking-[0.1em] text-[#7D8796]">
+                Вид сверху · нос вверху · датчики ЭЭГ
+              </span>
             </div>
 
             <button
@@ -340,24 +466,23 @@ export function Chapter6IcuJournal({ onDarkInView, onNextChapter }: Chapter6IcuJ
               className="v6-pill w-full py-2.5 px-4 rounded-full bg-[#FC4109] hover:bg-[#E53906] text-[#FAF9F5] font-sans-ui text-[13.5px] font-medium inline-flex items-center justify-center gap-2 shadow-[0_12px_30px_rgba(252,65,9,0.28)] cursor-pointer"
             >
               <Zap className="w-4 h-4 fill-current" />
-              <span>{isZapped ? 'Повторить ТМС-импульс' : '1. Подать ТМС-импульс (ZAP)'}</span>
+              <span>{isZapped ? 'Повторить магнитный импульс' : 'Шаг 1 · Подать магнитный импульс (ZAP)'}</span>
             </button>
           </div>
 
-          {/* Right 8 cols: 5-Channel D3 EEG Oscilloscope + Golden 0.31 Gauge + Physician Diagnosis Buttons */}
+          {/* Right 8 cols: 5-Channel D3 EEG Oscilloscope (NO SPOILER COLOR!) + Golden 0.31 Gauge + Gated Diagnosis Buttons */}
           <div className="lg:col-span-8 rounded-[22px] bg-[#181C23] border border-[#FAF9F5]/10 p-5 flex flex-col justify-between gap-4">
             <div className="flex flex-wrap items-center justify-between gap-3 font-mono-tech text-[11px]">
               <span className="text-[#C8D0DC]">
                 {isZapped
                   ? '5-КАНАЛЬНАЯ ЭЭГ · ОТКЛИК ОТ Pz · 0 → 300 МС'
-                  : 'НАЖМИТЕ «ПОДАТЬ ТМС-ИМПУЛЬС», ЧТОБЫ СНЯТЬ ЭХО КОРЫ'}
+                  : 'НАЖМИТЕ «ШАГ 1 · ПОДАТЬ ИМПУЛЬС», ЧТОБЫ СНЯТЬ ЭХО КОРЫ'}
               </span>
               <span className="text-[#FACC15]">ПОРОГ МАССИМИНИ: PCI* = 0.31</span>
             </div>
 
-            {/* D3-Shape 5-Channel Oscilloscope */}
             <div className="relative rounded-2xl bg-[#0D1015] border border-[#FAF9F5]/8 p-2.5 overflow-hidden">
-              <svg viewBox="0 0 680 250" className="w-full h-[168px] md:h-[176px] block">
+              <svg viewBox="0 0 680 250" className="w-full h-[170px] md:h-[180px] block">
                 <defs>
                   <clipPath id="icuSweepClip">
                     <rect x="0" y="0" width={Math.max(0, 680 * sweepProgress)} height="250" />
@@ -401,8 +526,8 @@ export function Chapter6IcuJournal({ onDarkInView, onNextChapter }: Chapter6IcuJ
                         key={ch}
                         d={d}
                         fill="none"
-                        stroke={isAbove ? '#34D399' : '#94A3B8'}
-                        strokeWidth={ch === 2 ? 2.1 : 1.35}
+                        stroke={activeWaveColor}
+                        strokeWidth={ch === 2 ? 2.15 : 1.35}
                         opacity={ch === 2 ? 0.96 : 0.48}
                       />
                     ))}
@@ -422,10 +547,10 @@ export function Chapter6IcuJournal({ onDarkInView, onNextChapter }: Chapter6IcuJ
               </svg>
             </div>
 
-            {/* Golden 0.31 Calibrated Bar */}
+            {/* Golden 0.31 Calibrated Bar (Neutral amber until diagnosed — ZERO color spoiler!) */}
             <div>
               <div className="flex items-center justify-between font-mono-tech text-[11px] mb-2">
-                <span className="text-[#9AA3B2]">Индекс сложности возмущения (PCI*)</span>
+                <span className="text-[#9AA3B2]">Сравните замеренный индекс PCI* с порогом 0.31</span>
                 <span className="text-base font-semibold text-[#FAF9F5]">
                   {isZapped ? `PCI* = ${patient.pci.toFixed(2)}` : '— . — —'}
                 </span>
@@ -435,7 +560,7 @@ export function Chapter6IcuJournal({ onDarkInView, onNextChapter }: Chapter6IcuJ
                   className="h-full rounded-full transition-all duration-500 ease-out"
                   style={{
                     width: `${pciBarPct}%`,
-                    backgroundColor: isAbove ? '#34D399' : '#64748B',
+                    backgroundColor: activeWaveColor,
                   }}
                 />
                 <div className="absolute -top-1.5 -bottom-1.5 w-[2px] bg-[#FACC15]" style={{ left: `${thresholdPct}%` }}>
@@ -446,34 +571,46 @@ export function Chapter6IcuJournal({ onDarkInView, onNextChapter }: Chapter6IcuJ
               </div>
             </div>
 
-            {/* Step 2: Physician's Diagnosis Decision */}
+            {/* Step 2: Physician's Diagnosis Decision (Gated cleanly until Step 1 ZAP is pressed!) */}
             <div className="space-y-3">
-              <div className="font-mono-tech text-[10.5px] uppercase tracking-[0.12em] text-[#9AA3B2]">
-                2. ВАШ КЛИНИЧЕСКИЙ ДИАГНОЗ ДЛЯ {patient.genitive}:
+              <div className="flex items-center justify-between gap-2 font-mono-tech text-[10.5px] uppercase tracking-[0.12em] text-[#9AA3B2]">
+                <span>ШАГ 2 · ВАШ КЛИНИЧЕСКИЙ ДИАГНОЗ ДЛЯ {patient.genitive}:</span>
+                {!isZapped && (
+                  <span className="inline-flex items-center gap-1 text-[#FACC15]">
+                    <Lock className="w-3 h-3" />
+                    <span>Сначала подайте импульс</span>
+                  </span>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
                   type="button"
+                  disabled={!isZapped}
                   onClick={() => handleDiagnose('coma')}
-                  className={`v6-pill px-4 py-3 rounded-xl border text-left text-[13.5px] font-medium cursor-pointer ${
-                    userVerdict === 'coma'
-                      ? 'bg-[#FAF9F5] text-[#141413] border-[#FAF9F5]'
-                      : 'bg-[#FAF9F5]/6 hover:bg-[#FAF9F5]/12 text-[#FAF9F5] border-[#FAF9F5]/16'
+                  className={`v6-pill px-4 py-3 rounded-xl border text-left text-[13.5px] font-medium ${
+                    !isZapped
+                      ? 'bg-[#FAF9F5]/4 text-[#64748B] border-[#FAF9F5]/8 cursor-not-allowed'
+                      : userVerdict === 'coma'
+                        ? 'bg-[#FAF9F5] text-[#141413] border-[#FAF9F5] cursor-pointer'
+                        : 'bg-[#FAF9F5]/6 hover:bg-[#FAF9F5]/12 text-[#FAF9F5] border-[#FAF9F5]/16 cursor-pointer'
                   }`}
                 >
                   Глубокая кома (нет сознания)
                 </button>
                 <button
                   type="button"
+                  disabled={!isZapped}
                   onClick={() => handleDiagnose('cmd')}
-                  className={`v6-pill px-4 py-3 rounded-xl border text-left text-[13.5px] font-medium cursor-pointer ${
-                    userVerdict === 'cmd'
-                      ? 'bg-[#34D399] text-[#081A14] border-[#34D399]'
-                      : 'bg-[#FAF9F5]/6 hover:bg-[#FAF9F5]/12 text-[#FAF9F5] border-[#FAF9F5]/16'
+                  className={`v6-pill px-4 py-3 rounded-xl border text-left text-[13.5px] font-medium ${
+                    !isZapped
+                      ? 'bg-[#FAF9F5]/4 text-[#64748B] border-[#FAF9F5]/8 cursor-not-allowed'
+                      : userVerdict === 'cmd'
+                        ? 'bg-[#34D399] text-[#081A14] border-[#34D399] cursor-pointer'
+                        : 'bg-[#FAF9F5]/6 hover:bg-[#FAF9F5]/12 text-[#FAF9F5] border-[#FAF9F5]/16 cursor-pointer'
                   }`}
                 >
-                  Скрытое сознание (CMD — пациент слышит!)
+                  Скрытое сознание (пациент слышит!)
                 </button>
               </div>
 
@@ -505,7 +642,7 @@ export function Chapter6IcuJournal({ onDarkInView, onNextChapter }: Chapter6IcuJ
         {/* Scientifically Honest Domino Bridge -> Interlude Part III */}
         <div className="mt-14 pt-6 border-t border-[#FAF9F5]/14 flex flex-wrap items-center justify-between gap-4">
           <p className="font-serif-editorial italic text-[17px] text-[#C8D0DC] max-w-2xl">
-            В реанимации нас спасла магнитная катушка над корой. Но как искать сознание там, где вообще нет человеческой коры — у осьминога — или вообще нет нейронов — у ИИ?
+            В реанимации нас спасла магнитная катушка над человеческой корой. Но как искать сознание там, где вообще нет человеческого мозга — у осьминога — или вообще нет нейронов — у ИИ?
           </p>
           <button
             type="button"
