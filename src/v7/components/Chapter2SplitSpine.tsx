@@ -186,10 +186,10 @@ export function Chapter2SplitSpine({ onNextChapter }: Chapter2SplitSpineProps) {
         <div
           className="relative grid grid-cols-1 md:grid-cols-2 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
           style={{
-            gap: state.splitBrainCut ? '34px' : '0px',
+            gap: state.splitBrainCut ? '40px' : '0px',
           }}
         >
-          {/* Central Surgical Spine Seam Indicator (desktop) */}
+          {/* Central Surgical Spine Seam Indicator (desktop) — rotated vertically along the cut axis so it never overlaps card copy */}
           <div
             aria-hidden="true"
             className="hidden md:flex flex-col items-center justify-center pointer-events-none absolute top-0 bottom-0 left-1/2 -translate-x-1/2 z-20 transition-opacity duration-500"
@@ -202,9 +202,9 @@ export function Chapter2SplitSpine({ onNextChapter }: Chapter2SplitSpineProps) {
               }`}
             />
             <span
-              className={`absolute top-1/2 -translate-y-1/2 px-2 py-1 rounded-full font-mono-tech text-[9.5px] uppercase tracking-[0.12em] whitespace-nowrap transition-all duration-500 ${
+              className={`absolute top-1/2 -translate-y-1/2 -rotate-90 origin-center px-2.5 py-0.5 rounded-full font-mono-tech text-[9px] uppercase tracking-[0.13em] whitespace-nowrap transition-all duration-500 ${
                 state.splitBrainCut
-                  ? 'bg-[#FC4109] text-[#FAF9F5] shadow-[0_6px_20px_rgba(252,65,9,0.3)]'
+                  ? 'bg-[#FC4109] text-[#FAF9F5] shadow-[0_6px_20px_rgba(252,65,9,0.28)]'
                   : 'bg-[#FAF9F5] text-[#5E5D59] border border-[#141413]/16'
               }`}
             >

@@ -129,8 +129,12 @@ export function Chapter4WagerAndDiopter({ onNextChapter }: Chapter4WagerAndDiopt
           {!state.wagerUnsealed ? (
             <button
               type="button"
-              onClick={() => setWagerUnsealed(true)}
-              className="group w-full relative overflow-hidden rounded-xl border-2 border-dashed border-[#FC4109]/70 bg-[#FC4109]/5 hover:bg-[#FC4109]/10 px-5 py-4 transition-all cursor-pointer flex flex-wrap items-center justify-between gap-4"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                window.getSelection()?.removeAllRanges();
+                setWagerUnsealed(true);
+              }}
+              className="group select-none w-full relative overflow-hidden rounded-xl border-2 border-dashed border-[#FC4109]/70 bg-[#FC4109]/5 hover:bg-[#FC4109]/10 px-5 py-4 transition-all cursor-pointer flex flex-wrap items-center justify-between gap-4"
             >
               <div className="flex items-center gap-3">
                 <span className="w-8 h-8 rounded-full bg-[#FC4109] text-[#FAF9F5] flex items-center justify-center shrink-0 transition-transform group-hover:rotate-12">
@@ -373,16 +377,40 @@ export function Chapter4WagerAndDiopter({ onNextChapter }: Chapter4WagerAndDiopt
                           strokeDasharray="6 6"
                           opacity="0.72"
                         />
+                        {/* Clean Swiss leader line up into clear #FAF9F5 sky above brain & diopter */}
+                        <line
+                          x1="1090"
+                          y1="322"
+                          x2="1090"
+                          y2="134"
+                          stroke="#004EDF"
+                          strokeWidth="2"
+                          strokeDasharray="5 5"
+                          opacity="0.8"
+                        />
+                        <circle cx="1090" cy="322" r="5" fill="#004EDF" />
+                        <rect
+                          x={opticalMode === 'verdict' ? 868 : 908}
+                          y="78"
+                          width={opticalMode === 'verdict' ? 544 : 444}
+                          height="56"
+                          rx="10"
+                          fill="#FAF9F5"
+                          fillOpacity="0.98"
+                          stroke="#004EDF"
+                          strokeOpacity="0.42"
+                          strokeWidth="1.8"
+                        />
                         <text
-                          x="1090"
-                          y="296"
+                          x={opticalMode === 'verdict' ? 1140 : 1130}
+                          y="114"
                           textAnchor="middle"
                           fill="#004EDF"
-                          fontSize="22"
+                          fontSize="24"
                           fontWeight="600"
                           fontFamily="JetBrains Mono Variable, monospace"
                         >
-                          {opticalMode === 'verdict' ? 'ЗАТЫЛОК: ДАННЫЕ ЕСТЬ · СИНХР. НЕТ' : 'IIT · ЗАДНЯЯ ГОРЯЧАЯ ЗОНА'}
+                          {opticalMode === 'verdict' ? 'ЗАТЫЛОК: ОБРАЗ ЕСТЬ · СИНХР. НЕТ' : 'IIT · ЗАДНЯЯ ГОРЯЧАЯ ЗОНА'}
                         </text>
                       </g>
                     )}
@@ -400,16 +428,40 @@ export function Chapter4WagerAndDiopter({ onNextChapter }: Chapter4WagerAndDiopt
                           strokeDasharray="6 6"
                           opacity="0.78"
                         />
+                        {/* Clean Swiss leader line up into clear #FAF9F5 sky above brain & diopter */}
+                        <line
+                          x1="485"
+                          y1="273"
+                          x2="485"
+                          y2="134"
+                          stroke="#FC4109"
+                          strokeWidth="2"
+                          strokeDasharray="5 5"
+                          opacity="0.85"
+                        />
+                        <circle cx="485" cy="273" r="5" fill="#FC4109" />
+                        <rect
+                          x="228"
+                          y="78"
+                          width="464"
+                          height="56"
+                          rx="10"
+                          fill="#FAF9F5"
+                          fillOpacity="0.98"
+                          stroke="#FC4109"
+                          strokeOpacity="0.45"
+                          strokeWidth="1.8"
+                        />
                         <text
-                          x="485"
-                          y="246"
+                          x="460"
+                          y="114"
                           textAnchor="middle"
                           fill="#FC4109"
-                          fontSize="22"
+                          fontSize="24"
                           fontWeight="600"
                           fontFamily="JetBrains Mono Variable, monospace"
                         >
-                          {opticalMode === 'verdict' ? 'ЛОБ: ВСПЫШКИ ВЫКЛЮЧЕНИЯ НЕТ' : 'GNWT · ЛОБНОЕ ВОСПЛАМЕНЕНИЕ'}
+                          {opticalMode === 'verdict' ? 'ЛОБ: НЕТ ВСПЫШКИ НА СМЕНУ' : 'GNWT · ЛОБНОЕ ВОСПЛАМЕНЕНИЕ'}
                         </text>
                       </g>
                     )}

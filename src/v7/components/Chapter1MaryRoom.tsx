@@ -10,31 +10,32 @@ gsap.registerPlugin(ScrollTrigger);
 interface Chapter1MaryRoomProps {
   onHudThemeChange: (theme: 'light' | 'dark') => void;
   onActiveChange: (active: boolean) => void;
+  onCanvasInHudChange?: (active: boolean) => void;
   onNextChapter: () => void;
 }
 
 const MARY_BEATS = [
   {
     kicker: 'ГЛАВА I · ЧАСТЬ 1/4 · КОМНАТА МЭРИ (Ф. ДЖЕКСОН, 1982)',
-    headlineMain: 'Она знает о красном всё —',
+    headlineMain: 'Она знает о\u00A0красном всё —',
     headlineAccent: 'кроме того, каково его видеть.',
-    note: 'Нейробиолог Мэри выросла в абсолютно чёрно-белой лаборатории. Она знает длину волны 650 нм, реакцию колбочек L и траекторию каждого импульса в зоне V4 — но никогда не видела ни единого цветного луча.',
+    note: 'Нейробиолог Мэри выросла в абсолютно чёрно-белой лаборатории. Она знает длину волны 650\u00A0нм, реакцию колбочек L и траекторию каждого импульса в зоне V4 — но никогда не видела ни единого цветного луча.',
   },
   {
     kicker: 'ГЛАВА I · ЧАСТЬ 2/4 · ФИЗИКА БЕЗ ОПЫТА',
-    headlineMain: 'В спектре нет красного —',
-    headlineAccent: 'там есть только частота 461 ТГц.',
+    headlineMain: 'В\u00A0спектре нет красного —',
+    headlineAccent: 'там есть только частота 461\u00A0ТГц.',
     note: 'В объективном мире свет бесцветен: это электромагнитные колебания разной длины. Можно выучить до микрона разницу между бумагой «слоновая кость» (Bone) и «яичная скорлупа» (Eggshell) — но это всё ещё сухие числа, а не сам оттенок перед глазами.',
   },
   {
     kicker: 'ГЛАВА I · ЧАСТЬ 3/4 · МОМЕНТ ПОРОГА',
     headlineMain: 'Дверь открывается.',
-    headlineAccent: 'Мозг получает сигнал, который уже знал по учебникам…',
+    headlineAccent: 'Мозг получает сигнал, который уже знал по\u00A0учебникам…',
     note: 'По зрительному нерву бежит точно тот каскад импульсов, который Мэри сто раз чертила на доске. Ни одной новой формулы физика ей не дала. Но происходит нечто, чего не было ни в одной книге.',
   },
   {
     kicker: 'ГЛАВА I · ЧАСТЬ 4/4 · РОЖДЕНИЕ КВАЛИА',
-    headlineMain: 'Красный обрушивается на неё.',
+    headlineMain: 'Красный обрушивается на\u00A0неё.',
     headlineAccent: 'Это и есть Трудная проблема сознания.',
     note: 'Субъективное качество переживания — «красность красного», боль ожога, вкус кофе — философы называют квалиа. Почему физическая химия в темноте черепа вообще сопровождается внутренним кино?',
   },
@@ -85,6 +86,7 @@ const DEFAULT_650 = wavelengthToHex(650);
 export function Chapter1MaryRoom({
   onHudThemeChange,
   onActiveChange,
+  onCanvasInHudChange,
   onNextChapter,
 }: Chapter1MaryRoomProps) {
   const { state, setMaryBet } = useExplorer();
@@ -116,9 +118,18 @@ export function Chapter1MaryRoom({
       ([entry]) => {
         onActiveChange(entry.isIntersecting);
       },
-      { threshold: 0.08 },
+      { threshold: 0.01 },
     );
     visObserver.observe(section);
+
+    const canvasHudTrigger = ScrollTrigger.create({
+      trigger: runway,
+      start: 'top 62px',
+      end: 'bottom 62px',
+      onToggle: (self) => {
+        onCanvasInHudChange?.(self.isActive);
+      },
+    });
 
     const trigger = ScrollTrigger.create({
       trigger: runway,
@@ -140,7 +151,9 @@ export function Chapter1MaryRoom({
       onUpdate: (self) => {
         const p = self.progress;
 
-        const nextBeat = p < 0.25 ? 0 : p < 0.52 ? 1 : p < 0.72 ? 2 : 3;
+        // Beat 3 ("МОМЕНТ ПОРОГА") spans the entire mid-bloom (0.52..0.79) cleanly in dark ink;
+        // Beat 4 ("РОЖДЕНИЕ КВАЛИА") begins synchronously as deep Klein Cobalt blankets the left column!
+        const nextBeat = p < 0.25 ? 0 : p < 0.52 ? 1 : p < 0.79 ? 2 : 3;
         setActiveBeat((prev) => (prev === nextBeat ? prev : nextBeat));
 
         if (rayWavePathRef.current) {
@@ -156,17 +169,27 @@ export function Chapter1MaryRoom({
           spikePathRef.current.style.strokeDashoffset = `${len * (1 - spikeT)}`;
         }
 
-        // Signature Monochrome -> Radial Crimson + Klein Cobalt Flood centered directly on the rose!
-        const colorT = Math.max(0, Math.min(1, (p - 0.56) / 0.34));
+        // Signature Monochrome -> Soft Optical Radial Crimson + Klein Cobalt Wave centered on the rose!
+        const colorT = Math.max(0, Math.min(1, (p - 0.54) / 0.38));
         const easedColor = colorT * colorT * (3 - 2 * colorT);
-        const radiusPct = easedColor * 145;
+        const feather = Math.min(4.5, easedColor * 18);
+        const maskRadius = easedColor <= 0.001 ? 0 : Math.min(112, Math.pow(easedColor, 0.85) * 112);
+        const innerStop = Math.max(0, maskRadius - feather);
+        const outerStop = maskRadius + feather;
+        const radialMask =
+          easedColor <= 0.001
+            ? 'radial-gradient(circle farthest-corner at 63.5% 57%, black 0%, transparent 0%)'
+            : `radial-gradient(circle farthest-corner at 63.5% 57%, black ${innerStop.toFixed(2)}%, transparent ${outerStop.toFixed(2)}%)`;
 
         if (colorLayerRef.current) {
-          colorLayerRef.current.style.clipPath = `circle(${radiusPct.toFixed(2)}% at 63.5% 57%)`;
+          colorLayerRef.current.style.maskImage = radialMask;
+          colorLayerRef.current.style.webkitMaskImage = radialMask;
         }
         if (cobaltWashRef.current) {
-          cobaltWashRef.current.style.clipPath = `circle(${radiusPct.toFixed(2)}% at 63.5% 57%)`;
-          cobaltWashRef.current.style.opacity = `${(easedColor * 0.92).toFixed(3)}`;
+          cobaltWashRef.current.style.maskImage = radialMask;
+          cobaltWashRef.current.style.webkitMaskImage = radialMask;
+          const cobaltOpacity = Math.min(0.95, Math.pow(easedColor, 0.78) * 0.96);
+          cobaltWashRef.current.style.opacity = `${cobaltOpacity.toFixed(3)}`;
         }
         if (prismSpectrumRef.current) {
           prismSpectrumRef.current.style.opacity = `${easedColor.toFixed(3)}`;
@@ -185,16 +208,23 @@ export function Chapter1MaryRoom({
         }
 
         if (progressBarRef.current) {
-          progressBarRef.current.style.transform = `scaleX(${p.toFixed(4)})`;
+          const barFill = Math.max(0, Math.min(1, p / 0.92));
+          progressBarRef.current.style.transform = `scaleX(${barFill.toFixed(4)})`;
         }
         if (qualiaValueRef.current) {
-          qualiaValueRef.current.textContent =
-            easedColor > 0.35
-              ? `${Math.round(easedColor * 100)}% · живой алый`
-              : '0% · только числа';
+          if (easedColor > 0.02) {
+            const pct = Math.max(1, Math.round(easedColor * 100));
+            qualiaValueRef.current.textContent =
+              easedColor > 0.35
+                ? `${pct}% · живой алый`
+                : `${pct}% · порог цвета`;
+          } else {
+            qualiaValueRef.current.textContent = '0% · только числа';
+          }
         }
 
-        const shouldBeColored = easedColor > 0.36;
+        // Wait until deep Klein Cobalt actually blankets the left headline & top HUD (>= 0.74) before flipping ink to white!
+        const shouldBeColored = easedColor >= 0.74;
         if (stageRootRef.current) {
           stageRootRef.current.dataset.colored = shouldBeColored ? 'true' : 'false';
         }
@@ -208,9 +238,11 @@ export function Chapter1MaryRoom({
 
     return () => {
       visObserver.disconnect();
+      canvasHudTrigger.kill();
       trigger.kill();
+      onCanvasInHudChange?.(false);
     };
-  }, [onHudThemeChange, onActiveChange]);
+  }, [onHudThemeChange, onActiveChange, onCanvasInHudChange]);
 
   const beat = MARY_BEATS[activeBeat] ?? MARY_BEATS[0];
   const spec = wavelengthToHex(wavelength);
@@ -236,7 +268,7 @@ export function Chapter1MaryRoom({
             <h2 className="text-[clamp(32px,4.4vw,56px)] leading-[1.06] tracking-[-0.03em]">
               <span className="font-display font-bold block">Ставка перед дверью:</span>
               <span className="font-serif-editorial italic font-normal text-[#30302E] block mt-1">
-                узнает ли Мэри что-то новое?
+                узнает ли Мэри что{'\u2011'}то новое?
               </span>
             </h2>
 
@@ -263,11 +295,13 @@ export function Chapter1MaryRoom({
                       : 'bg-[#F4F2EA] hover:bg-[#ECE9DF] text-[#141413] border-[#141413]/12'
                   }`}
                 >
-                  <div className="flex items-center justify-between font-mono-tech text-[10.5px] uppercase tracking-[0.12em]">
-                    <span className={state.maryBet === 'learns_new' ? 'text-[#FC4109]' : 'text-[#5E5D59]'}>
-                      ПОЗИЦИЯ A · ЧАЛМЕРС / ДЖЕКСОН
+                  <div className="flex items-center justify-between gap-2 min-h-[18px] font-mono-tech text-[10.5px] uppercase tracking-[0.1em]">
+                    <span className={`whitespace-nowrap ${state.maryBet === 'learns_new' ? 'text-[#FC4109]' : 'text-[#5E5D59]'}`}>
+                      ПОЗИЦИЯ A · ЧАЛМЕРС
                     </span>
-                    <span>{state.maryBet === 'learns_new' ? '● ВЫБРАНО' : '○'}</span>
+                    <span className="whitespace-nowrap shrink-0">
+                      {state.maryBet === 'learns_new' ? '● ВЫБРАНО' : '○'}
+                    </span>
                   </div>
                   <div className="font-display font-bold text-[17px] mt-2">
                     Да, она узнает новое
@@ -290,11 +324,13 @@ export function Chapter1MaryRoom({
                       : 'bg-[#F4F2EA] hover:bg-[#ECE9DF] text-[#141413] border-[#141413]/12'
                   }`}
                 >
-                  <div className="flex items-center justify-between font-mono-tech text-[10.5px] uppercase tracking-[0.12em]">
-                    <span className={state.maryBet === 'knows_all' ? 'text-[#FC4109]' : 'text-[#5E5D59]'}>
+                  <div className="flex items-center justify-between gap-2 min-h-[18px] font-mono-tech text-[10.5px] uppercase tracking-[0.1em]">
+                    <span className={`whitespace-nowrap ${state.maryBet === 'knows_all' ? 'text-[#FC4109]' : 'text-[#5E5D59]'}`}>
                       ПОЗИЦИЯ B · ДЕННЕТ
                     </span>
-                    <span>{state.maryBet === 'knows_all' ? '● ВЫБРАНО' : '○'}</span>
+                    <span className="whitespace-nowrap shrink-0">
+                      {state.maryBet === 'knows_all' ? '● ВЫБРАНО' : '○'}
+                    </span>
                   </div>
                   <div className="font-display font-bold text-[17px] mt-2">
                     Нет, она уже всё знала
@@ -322,7 +358,7 @@ export function Chapter1MaryRoom({
                     ? 'Смело! Вы встали на сторону Деннета — но признайтесь честно: неужели учебник по оптике правда заменяет первый взгляд на алый закат? Здесь есть нефизический остаток.'
                     : 'Никакое число формул о длине волны не заменит одного взгляда на алый цветок. Это доказывает существование нефизического опыта — квалиа.',
               }}
-              struckWord="нефизического"
+              struckWord={state.maryBet === 'knows_all' ? 'нефизический' : 'нефизического'}
               second={{
                 scholar: 'dennett',
                 gesture: 'slash',
@@ -345,8 +381,8 @@ export function Chapter1MaryRoom({
         </div>
       </div>
 
-      {/* PINNED 360vh SCROLL METAMORPHOSIS: Monochrome -> Radial Crimson Rose + Klein Cobalt Flood! */}
-      <div ref={runwayRef} className="relative h-[340vh] bg-[#ECEAE4]">
+      {/* PINNED 340vh SCROLL METAMORPHOSIS: Monochrome -> Radial Crimson Rose + Klein Cobalt Flood! */}
+      <div id="ch-1-runway" ref={runwayRef} className="relative h-[340vh] bg-[#ECEAE4]">
         <div
           ref={stageRootRef}
           data-colored={isColoredPhase ? 'true' : 'false'}
@@ -362,11 +398,14 @@ export function Chapter1MaryRoom({
             />
           </div>
 
-          {/* LAYER B: Full Vivid Color Photograph revealed radially from the Crimson Rose */}
+          {/* LAYER B: Full Vivid Color Photograph revealed with a soft feathered radial wave from the Crimson Rose */}
           <div
             ref={colorLayerRef}
-            className="absolute inset-0 will-change-[clip-path]"
-            style={{ clipPath: 'circle(0% at 63.5% 57%)' }}
+            className="absolute inset-0 will-change-[mask-image]"
+            style={{
+              maskImage: 'radial-gradient(circle farthest-corner at 63.5% 57%, black 0%, transparent 0%)',
+              WebkitMaskImage: 'radial-gradient(circle farthest-corner at 63.5% 57%, black 0%, transparent 0%)',
+            }}
           >
             <img
               src="/v6/mary-still-life.jpg"
@@ -379,10 +418,11 @@ export function Chapter1MaryRoom({
           {/* LAYER C: Klein Cobalt (#004EDF) Upper Wall Wash */}
           <div
             ref={cobaltWashRef}
-            className="absolute inset-0 pointer-events-none will-change-[clip-path,opacity]"
+            className="absolute inset-0 pointer-events-none will-change-[mask-image,opacity]"
             style={{
               opacity: 0,
-              clipPath: 'circle(0% at 63.5% 57%)',
+              maskImage: 'radial-gradient(circle farthest-corner at 63.5% 57%, black 0%, transparent 0%)',
+              WebkitMaskImage: 'radial-gradient(circle farthest-corner at 63.5% 57%, black 0%, transparent 0%)',
               background:
                 'linear-gradient(180deg, rgba(0, 78, 223, 0.94) 0%, rgba(0, 78, 223, 0.86) 48%, rgba(0, 78, 223, 0.25) 68%, rgba(0, 78, 223, 0) 80%)',
               mixBlendMode: 'multiply',
@@ -458,27 +498,21 @@ export function Chapter1MaryRoom({
             }}
           />
 
-          {/* LAYER F: Editorial Typography */}
+          {/* LAYER F: Editorial Typography — permanently opacity-100 (zero blank-wall opacity:0 frames during scroll!) */}
           <div className="relative z-30 max-w-[1360px] mx-auto px-5 md:px-12 lg:px-20 pt-20 md:pt-24">
             <div className="max-w-2xl lg:max-w-[740px]">
-              <div className="font-mono-tech text-[11px] md:text-[12px] tracking-[0.06em] uppercase transition-colors duration-300 text-[#5E5D59] group-data-[colored=true]/mary:text-[#FAF9F5]/85">
+              <div className="font-mono-tech text-[11px] md:text-[12px] tracking-[0.06em] uppercase transition-colors duration-200 text-[#5E5D59] group-data-[colored=true]/mary:text-[#FAF9F5]/85">
                 {beat.kicker}
               </div>
 
-              <h3
-                key={activeBeat}
-                className="mt-3 text-[clamp(26px,3.6vw,52px)] leading-[1.09] tracking-[-0.026em] transition-colors duration-300 text-[#141413] group-data-[colored=true]/mary:text-[#FAF9F5] animate-[beatRise_420ms_cubic-bezier(0.22,1,0.36,1)]"
-              >
+              <h3 className="mt-3 text-[clamp(26px,3.6vw,52px)] leading-[1.09] tracking-[-0.026em] transition-colors duration-200 text-[#141413] group-data-[colored=true]/mary:text-[#FAF9F5]">
                 <span className="font-display font-bold block">{beat.headlineMain}</span>
                 <span className="font-serif-editorial italic font-normal block mt-1 text-[#3B3A37] group-data-[colored=true]/mary:text-[#FFE4D6]">
                   {beat.headlineAccent}
                 </span>
               </h3>
 
-              <p
-                key={`note-${activeBeat}`}
-                className="mt-3.5 max-w-lg text-[14.5px] md:text-[15.5px] leading-[1.58] transition-colors duration-300 text-[#3B3A37] group-data-[colored=true]/mary:text-[#FAF9F5]/92 animate-[beatRise_480ms_cubic-bezier(0.22,1,0.36,1)]"
-              >
+              <p className="mt-3.5 max-w-lg text-[14.5px] md:text-[15.5px] leading-[1.58] transition-colors duration-200 text-[#3B3A37] group-data-[colored=true]/mary:text-[#FAF9F5]/92">
                 {beat.note}
               </p>
             </div>
@@ -504,7 +538,7 @@ export function Chapter1MaryRoom({
                   </div>
                 </div>
                 <div className="h-6 w-[1px] bg-[#141413]/12 hidden sm:block" />
-                <div className="hidden sm:block min-w-[144px]">
+                <div className="hidden sm:block min-w-[168px]">
                   <div className="font-mono-tech text-[10px] uppercase tracking-[0.12em] text-[#5E5D59]">
                     Переживание (Квалиа)
                   </div>
@@ -518,7 +552,7 @@ export function Chapter1MaryRoom({
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="hidden md:block w-28 h-[3px] rounded-full bg-[#141413]/18 overflow-hidden">
+                <div className="hidden md:block w-28 h-[4px] rounded-full bg-[#FAF9F5]/30 ring-1 ring-[#FAF9F5]/16 overflow-hidden">
                   <div
                     ref={progressBarRef}
                     className="h-full w-full origin-left bg-[#FC4109]"

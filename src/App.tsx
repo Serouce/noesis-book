@@ -24,7 +24,7 @@ function NoesisBookShell() {
   const [indexOpen, setIndexOpen] = useState(false);
   const [activeChapterId, setActiveChapterId] = useState<string>('plate-00');
   const [ch1DarkHud, setCh1DarkHud] = useState(false);
-  const [ch1Active, setCh1Active] = useState(false);
+  const [ch1CanvasInHud, setCh1CanvasInHud] = useState(false);
   const [ch6DarkHud, setCh6DarkHud] = useState(false);
   const [footerDarkHud, setFooterDarkHud] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -32,7 +32,7 @@ function NoesisBookShell() {
 
   const lenisRef = useRef<Lenis | null>(null);
 
-  // Unified Lenis + GSAP ScrollTrigger clock (0 GPU bloat — 120 FPS pure editorial motion!)
+  // Unified Lenis + GSAP ScrollTrigger clock + 100% deterministic per-frame viewport HUD sync
   useEffect(() => {
     document.documentElement.lang = 'ru';
     document.title = 'NOESIS — Интерактивная книга о сознании';
@@ -46,74 +46,90 @@ function NoesisBookShell() {
     });
     lenisRef.current = lenis;
 
-    let lastProgressUpdate = 0;
-    const updateProgress = (scroll: number, limit: number) => {
+    const chapterIds = BOOK_CHAPTERS.map((c) => c.id);
+
+    // Single deterministic source of truth directly from live DOM geometry (0 lag, 0 stale IntersectionObserver!)
+    const syncHudFromViewport = () => {
+      const scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+      const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      const nextProgress = Math.max(0, Math.min(1, scrollY / maxScroll));
+
       setIsScrolled((prev) => {
-        const next = scroll > 64;
+        const next = scrollY > 48;
         return prev === next ? prev : next;
       });
-      const now = performance.now();
-      if (now - lastProgressUpdate > 40) {
-        lastProgressUpdate = now;
-        const pct = limit > 0 ? scroll / limit : 0;
-        setScrollProgress(pct);
+      setScrollProgress((prev) => (Math.abs(prev - nextProgress) < 0.0005 ? prev : nextProgress));
+
+      // Active chapter: last section whose top crossed the upper 28% reading line
+      const anchorY = Math.max(84, window.innerHeight * 0.28);
+      let current = chapterIds[0];
+      for (const id of chapterIds) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        if (el.getBoundingClientRect().top <= anchorY) {
+          current = id;
+        }
       }
+      setActiveChapterId((prev) => (prev === current ? prev : current));
+
+      // Per-spread exact header probe right behind the 60px top HUD bar (y = 32px)
+      const probeY = 32;
+
+      const runwayEl = document.getElementById('ch-1-runway');
+      const nextCh1Canvas = runwayEl
+        ? runwayEl.getBoundingClientRect().top <= probeY && runwayEl.getBoundingClientRect().bottom > probeY
+        : false;
+      setCh1CanvasInHud((prev) => (prev === nextCh1Canvas ? prev : nextCh1Canvas));
+
+      const ch6El = document.getElementById('ch-6');
+      const nextCh6Dark = ch6El
+        ? ch6El.getBoundingClientRect().top <= probeY && ch6El.getBoundingClientRect().bottom > probeY
+        : false;
+      setCh6DarkHud((prev) => (prev === nextCh6Dark ? prev : nextCh6Dark));
+
+      const footerEl = document.getElementById('book-colophon-footer');
+      const nextFooterDark = footerEl
+        ? footerEl.getBoundingClientRect().top <= probeY && footerEl.getBoundingClientRect().bottom > probeY
+        : false;
+      setFooterDarkHud((prev) => (prev === nextFooterDark ? prev : nextFooterDark));
     };
 
-    const onLenisScroll = ({ scroll, limit }: { scroll: number; limit: number }) => {
+    const onLenisScroll = () => {
       ScrollTrigger.update();
-      updateProgress(scroll, limit);
+      syncHudFromViewport();
     };
     lenis.on('scroll', onLenisScroll);
 
     const onNativeScroll = () => {
       ScrollTrigger.update();
-      const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-      updateProgress(window.scrollY || 0, maxScroll);
+      syncHudFromViewport();
     };
     window.addEventListener('scroll', onNativeScroll, { passive: true });
+    window.addEventListener('resize', syncHudFromViewport, { passive: true });
 
     const tick = (time: number) => {
       lenis.raf(time * 1000);
+      // Cheap <0.05ms deterministic check ensures programmatic jumps/scrollIntoView sync on the very next frame!
+      syncHudFromViewport();
     };
     gsap.ticker.add(tick);
     gsap.ticker.lagSmoothing(0);
 
-    const refreshTimer = window.setTimeout(() => ScrollTrigger.refresh(), 320);
+    syncHudFromViewport();
+    const refreshTimer = window.setTimeout(() => {
+      ScrollTrigger.refresh();
+      syncHudFromViewport();
+    }, 320);
 
     return () => {
       window.clearTimeout(refreshTimer);
       window.removeEventListener('scroll', onNativeScroll);
+      window.removeEventListener('resize', syncHudFromViewport);
       lenis.off('scroll', onLenisScroll);
       gsap.ticker.remove(tick);
       lenis.destroy();
       lenisRef.current = null;
     };
-  }, []);
-
-  // Track active book chapter cleanly across all 9 chapter anchors via IntersectionObserver
-  useEffect(() => {
-    const ids = BOOK_CHAPTERS.map((c) => c.id);
-    const elements = ids
-      .map((id) => document.getElementById(id))
-      .filter((el): el is HTMLElement => el !== null);
-
-    if (elements.length === 0) return;
-
-    const obs = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-        if (visible.length > 0) {
-          setActiveChapterId(visible[0].target.id);
-        }
-      },
-      { rootMargin: '-18% 0px -55% 0px', threshold: [0, 0.1, 0.35] },
-    );
-
-    elements.forEach((el) => obs.observe(el));
-    return () => obs.disconnect();
   }, []);
 
   const handleNavigate = useCallback((targetId: string) => {
@@ -138,11 +154,12 @@ function NoesisBookShell() {
     setCh1DarkHud(theme === 'dark');
   }, []);
 
-  // Strict per-spread adaptive contrast (never leaks dark HUD onto light archival paper!)
+  const noopBool = useCallback(() => undefined, []);
+
+  // 100% deterministic contrast strictly matching what is physically under the top 60px HUD bar!
   const hudTheme: 'light' | 'dark' = (() => {
-    if (activeChapterId === 'ch-1' && ch1Active && ch1DarkHud) return 'dark';
-    if (activeChapterId === 'ch-6' && ch6DarkHud) return 'dark';
-    if (activeChapterId === 'ch-8' && footerDarkHud) return 'dark';
+    if (ch6DarkHud || footerDarkHud) return 'dark';
+    if (ch1CanvasInHud && ch1DarkHud) return 'dark';
     return 'light';
   })();
 
@@ -156,6 +173,7 @@ function NoesisBookShell() {
         activeChapterId={activeChapterId}
         hudTheme={hudTheme}
         isScrolled={isScrolled}
+        immersiveCanvas={ch1CanvasInHud}
         scrollProgress={scrollProgress}
         onOpenIndex={() => setIndexOpen(true)}
         onScrollTop={handleScrollTop}
@@ -168,7 +186,7 @@ function NoesisBookShell() {
         {/* PART I · CHAPTER I: Qualia & Mary's Room (Pre-exit Bet + Monochrome -> Cobalt Bloom + Chalmers vs Dennett) */}
         <Chapter1MaryRoom
           onHudThemeChange={handleCh1HudTheme}
-          onActiveChange={setCh1Active}
+          onActiveChange={noopBool}
           onNextChapter={() => handleNavigate('ch-2')}
         />
 
@@ -195,7 +213,7 @@ function NoesisBookShell() {
 
         {/* PART II · CHAPTER VI: Single Deliberate Dark Clinical Spread — ICU Shift (3 Patients, NEJM 2024 CMD 25%, PCI* = 0.31) */}
         <Chapter6IcuJournal
-          onDarkInView={setCh6DarkHud}
+          onDarkInView={noopBool}
           onNextChapter={() => handleNavigate('interlude-part-3')}
         />
 
@@ -214,7 +232,7 @@ function NoesisBookShell() {
 
         {/* PART III · CHAPTER VIII: Endpaper 3D-Flippable Cotton Bone Card ("Контрольная проба №0") + Bibliography & Colophon */}
         <Chapter8BoneEndpaper
-          onFooterInView={setFooterDarkHud}
+          onFooterInView={noopBool}
           onScrollTop={handleScrollTop}
         />
       </main>

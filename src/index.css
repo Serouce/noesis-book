@@ -204,10 +204,10 @@ input[type='range'].v6-wavelength-slider::-webkit-slider-thumb:hover {
 
 @keyframes strikeDraw {
   from {
-    transform: scaleX(0) rotate(-2deg);
+    transform: scaleX(0) rotate(-1.2deg);
   }
   to {
-    transform: scaleX(1) rotate(-2deg);
+    transform: scaleX(1) rotate(-1.2deg);
   }
 }
 

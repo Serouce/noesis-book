@@ -356,7 +356,7 @@ export function Chapter8BoneEndpaper({ onFooterInView, onScrollTop }: Chapter8Bo
       </div>
 
       {/* OBSIDIAN BOOK COLOPHON FOOTER */}
-      <footer ref={footerRef} className="bg-[#141413] text-[#FAF9F5] py-16 md:py-20">
+      <footer id="book-colophon-footer" ref={footerRef} className="bg-[#141413] text-[#FAF9F5] py-16 md:py-20">
         <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20 flex flex-col md:flex-row items-start md:items-end justify-between gap-8">
           <div className="space-y-3 max-w-lg">
             <div className="flex items-center gap-2.5 font-display font-bold text-[15px] tracking-[0.1em]">

@@ -293,11 +293,11 @@ export function ScholarMarginDuel({
     return (
       <>
         «{before}
-        <span className="relative inline-block px-0.5">
+        <span className="relative inline-block pr-0.5">
           <span>{struckWord}</span>
           <span
             aria-hidden="true"
-            className="absolute left-0 right-0 top-1/2 h-[2px] bg-[#FC4109] -rotate-2 origin-left v7-strike-line"
+            className="absolute -left-[2px] -right-[2px] top-[53%] h-[2px] bg-[#FC4109] origin-left v7-strike-line"
           />
         </span>
         {after}»

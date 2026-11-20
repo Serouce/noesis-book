@@ -10,6 +10,7 @@ const SPECIES = [
   {
     id: 'sponge',
     name: 'Морская губка',
+    genitive: 'Морской губки',
     neurons: '0 нейронов',
     detail: 'Нет нервной системы и синапсов',
     inNyDeclaration: false,
@@ -17,6 +18,7 @@ const SPECIES = [
   {
     id: 'crab',
     name: 'Десятиногий краб',
+    genitive: 'Десятиногого краба',
     neurons: '~100 тыс.',
     detail: 'Избегает боли, помнит травму',
     inNyDeclaration: true,
@@ -24,6 +26,7 @@ const SPECIES = [
   {
     id: 'bee',
     name: 'Медоносная пчела',
+    genitive: 'Медоносной пчелы',
     neurons: '~1 млн',
     detail: 'Понимает ноль, катает шарики в игре',
     inNyDeclaration: true,
@@ -31,6 +34,7 @@ const SPECIES = [
   {
     id: 'octopus',
     name: 'Осьминог',
+    genitive: 'Осьминога',
     neurons: '500 млн',
     detail: '2/3 нейронов живут в 8 щупальцах',
     inNyDeclaration: true,
@@ -38,6 +42,7 @@ const SPECIES = [
   {
     id: 'raven',
     name: 'Ворон',
+    genitive: 'Ворона',
     neurons: '~1,2 млрд',
     detail: 'Без неокортекса, но планирует будущее',
     inNyDeclaration: true,
@@ -45,6 +50,7 @@ const SPECIES = [
   {
     id: 'human',
     name: 'Человек',
+    genitive: 'Человека (никого выше)',
     neurons: '86 млрд',
     detail: 'У слона — 257 млрд: число ≠ сознание',
     inNyDeclaration: true,
@@ -151,16 +157,37 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
         {/* Interactive Ribbon Placement Bar */}
         <div className="mt-10 rounded-2xl border border-[#141413]/14 bg-[#F3F1E9] p-5 md:p-7 space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-2.5 font-mono-tech text-[11px] uppercase tracking-[0.12em]">
-              <Bookmark className="w-4 h-4 text-[#FC4109] fill-current" />
-              <span>
-                ВАША ЗАКЛАДКА: ПОСЛЕ{' '}
-                <strong className="text-[#FC4109]">
-                  {state.ribbonBoundaryIndex === 0
-                    ? 'ВСЕ ЧУВСТВУЮТ'
-                    : SPECIES[state.ribbonBoundaryIndex - 1]?.name.toUpperCase()}
-                </strong>
-              </span>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+              <div className="flex items-center gap-2.5 font-mono-tech text-[11px] uppercase tracking-[0.12em]">
+                <Bookmark className="w-4 h-4 text-[#FC4109] fill-current" />
+                <span>
+                  {state.ribbonBoundaryIndex === 0 ? (
+                    <>
+                      ВАША ЗАКЛАДКА: <strong className="text-[#FC4109]">ЧУВСТВУЮТ ВСЕ 6 ВИДОВ</strong>
+                    </>
+                  ) : (
+                    <>
+                      ВАША ЗАКЛАДКА: ПОСЛЕ{' '}
+                      <strong className="text-[#FC4109]">
+                        {SPECIES[state.ribbonBoundaryIndex - 1]?.genitive.toUpperCase()}
+                      </strong>
+                    </>
+                  )}
+                </span>
+              </div>
+
+              {state.ribbonChecked && (
+                <div className="inline-flex items-center gap-3 font-mono-tech text-[10px] uppercase tracking-[0.1em] text-[#5E5D59]">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#0D7A5F]" />
+                    <span>признано NY 2024</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#94A3B8]" />
+                    <span>вне декларации</span>
+                  </span>
+                </div>
+              )}
             </div>
 
             <button
@@ -182,35 +209,40 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
           </div>
 
           {/* 6 Modern Swiss Taxonomic Cards with Interactive Bookmark Slots */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-3 pb-6">
             {SPECIES.map((sp, idx) => {
               const userConsidersConscious = idx >= state.ribbonBoundaryIndex;
               const isUserCutHere = idx === state.ribbonBoundaryIndex;
               const isNyCutHere = state.ribbonChecked && idx === 1;
+              const bothOnSameGap = isUserCutHere && isNyCutHere;
 
               return (
                 <div key={sp.id} className="relative flex flex-col">
-                  {/* User Crimson Bookmark Ribbon Marker on Left Edge */}
+                  {/* User Crimson Bookmark Ribbon Marker — zero-width axis centered cleanly in 12px gap */}
                   {isUserCutHere && (
                     <div
                       aria-hidden="true"
-                      className="hidden lg:flex flex-col items-center absolute -left-2 -top-3 -bottom-3 z-20 pointer-events-none"
+                      className={`hidden lg:flex flex-col items-center w-0 ${
+                        bothOnSameGap ? '-left-[8px]' : '-left-[6px]'
+                      } absolute -top-4 -bottom-2 z-20 pointer-events-none`}
                     >
-                      <span className="px-1.5 py-0.5 rounded bg-[#FC4109] text-[#FAF9F5] font-mono-tech text-[8.5px] uppercase tracking-wider whitespace-nowrap shadow-sm">
+                      <span className="shrink-0 px-1.5 py-0.5 rounded bg-[#FC4109] text-[#FAF9F5] font-mono-tech text-[8.5px] uppercase tracking-wider whitespace-nowrap shadow-sm">
                         ВЫ
                       </span>
                       <span className="w-[2.5px] flex-1 bg-[#FC4109]" />
                     </div>
                   )}
 
-                  {/* Official April 2024 NY Declaration Emerald Line right after Sea Sponge! */}
+                  {/* Official April 2024 NY Declaration Emerald Line — zero-width axis centered in 12px gap */}
                   {isNyCutHere && (
                     <div
                       aria-hidden="true"
-                      className="hidden lg:flex flex-col items-center absolute -left-2 -bottom-7 top-0 z-10 pointer-events-none"
+                      className={`hidden lg:flex flex-col items-center w-0 ${
+                        bothOnSameGap ? '-left-[4px]' : '-left-[6px]'
+                      } absolute -bottom-7 -top-1 z-10 pointer-events-none`}
                     >
-                      <span className="w-[2px] flex-1 border-l-2 border-dashed border-[#0D7A5F]" />
-                      <span className="px-1.5 py-0.5 rounded bg-[#0D7A5F] text-[#FAF9F5] font-mono-tech text-[8.5px] uppercase tracking-wider whitespace-nowrap">
+                      <span className="w-0 flex-1 border-l-2 border-dashed border-[#0D7A5F]" />
+                      <span className="shrink-0 px-1.5 py-0.5 rounded bg-[#0D7A5F] text-[#FAF9F5] font-mono-tech text-[8.5px] uppercase tracking-wider whitespace-nowrap shadow-xs">
                         NY 2024
                       </span>
                     </div>

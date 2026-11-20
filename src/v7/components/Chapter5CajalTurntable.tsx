@@ -355,55 +355,97 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
             </div>
 
             <div className="my-4 relative">
-              <svg viewBox="0 0 420 350" className="w-full h-[300px] md:h-[320px] block">
+              <svg viewBox="0 0 420 350" className="w-full h-[300px] md:h-[325px] block">
                 {/* Cortical layer hairlines (Layers I - V) */}
-                <line x1="16" y1="88" x2="404" y2="88" stroke="rgba(20,20,19,0.09)" strokeDasharray="3 4" />
-                <line x1="16" y1="226" x2="404" y2="226" stroke="rgba(20,20,19,0.09)" strokeDasharray="3 4" />
+                <line x1="12" y1="96" x2="408" y2="96" stroke="rgba(20,20,19,0.10)" strokeDasharray="3 4" />
+                <line x1="12" y1="226" x2="408" y2="226" stroke="rgba(20,20,19,0.10)" strokeDasharray="3 4" />
 
-                <text x="18" y="34" fill="#5E5D59" fontSize="10" fontFamily="JetBrains Mono Variable, monospace">
+                <text x="14" y="34" fill="#5E5D59" fontSize="11" fontFamily="JetBrains Mono Variable, monospace">
                   СЛОЙ I · ВЕРХНЯЯ АНТЕННА
                 </text>
-                <text x="18" y="49" fill="#004EDF" fontSize="10.5" fontWeight="600" fontFamily="JetBrains Mono Variable, monospace">
-                  ПРОГНОЗЫ МОЗГА (ИЗ ГЛ. III)
+                <text x="14" y="52" fill="#004EDF" fontSize="11.5" fontWeight="600" fontFamily="JetBrains Mono Variable, monospace">
+                  ПРОГНОЗЫ МОЗГА (ГЛ. III)
                 </text>
 
-                <text x="18" y="294" fill="#5E5D59" fontSize="10" fontFamily="JetBrains Mono Variable, monospace">
+                <text x="14" y="286" fill="#5E5D59" fontSize="11" fontFamily="JetBrains Mono Variable, monospace">
                   СЛОЙ V · НИЖНЯЯ АНТЕННА
                 </text>
                 <text
-                  x="18"
-                  y="309"
-                  fill={mode.needleDown ? '#141413' : '#9E9B93'}
-                  fontSize="10.5"
+                  x="14"
+                  y="304"
+                  fill={mode.needleDown ? '#141413' : '#7C7A73'}
+                  fontSize="11.5"
                   fontWeight="600"
                   fontFamily="JetBrains Mono Variable, monospace"
                 >
                   {mode.needleDown ? 'СЫРОЙ СИГНАЛ МИРА (ВКЛ)' : 'ВНЕШНИЙ МИР ОТКЛЮЧЁН'}
                 </text>
 
-                {/* Apical Tuft (Cajal crisp ink branches) */}
+                {/* Expressive Cajal Botanical-Ink Apical Tuft (organic sinuous arborization + spines) */}
                 <g
                   stroke={mode.id === 'propofol' ? '#8E8B83' : '#141413'}
                   strokeLinecap="round"
+                  strokeLinejoin="round"
                   fill="none"
                 >
-                  <path d="M 225 110 L 225 76 L 172 34 M 225 76 L 278 34 M 225 76 L 225 26" strokeWidth="2.1" />
-                  <path d="M 196 53 L 160 56 M 254 53 L 292 58 M 204 42 L 208 20 M 248 42 L 244 20" strokeWidth="1.35" />
-                  <path d="M 172 34 L 146 24 M 278 34 L 306 24" strokeWidth="1.1" />
+                  {/* Primary sinuous tuft branches */}
+                  <path
+                    d="M 284 108 C 283 92, 282 82, 266 64 C 252 50, 236 39, 212 24"
+                    strokeWidth="2.1"
+                  />
+                  <path
+                    d="M 284 108 C 286 91, 290 78, 308 60 C 326 44, 346 34, 372 22"
+                    strokeWidth="2.1"
+                  />
+                  <path d="M 284 96 C 283 72, 286 48, 284 18" strokeWidth="1.75" />
+                  {/* Secondary organic twigs */}
+                  <path d="M 262 60 C 244 58, 224 62, 206 54" strokeWidth="1.35" />
+                  <path d="M 244 45 C 242 32, 246 24, 240 14" strokeWidth="1.15" />
+                  <path d="M 228 34 C 218 36, 209 42, 200 40" strokeWidth="0.95" opacity="0.85" />
+                  <path d="M 308 60 C 326 58, 344 64, 366 56" strokeWidth="1.35" />
+                  <path d="M 332 42 C 336 30, 334 21, 342 13" strokeWidth="1.15" />
+                  <path d="M 285 52 C 272 42, 265 30, 264 17" strokeWidth="1.1" />
+                  <path d="M 285 48 C 299 38, 306 28, 311 16" strokeWidth="1.1" />
+                  <path d="M 352 30 C 366 32, 378 36, 388 34" strokeWidth="0.95" opacity="0.85" />
+                  {/* Delicate oblique collaterals off the mid apical trunk */}
+                  <path d="M 284 136 C 266 130, 250 132, 234 123" strokeWidth="1.15" opacity="0.72" />
+                  <path d="M 284 152 C 304 146, 322 148, 342 139" strokeWidth="1.15" opacity="0.72" />
+                  <path d="M 284 204 C 264 200, 248 206, 232 199" strokeWidth="1.05" opacity="0.65" />
+                  <path d="M 284 210 C 304 207, 320 212, 338 205" strokeWidth="1.05" opacity="0.65" />
+                  {/* Subtle Cajal dendritic spine boutons */}
+                  {[
+                    [236, 39], [250, 52], [220, 59], [268, 33], [302, 33], [326, 46], [348, 59], [358, 28],
+                  ].map(([sx, sy]) => (
+                    <circle
+                      key={`${sx}-${sy}`}
+                      cx={sx}
+                      cy={sy}
+                      r="1.4"
+                      fill={mode.id === 'propofol' ? '#8E8B83' : '#141413'}
+                      stroke="none"
+                      opacity="0.75"
+                    />
+                  ))}
                 </g>
 
                 {/* Central Apical Coupling Shaft (SNAPS IN HALF ON PROPOFOL!) */}
                 {mode.shaftIntact ? (
                   <g>
-                    <line x1="225" y1="108" x2="225" y2="236" stroke="#141413" strokeWidth="3.2" strokeLinecap="round" />
+                    <path
+                      d="M 284 106 C 282 146, 286 188, 284 232"
+                      fill="none"
+                      stroke="#141413"
+                      strokeWidth="3.2"
+                      strokeLinecap="round"
+                    />
                     {/* Live action-potential sparks racing along intact Ca2+ trunk */}
                     {[0, 0.34, 0.68].map((offset) => {
                       const t = (phaseTick * 0.45 + offset) % 1;
-                      const cy = 112 + t * 120;
+                      const cy = 110 + t * 118;
                       return (
                         <circle
                           key={offset}
-                          cx="225"
+                          cx="284"
                           cy={cy}
                           r={mode.id === 'psilocybin' ? 5.2 : 4}
                           fill={mode.accent}
@@ -415,14 +457,14 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
                 ) : (
                   /* BROKEN COUPLING SHAFT UNDER PROPOFOL ANESTHESIA! */
                   <g>
-                    <line x1="225" y1="108" x2="225" y2="152" stroke="#8E8B83" strokeWidth="2.8" strokeLinecap="round" />
-                    <line x1="225" y1="196" x2="225" y2="236" stroke="#8E8B83" strokeWidth="2.8" strokeLinecap="round" />
-                    <path d="M 204 166 L 246 182 M 246 166 L 204 182" stroke="#FC4109" strokeWidth="2.4" strokeLinecap="round" />
+                    <path d="M 284 106 C 283 122, 284 136, 284 150" fill="none" stroke="#8E8B83" strokeWidth="2.8" strokeLinecap="round" />
+                    <path d="M 284 196 C 285 210, 284 222, 284 232" fill="none" stroke="#8E8B83" strokeWidth="2.8" strokeLinecap="round" />
+                    <path d="M 264 164 L 304 182 M 304 164 L 264 182" stroke="#FC4109" strokeWidth="2.4" strokeLinecap="round" />
                     <text
-                      x="258"
+                      x="314"
                       y="178"
                       fill="#FC4109"
-                      fontSize="10.5"
+                      fontSize="11"
                       fontWeight="600"
                       fontFamily="JetBrains Mono Variable, monospace"
                     >
@@ -431,38 +473,47 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
                   </g>
                 )}
 
-                {/* Pyramidal Soma (Cell Body) */}
+                {/* Organic Cajal Pyramidal Soma (Cell Body + Nucleus) */}
                 <path
-                  d="M 225 232 L 246 270 L 204 270 Z"
+                  d="M 284 224 C 291 242, 299 258, 309 274 C 292 278, 276 278, 259 274 C 269 258, 277 242, 284 224 Z"
                   fill={mode.shaftIntact ? mode.accent : '#8E8B83'}
                   fillOpacity="0.18"
                   stroke="#141413"
-                  strokeWidth="2.2"
+                  strokeWidth="2.1"
                   strokeLinejoin="round"
                 />
+                <circle cx="284" cy="259" r="5.5" fill="none" stroke="#141413" strokeWidth="1" opacity="0.45" />
 
-                {/* Basal Dendrites (Bottom Sensory Input) */}
+                {/* Expressive Curved Basal Dendrites & Descending Axon (Bottom Sensory Input) */}
                 <g
-                  stroke={mode.needleDown ? '#141413' : '#B5B2A8'}
-                  strokeWidth="1.8"
+                  stroke={mode.needleDown ? '#141413' : '#9E9B93'}
                   strokeLinecap="round"
                   fill="none"
                 >
-                  <path d="M 208 268 L 166 292 L 146 312 M 166 292 L 178 320" />
-                  <path d="M 242 268 L 284 292 L 304 312 M 284 292 L 270 320" />
-                  <path d="M 225 270 L 225 326" strokeDasharray={mode.needleDown ? undefined : '4 4'} />
+                  <path d="M 264 273 C 246 282, 232 292, 206 312" strokeWidth="1.8" />
+                  <path d="M 244 285 C 228 286, 214 290, 200 286" strokeWidth="1.2" />
+                  <path d="M 234 293 C 232 308, 238 318, 234 330" strokeWidth="1.2" />
+                  <path d="M 304 273 C 322 282, 338 292, 366 314" strokeWidth="1.8" />
+                  <path d="M 326 285 C 344 286, 358 290, 376 286" strokeWidth="1.2" />
+                  <path d="M 336 294 C 338 308, 332 318, 336 330" strokeWidth="1.2" />
+                  {/* Descending axon hillock */}
+                  <path
+                    d="M 284 277 C 283 298, 286 316, 284 336"
+                    strokeWidth="1.6"
+                    strokeDasharray={mode.needleDown ? undefined : '4 4'}
+                  />
                 </g>
 
-                {/* Top-down prediction glow rings in REM & Psilocybin */}
+                {/* Top-down prediction resonance ring in Layer I */}
                 {mode.shaftIntact && (
                   <circle
-                    cx="225"
-                    cy="52"
-                    r={18 + Math.sin(phaseTick * 3) * 4}
+                    cx="284"
+                    cy="50"
+                    r={22 + Math.sin(phaseTick * 3) * 4}
                     fill="none"
                     stroke={mode.accent}
-                    strokeWidth="1.5"
-                    opacity="0.45"
+                    strokeWidth="1.4"
+                    opacity="0.42"
                   />
                 )}
               </svg>
@@ -488,41 +539,41 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
                   {/* Minimalist matte plinth frame */}
                   <rect x="10" y="10" width="220" height="200" rx="16" fill="#FAF9F5" stroke="#141413" strokeWidth="1.2" strokeOpacity="0.16" />
 
-                  {/* Vinyl Platter (spins smoothly unless Propofol stops everything!) */}
+                  {/* Vinyl Platter (r=66, raised to cy=98 so crisp 10.5px status caption sits on pure plinth paper!) */}
                   <g
                     style={{
-                      transformOrigin: '104px 110px',
+                      transformOrigin: '102px 98px',
                       transform: platterSpinning ? `rotate(${(phaseTick * 36) % 360}deg)` : 'rotate(0deg)',
                     }}
                   >
-                    <circle cx="104" cy="110" r="76" fill="#1C1C1B" />
-                    <circle cx="104" cy="110" r="64" fill="none" stroke="rgba(250,249,245,0.12)" strokeWidth="1" />
-                    <circle cx="104" cy="110" r="50" fill="none" stroke="rgba(250,249,245,0.14)" strokeWidth="1" />
-                    <circle cx="104" cy="110" r="36" fill="none" stroke="rgba(250,249,245,0.12)" strokeWidth="1" />
+                    <circle cx="102" cy="98" r="66" fill="#1C1C1B" />
+                    <circle cx="102" cy="98" r="55" fill="none" stroke="rgba(250,249,245,0.12)" strokeWidth="1" />
+                    <circle cx="102" cy="98" r="43" fill="none" stroke="rgba(250,249,245,0.14)" strokeWidth="1" />
+                    <circle cx="102" cy="98" r="31" fill="none" stroke="rgba(250,249,245,0.12)" strokeWidth="1" />
                     {/* Subtle index notch so rotation is physically visible */}
-                    <line x1="104" y1="38" x2="104" y2="54" stroke="#FC4109" strokeWidth="2.2" strokeLinecap="round" />
+                    <line x1="102" y1="36" x2="102" y2="50" stroke="#FC4109" strokeWidth="2.2" strokeLinecap="round" />
                     {/* Label center */}
-                    <circle cx="104" cy="110" r="22" fill={mode.accent} />
-                    <circle cx="104" cy="110" r="4" fill="#FAF9F5" />
+                    <circle cx="102" cy="98" r="19" fill={mode.accent} />
+                    <circle cx="102" cy="98" r="3.6" fill="#FAF9F5" />
                   </g>
 
                   {/* Articulated Graphite Tonearm (physically LIFTS OFF platter in REM / Club Silencio!) */}
                   <g
                     style={{
-                      transformOrigin: '198px 46px',
+                      transformOrigin: '198px 42px',
                       transform: `rotate(${tonearmRotation}deg)`,
                       transition: 'transform 520ms cubic-bezier(0.22, 1, 0.36, 1)',
                     }}
                   >
-                    <circle cx="198" cy="46" r="13" fill="#E6E3D8" stroke="#1C1C1B" strokeWidth="1.6" />
-                    <circle cx="198" cy="46" r="4.5" fill="#1C1C1B" />
-                    <path d="M 198 46 L 194 140 L 176 164" fill="none" stroke="#1C1C1B" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
-                    <rect x="167" y="159" width="14" height="8" rx="2" transform="rotate(-32 174 163)" fill="#FC4109" />
+                    <circle cx="198" cy="42" r="12.5" fill="#E6E3D8" stroke="#1C1C1B" strokeWidth="1.6" />
+                    <circle cx="198" cy="42" r="4.2" fill="#1C1C1B" />
+                    <path d="M 198 42 L 194 130 L 175 152" fill="none" stroke="#1C1C1B" strokeWidth="3.1" strokeLinecap="round" strokeLinejoin="round" />
+                    <rect x="166" y="147" width="14" height="8" rx="2" transform="rotate(-32 173 151)" fill="#FC4109" />
                   </g>
 
-                  {/* Tonearm status micro-lamp */}
-                  <circle cx="198" cy="186" r="4" fill={mode.needleDown ? '#0D7A5F' : '#FC4109'} />
-                  <text x="186" y="189" textAnchor="end" fill="#5E5D59" fontSize="8.5" fontFamily="JetBrains Mono Variable, monospace">
+                  {/* Tonearm status micro-lamp — crisp 10.5px readout cleanly below platter edge */}
+                  <circle cx="208" cy="191" r="4.2" fill={mode.needleDown ? '#0D7A5F' : '#FC4109'} />
+                  <text x="196" y="195" textAnchor="end" fill="#4A4945" fontSize="10.5" fontWeight="500" fontFamily="JetBrains Mono Variable, monospace">
                     {mode.needleDown ? 'ИГЛА НА ДИСКЕ' : 'ИГЛА ПОДНЯТА'}
                   </text>
                 </svg>
