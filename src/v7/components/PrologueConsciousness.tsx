@@ -382,6 +382,17 @@ export function PrologueConsciousness({ onContinueToPart1: _onContinueToPart1 }:
               </div>
             ))}
           </div>
+
+          <div className="pt-4 border-t border-[#FAF9F5]/12 flex flex-wrap items-center justify-between gap-3">
+            <p className="font-serif-editorial italic text-[15px] text-[#FAF9F5]/82">
+              {ruTypo(
+                'Начнём с самого вещества внутри черепа: если опыт рождает мозг, почему 80% его нейронов живут в полной темноте?',
+              )}
+            </p>
+            <span className="font-mono-tech text-[10px] uppercase tracking-[0.14em] text-[#FC4109]">
+              ДАЛЕЕ · ГЛАВА I.1 ↓
+            </span>
+          </div>
         </div>
       </div>
     </section>

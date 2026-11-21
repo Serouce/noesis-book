@@ -392,7 +392,7 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
       id="ch-5"
       ref={stageSectionRef}
       className="relative bg-[#FAF9F5] text-[#141413] pt-24 pb-0 md:pt-28"
-      aria-label="Глава V — Клеточный транзистор и тишина"
+      aria-label="Глава IV.2 — Клеточный транзистор и тишина"
     >
       {/* FULL-SCREEN HARD CUT-TO-BLACK (Muted-First dramatic choreography!) */}
       {cutBlackPhase !== 'none' && (
@@ -412,8 +412,8 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
       <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20">
         {/* Folio Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#141413]/12 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
-          <span className="text-[#FC4109] font-semibold">АКТ IV · ПОД ЧЕРЕПОМ · ГЛАВА V</span>
-          <span>КЛЕТОЧНЫЙ ТРАНЗИСТОР · ×1000 · стр. 70</span>
+          <span className="text-[#FC4109] font-semibold">АКТ IV · ПОД ЧЕРЕПОМ · ГЛАВА IV.2</span>
+          <span>КЛЕТОЧНЫЙ ТРАНЗИСТОР · ×1000 · стр. 90</span>
         </div>
 
         {/* Opening Editorial Prose */}
@@ -853,7 +853,7 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
             onClick={onNextChapter}
             className="v6-pill h-11 px-5 rounded-full bg-[#FAF9F5] hover:bg-[#EAE7DD] text-[#141413] font-mono-tech text-[11px] uppercase tracking-[0.12em] font-semibold inline-flex items-center gap-2 cursor-pointer shadow-lg"
           >
-            <span>Войти в реанимацию · Глава VI</span>
+            <span>Войти в реанимацию · Глава IV.3</span>
             <ArrowDown className="w-3.5 h-3.5 text-[#0D7A5F]" />
           </button>
         </div>

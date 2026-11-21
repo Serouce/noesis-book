@@ -16,15 +16,15 @@ interface Chapter8BoneEndpaperProps {
 const FIVE_TAKEAWAYS = [
   {
     num: '01',
-    ref: 'Акты II & III',
-    title: 'Сознание — не фотография, а управляемая галлюцинация',
-    text: 'В природе нет красок, есть только волны. Мозг непрерывно строит прогноз реальности и правит его лишь тогда, когда мир бьёт по ожиданиям ошибкой.',
+    ref: 'Акт I',
+    title: 'Опыт рождает не число клеток, а связная кора внутри тела',
+    text: '80% нейронов (69 млрд) лежат в мозжечке без сознания. Зато 16 млрд клеток коры с обратными петлями, сеть SCAN и ритм сердца сшивают разум с живым телом.',
   },
   {
     num: '02',
-    ref: 'Акт III',
-    title: 'Внутри головы нет единого «директора»',
-    text: 'Говорящее левое полушарие — блестящий пресс-секретарь, который мгновенно сочиняет правдоподобное алиби для действий, причин которых сам не знает.',
+    ref: 'Акты II & III',
+    title: 'Сознание — не прямой эфир, а управляемая галлюцинация',
+    text: 'Цвет и время (~80 мс постдикции) монтируются внутри, внутренний экран у всех разный, а говорящее полушарие мгновенно сочиняет алиби для скрытых решений.',
   },
   {
     num: '03',
@@ -55,6 +55,27 @@ const BIBLIOGRAPHY = [
     note: 'Первая в истории масштабная состязательная проверка IIT и GNWT: обе теории получили эмпирические пробоины.',
   },
   {
+    year: '2023/26',
+    journal: 'Nature (2023 & Feb 2026)',
+    title: 'A somato-cognitive action network alternates with effector regions in motor cortex (SCAN)',
+    authors: 'E. M. Gordon, N. U. F. Dosenbach и др. (Nature 2023; Parkinson’s N = 863, Nature 2026)',
+    note: 'Взломанный гомункулус Пенфилда: 3 вставки сети SCAN связывают моторную кору с планом, осанкой и внутренними органами.',
+  },
+  {
+    year: '2020/22',
+    journal: 'PNAS (2020) / eLife (2022)',
+    title: 'Heart–brain interactions shape somatosensory perception & The pupillary light response in aphantasia',
+    authors: 'E. Al, A. Villringer (PNAS 2020); L. Kay, J. Pearson и др. (eLife 2022)',
+    note: 'Затвор сердца в фазе систолы повышает порог ощущений, а зрачковый рефлекс объективно отличает афантазию от яркого воображения.',
+  },
+  {
+    year: '2000/08',
+    journal: 'Science (2000) / Current Biology (2008)',
+    title: 'Motion Integration and Postdiction in Visual Awareness & Intact navigation in blindsight (Patient TN)',
+    authors: 'D. M. Eagleman & T. J. Sejnowski (Science 2000); B. de Gelder и др. (Curr Biol 2008)',
+    note: 'Окно постдикции ~80 мс при монтаже настоящего момента и подкорковая навигация без первичной зрительной коры V1.',
+  },
+  {
     year: '2024',
     journal: 'New England Journal of Medicine',
     title: 'Cognitive Motor Dissociation in Disorders of Consciousness',
@@ -81,13 +102,6 @@ const BIBLIOGRAPHY = [
     title: 'General Anesthesia Decouples Cortical Pyramidal Neurons',
     authors: 'M. Suzuki & M. E. Larkum',
     note: 'Наркоз разрывает кальциевую связку в стволе пирамидальных нейронов 5-го слоя между прогнозами и сенсорным входом.',
-  },
-  {
-    year: '2024',
-    journal: 'Nature / Annals of Neurology',
-    title: 'Psilocybin Desynchronizes the Human Brain & PCI* = 0.31 Calibration',
-    authors: 'Siegel et al. (Nature, 2024); Casarotto, Massimini et al. (N = 150)',
-    note: 'Механизм перестройки привычных сетей мозга под псилоцибином через рецепторы 5-HT2A и клинический порог сложности PCI* = 0.31.',
   },
 ];
 
@@ -198,13 +212,13 @@ export function Chapter8BoneEndpaper({
     <section
       id="ch-8"
       className="relative bg-[#FAF9F5] text-[#141413]"
-      aria-label="Глава VIII — Синтез, Форзац и Контрольная проба №0"
+      aria-label="Глава V.2 — Синтез, Форзац и Контрольная проба №0"
     >
       {/* PART 8.1: SYNTHESIS SPREAD */}
       <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20 pt-24 pb-16 md:pt-28 md:pb-20 border-b border-[#141413]/10">
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#141413]/12 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
-          <span className="text-[#FC4109] font-semibold">АКТ V · ГЛАВА VIII · СИНТЕЗ И ФОРЗАЦ</span>
-          <span>ИТОГИ КНИГИ · стр. 118</span>
+          <span className="text-[#FC4109] font-semibold">АКТ V · ГЛАВА V.2 · СИНТЕЗ И ФОРЗАЦ</span>
+          <span>ИТОГИ КНИГИ · стр. 138</span>
         </div>
 
         <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
@@ -282,8 +296,8 @@ export function Chapter8BoneEndpaper({
                 <span>БУМАГА: BONE · 420 Г/М² · РЕЛЬЕФНАЯ ПЕЧАТЬ</span>
               </div>
 
-              {/* 6 Interactive Summary Cells (clicking jumps straight to that Act!) */}
-              <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {/* 8 Interactive Summary Cells (2x4 Swiss Specimen Grid — clicking jumps straight to that Act!) */}
+              <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3.5">
                 <button
                   type="button"
                   onClick={() => jumpCell('act-1', 'plate-00')}
@@ -352,6 +366,36 @@ export function Chapter8BoneEndpaper({
                         : state.ribbonBoundaryIndex === 0
                           ? 'Все 6 (даже губка!)'
                           : `Отсекли ${state.ribbonBoundaryIndex} из 6`}
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => jumpCell('act-2', 'ch-aphantasia')}
+                  className="text-left p-3.5 rounded-xl bg-[#FAF9F5]/85 hover:bg-[#FAF9F5] border border-[#141413]/10 hover:border-[#141413]/28 transition-colors cursor-pointer"
+                >
+                  <div className="font-mono-tech text-[9.5px] uppercase tracking-[0.11em] text-[#5E5D59]">
+                    Акт II · Экран (Афантазия)
+                  </div>
+                  <div className="font-display font-bold text-[19px] mt-1 text-[#004EDF]">
+                    {state.aphantasiaScore !== null ? `${state.aphantasiaScore} / 5` : '5-сек тест →'}
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => jumpCell('act-2', 'ch-overflow')}
+                  className="text-left p-3.5 rounded-xl bg-[#FAF9F5]/85 hover:bg-[#FAF9F5] border border-[#141413]/10 hover:border-[#141413]/28 transition-colors cursor-pointer"
+                >
+                  <div className="font-mono-tech text-[9.5px] uppercase tracking-[0.11em] text-[#5E5D59]">
+                    Акт II · Сперлинг (P vs A)
+                  </div>
+                  <div className="font-display font-semibold text-[14.5px] mt-1.5 text-[#141413]">
+                    {state.sperlingCuedScore !== null
+                      ? `${state.sperlingCuedScore}/4 по стрелке`
+                      : state.sperlingWholeScore !== null
+                        ? `${state.sperlingWholeScore}/12 целиком`
+                        : 'Пройти вспышку →'}
                   </div>
                 </button>
 

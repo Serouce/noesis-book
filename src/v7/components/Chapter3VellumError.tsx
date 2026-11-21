@@ -165,13 +165,13 @@ export function Chapter3VellumError({ onNextChapter }: Chapter3VellumErrorProps)
     <section
       id="ch-3"
       className="relative bg-[#FAF9F5] text-[#141413] pt-14 pb-20 md:pt-18 md:pb-24 border-b border-[#141413]/10"
-      aria-label="Глава II — Управляемая галлюцинация"
+      aria-label="Глава III.1 — Управляемая галлюцинация"
     >
       <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20">
         {/* Folio Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#141413]/12 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
-          <span className="text-[#FC4109] font-semibold">АКТ III · КОНСТРУКТОР «Я» · ГЛАВА II</span>
-          <span>УПРАВЛЯЕМАЯ ГАЛЛЮЦИНАЦИЯ · стр. 24</span>
+          <span className="text-[#FC4109] font-semibold">АКТ III · КОНСТРУКТОР «Я» · ГЛАВА III.1</span>
+          <span>УПРАВЛЯЕМАЯ ГАЛЛЮЦИНАЦИЯ · стр. 48</span>
         </div>
 
         {/* Opening Editorial Prose */}
@@ -562,7 +562,7 @@ export function Chapter3VellumError({ onNextChapter }: Chapter3VellumErrorProps)
 
             <div className="rounded-2xl border border-[#141413]/12 bg-[#F5F3EB] p-5 space-y-3">
               <div className="font-mono-tech text-[10.5px] uppercase tracking-[0.13em] text-[#FC4109]">
-                ДАЛЬШЕ В АКТЕ III · ГЛАВА III
+                ДАЛЬШЕ В АКТЕ III · ГЛАВА III.2
               </div>
               <p className="font-serif-editorial italic text-[15.5px] leading-[1.55] text-[#282725]">
                 {ruTypo(

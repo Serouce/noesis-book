@@ -161,13 +161,13 @@ export function Chapter2SplitSpine({ onNextChapter: _onNextChapter }: Chapter2Sp
     <section
       id="ch-2"
       className="relative bg-[#FAF9F5] text-[#141413] pt-20 pb-20 md:pt-24 md:pb-24 border-b border-[#141413]/10"
-      aria-label="Глава III — Расколотый штурвал"
+      aria-label="Глава III.2 — Расколотый штурвал"
     >
       <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20">
         {/* Folio Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#141413]/12 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
-          <span className="text-[#FC4109] font-semibold">АКТ III · КОНСТРУКТОР «Я» · ГЛАВА III</span>
-          <span>РАСКОЛОТЫЙ ШТУРВАЛ · стр. 38</span>
+          <span className="text-[#FC4109] font-semibold">АКТ III · КОНСТРУКТОР «Я» · ГЛАВА III.2</span>
+          <span>РАСКОЛОТЫЙ ШТУРВАЛ · стр. 60</span>
         </div>
 
         {/* Editorial Opening */}

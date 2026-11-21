@@ -21,25 +21,25 @@ interface Chapter1MaryRoomProps {
 
 const MARY_BEATS = [
   {
-    kicker: 'ГЛАВА I · ЧАСТЬ 1/4 · КОМНАТА МЭРИ (Ф. ДЖЕКСОН, 1982)',
+    kicker: 'ГЛАВА II.1 · ЧАСТЬ 1/4 · КОМНАТА МЭРИ (Ф. ДЖЕКСОН, 1982)',
     headlineMain: 'Она знает о\u00A0красном всё —',
     headlineAccent: 'кроме того, каково его видеть.',
     note: 'Нейробиолог Мэри выросла в абсолютно чёрно-белой лаборатории. Она знает длину волны 650\u00A0нм, реакцию цветовых датчиков глаза и путь каждого импульса в зрительной коре — но никогда не видела ни единого цветного луча.',
   },
   {
-    kicker: 'ГЛАВА I · ЧАСТЬ 2/4 · ФИЗИКА БЕЗ ОПЫТА',
+    kicker: 'ГЛАВА II.1 · ЧАСТЬ 2/4 · ФИЗИКА БЕЗ ОПЫТА',
     headlineMain: 'В\u00A0спектре нет красного —',
     headlineAccent: 'там есть только частота 461\u00A0ТГц.',
     note: 'В объективном мире свет бесцветен: это электромагнитные колебания разной длины. Можно выучить до микрона разницу между бумагой «слоновая кость» (Bone) и «яичная скорлупа» (Eggshell) — но это всё ещё сухие числа, а не сам оттенок перед глазами.',
   },
   {
-    kicker: 'ГЛАВА I · ЧАСТЬ 3/4 · МОМЕНТ ПОРОГА',
+    kicker: 'ГЛАВА II.1 · ЧАСТЬ 3/4 · МОМЕНТ ПОРОГА',
     headlineMain: 'Дверь открывается.',
     headlineAccent: 'Мозг получает сигнал, который уже знал по\u00A0учебникам…',
     note: 'По зрительному нерву бежит точно тот каскад импульсов, который Мэри сто раз чертила на доске. Ни одной новой формулы физика ей не дала. Но происходит нечто, чего не было ни в одной книге.',
   },
   {
-    kicker: 'ГЛАВА I · ЧАСТЬ 4/4 · РОЖДЕНИЕ КВАЛИА',
+    kicker: 'ГЛАВА II.1 · ЧАСТЬ 4/4 · РОЖДЕНИЕ КВАЛИА',
     headlineMain: 'Красный обрушивается на\u00A0неё.',
     headlineAccent: 'Это и есть Трудная проблема сознания.',
     note: 'Субъективное качество переживания — «красность красного», боль ожога, вкус кофе — философы называют квалиа. Почему физическая химия в темноте черепа вообще сопровождается внутренним кино?',
@@ -281,13 +281,13 @@ export function Chapter1MaryRoom({
       id="ch-1"
       ref={sectionRef}
       className="relative bg-[#FAF9F5] text-[#141413]"
-      aria-label="Глава I — Загадка цвета и Комната Мэри"
+      aria-label="Глава II.1 — Загадка цвета и Комната Мэри"
     >
       {/* PRE-EXIT BET SPREAD */}
       <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20 py-14 md:py-20">
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#141413]/12 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
-          <span className="text-[#FC4109] font-semibold">АКТ II · ОПТИКА · ГЛАВА I</span>
-          <span>ЗАГАДКА ЦВЕТА · стр. 10</span>
+          <span className="text-[#FC4109] font-semibold">АКТ II · ОПТИКА · ГЛАВА II.1</span>
+          <span>ЗАГАДКА ЦВЕТА · стр. 22</span>
         </div>
 
         <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
@@ -739,11 +739,11 @@ export function Chapter1MaryRoom({
             </div>
           </div>
 
-          {/* Quiet Poetic Domino Reflection (Single page-turn CTA lives cleanly in ActBottomTurn below!) */}
+          {/* Quiet Poetic Domino Reflection -> Aphantasia 5-sec Test below */}
           <div className="pt-6 border-t border-[#141413]/10">
             <p className="font-serif-editorial italic text-[16.5px] leading-[1.6] text-[#353431] max-w-2xl">
               {ruTypo(
-                'Если цвет рождается внутри нас, а не в луче света — как мозг достраивает целый трёхмерный мир и кто держит штурвал нашего «Я»?',
+                'Если краски живут не в фотонах, а на внутреннем экране мозга — значит ли это, что у всех людей этот экран вообще включён? Проверьте себя за 5 секунд прямо ниже.',
               )}
             </p>
           </div>

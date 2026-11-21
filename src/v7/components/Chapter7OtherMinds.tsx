@@ -226,13 +226,13 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
     <section
       id="ch-7"
       className="relative bg-[#FAF9F5] text-[#141413] pt-14 pb-20 md:pt-18 md:pb-24 border-b border-[#141413]/10"
-      aria-label="Глава VII — Граница иных разумов"
+      aria-label="Глава V.1 — Граница иных разумов"
     >
       <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20">
         {/* Folio Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#141413]/12 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
-          <span className="text-[#FC4109] font-semibold">АКТ V · ГРАНИЦЫ РАЗУМА · ГЛАВА VII</span>
-          <span>ИНЫЕ РАЗУМЫ · 2024–2025 · стр. 102</span>
+          <span className="text-[#FC4109] font-semibold">АКТ V · ГРАНИЦЫ РАЗУМА · ГЛАВА V.1</span>
+          <span>ИНЫЕ РАЗУМЫ · 2024–2025 · стр. 122</span>
         </div>
 
         {/* PART 7.1: CRIMSON SILK-RIBBON BOOKMARK */}
@@ -254,11 +254,10 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
 
         {/* Interactive Ribbon Placement Bar */}
         <div className="mt-10 rounded-2xl border border-[#141413]/14 bg-[#F3F1E9] p-5 md:p-7 space-y-5 relative">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              <LabHonestyBadge badge="self-test" />
-              <div className="flex items-center gap-2.5 font-mono-tech text-[11px] uppercase tracking-[0.12em]">
-                <Bookmark className="w-4 h-4 text-[#FC4109] fill-current" />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <div className="flex items-center gap-2 font-mono-tech text-[11px] uppercase tracking-[0.11em]">
+                <Bookmark className="w-4 h-4 text-[#FC4109] fill-current shrink-0" />
                 <span>
                   {state.ribbonBoundaryIndex === 0 ? (
                     <>
@@ -289,22 +288,25 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
               )}
             </div>
 
-            <button
-              type="button"
-              onClick={handleCheckNyDeclaration}
-              className={`v6-pill h-10 px-5 rounded-full font-sans-ui text-[13px] font-medium inline-flex items-center gap-2 cursor-pointer ${
-                state.ribbonChecked
-                  ? 'bg-[#0D7A5F] text-[#FAF9F5]'
-                  : 'bg-[#141413] hover:bg-[#2A2A28] text-[#FAF9F5]'
-              }`}
-            >
-              {state.ribbonChecked ? <Check className="w-4 h-4" /> : <Sparkles className="w-4 h-4 text-[#FC4109]" />}
-              <span>
-                {state.ribbonChecked
-                  ? 'Сверено с Нью-Йоркской декларацией 2024'
-                  : 'Сверить с Нью-Йоркской декларацией 2024'}
-              </span>
-            </button>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <LabHonestyBadge badge="self-test" />
+              <button
+                type="button"
+                onClick={handleCheckNyDeclaration}
+                className={`v6-pill h-9 px-4 rounded-full font-sans-ui text-[12.5px] font-medium inline-flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+                  state.ribbonChecked
+                    ? 'bg-[#0D7A5F] text-[#FAF9F5]'
+                    : 'bg-[#141413] hover:bg-[#2A2A28] text-[#FAF9F5]'
+                }`}
+              >
+                {state.ribbonChecked ? <Check className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5 text-[#FC4109]" />}
+                <span>
+                  {state.ribbonChecked
+                    ? 'Сверено с NY 2024'
+                    : 'Сверить с декларацией NY 2024'}
+                </span>
+              </button>
+            </div>
           </div>
 
           <p className="font-mono-tech text-[10px] uppercase tracking-[0.11em] text-[#6B6963]">

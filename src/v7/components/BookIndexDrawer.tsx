@@ -19,7 +19,7 @@ export function BookIndexDrawer({
   activeChapterId,
   onNavigate,
 }: BookIndexDrawerProps) {
-  const { completedChapters, completedCount, state, resetAllState } = useExplorer();
+  const { completedChapters, completedCount, totalExperiments, state, resetAllState } = useExplorer();
   const [confirmReset, setConfirmReset] = useState(false);
 
   useEffect(() => {
@@ -70,7 +70,7 @@ export function BookIndexDrawer({
                 Пять актов книги
               </h2>
               <div className="mt-2 flex flex-wrap items-center gap-3 font-mono-tech text-[10.5px] text-[#5E5D59]">
-                <span>ОПЫТОВ ПРОЙДЕНО: {completedCount} / 8</span>
+                <span>ОПЫТОВ ПРОЙДЕНО: {completedCount} / {totalExperiments}</span>
                 <span className="text-[#141413]/25">·</span>
                 <span className="inline-flex items-center gap-1 text-[#004EDF]">
                   <BookMarked className="w-3 h-3" />

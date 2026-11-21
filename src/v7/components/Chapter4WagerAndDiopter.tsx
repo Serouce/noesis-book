@@ -159,13 +159,13 @@ export function Chapter4WagerAndDiopter({ onNextChapter }: Chapter4WagerAndDiopt
     <section
       id="ch-4"
       className="relative bg-[#FAF9F5] text-[#141413] pt-14 pb-20 md:pt-18 md:pb-24 border-b border-[#141413]/10"
-      aria-label="Глава IV — Большое пари и оптический диоптр COGITATE 2025"
+      aria-label="Глава IV.1 — Большое пари и оптический диоптр COGITATE 2025"
     >
       <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20">
         {/* Folio Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#141413]/12 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
-          <span className="text-[#FC4109] font-semibold">АКТ IV · ПОД ЧЕРЕПОМ · ГЛАВА IV</span>
-          <span>БОЛЬШОЕ ПАРИ · COGITATE 2025 · стр. 54</span>
+          <span className="text-[#FC4109] font-semibold">АКТ IV · ПОД ЧЕРЕПОМ · ГЛАВА IV.1</span>
+          <span>БОЛЬШОЕ ПАРИ · COGITATE 2025 · стр. 74</span>
         </div>
 
         {/* Opening + 2 Human-Language Theory Cards */}

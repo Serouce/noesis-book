@@ -32,33 +32,35 @@ const STORAGE_KEY = 'noesis_v9_state_v1';
 const SCHEMA_VERSION = 1;
 
 export interface ExplorerState {
-  // Табл. 00 — Иллюзия Муни + Пролог
+  // Табл. 00 — Иллюзия Муни + Пролог + Акт I (Волна 2)
   mooneyGuess: MooneyGuess;
   mooneyExposed: boolean;
   mooneySeconds: number | null;
   prologueExplored: boolean;
-  // Гл. I — Комната Мэри
+  cerebellumTested: boolean;
+  hepTested: boolean;
+  // Акт II — Комната Мэри + Афантазия + Сперлинг + Flash-Lag (Волна 2)
   maryBet: MaryBet;
-  // Гл. II — Сдвиг кальки («Три пальца»)
+  aphantasiaScore: number | null;
+  sperlingWholeScore: number | null;
+  sperlingCuedScore: number | null;
+  flashLagCompleted: boolean;
+  // Акт III — Сдвиг кальки («Три пальца») + Разрезанный корешок
   vellumTriggered: boolean;
-  // Гл. III — Разрезанный корешок
   splitBrainCut: boolean;
   splitBrainEverCut: boolean;
   splitBrainCard: SplitBrainCard;
-  // Гл. IV — Большое пари + COGITATE 2025
+  // Акт IV — Большое пари + COGITATE 2025 + Проигрыватель + Реанимация
   wagerUnsealed: boolean;
   cogitateBet: CogitateBet;
-  // Гл. V — Нейрон Ларкума × Проигрыватель Рамса
   turntableMode: TurntableMode;
   nremExperienced: boolean;
   remExperienced: boolean;
   propofolExperienced: boolean;
-  // Гл. VI — Дежурство в реанимации (3 пациента)
   icuDiagnoses: Partial<Record<'p1' | 'p2' | 'p3', IcuVerdict>>;
-  // Гл. VII — Красная закладка-ляссе (0..5)
+  // Акт V — Красная закладка-ляссе (0..5) + Трибунал ИИ (5 модулей Butlin 2025)
   ribbonBoundaryIndex: number;
   ribbonChecked: boolean;
-  // Гл. VII — Трибунал ИИ (5 модулей Butlin 2025)
   tribunalModules: Record<string, boolean>;
   // Навигация и архив v9
   visitedActs: Record<string, boolean>;
@@ -79,7 +81,12 @@ interface ExplorerContextValue {
   setMooneyGuess: (guess: Exclude<MooneyGuess, null>) => void;
   setMooneyResult: (seconds: number) => void;
   setPrologueExplored: (v: boolean) => void;
+  setCerebellumTested: (v: boolean) => void;
+  setHepTested: (v: boolean) => void;
   setMaryBet: (bet: Exclude<MaryBet, null>) => void;
+  setAphantasiaScore: (score: number) => void;
+  setSperlingResult: (whole: number | null, cued: number | null) => void;
+  setFlashLagCompleted: (v: boolean) => void;
   setSplitBrainCut: (cut: boolean) => void;
   setSplitBrainCard: (card: Exclude<SplitBrainCard, null>) => void;
   setVellumTriggered: (v: boolean) => void;
@@ -97,6 +104,7 @@ interface ExplorerContextValue {
   icuStats: { attempted: number; correct: number; total: number };
   activeTribunalCount: number;
   completedCount: number;
+  totalExperiments: number;
   consistency: ConsistencyVerdict;
   completedChapters: Record<string, boolean>;
 }
@@ -114,7 +122,13 @@ const INITIAL_STATE: ExplorerState = {
   mooneyExposed: false,
   mooneySeconds: null,
   prologueExplored: false,
+  cerebellumTested: false,
+  hepTested: false,
   maryBet: null,
+  aphantasiaScore: null,
+  sperlingWholeScore: null,
+  sperlingCuedScore: null,
+  flashLagCompleted: false,
   vellumTriggered: false,
   splitBrainCut: false,
   splitBrainEverCut: false,
@@ -198,6 +212,19 @@ function sanitizePersistedState(raw: unknown): ExplorerState {
       ? Math.max(0, Math.min(5, Math.round(d.ribbonBoundaryIndex)))
       : 3;
 
+  const aphScore =
+    typeof d.aphantasiaScore === 'number' && Number.isFinite(d.aphantasiaScore)
+      ? Math.max(0, Math.min(5, Math.round(d.aphantasiaScore)))
+      : null;
+  const spWhole =
+    typeof d.sperlingWholeScore === 'number' && Number.isFinite(d.sperlingWholeScore)
+      ? Math.max(0, Math.min(12, Math.round(d.sperlingWholeScore)))
+      : null;
+  const spCued =
+    typeof d.sperlingCuedScore === 'number' && Number.isFinite(d.sperlingCuedScore)
+      ? Math.max(0, Math.min(4, Math.round(d.sperlingCuedScore)))
+      : null;
+
   return {
     mooneyGuess: validGuess,
     mooneyExposed: d.mooneyExposed === true,
@@ -206,7 +233,13 @@ function sanitizePersistedState(raw: unknown): ExplorerState {
         ? Number(d.mooneySeconds.toFixed(1))
         : null,
     prologueExplored: d.prologueExplored === true,
+    cerebellumTested: d.cerebellumTested === true,
+    hepTested: d.hepTested === true,
     maryBet: validMary,
+    aphantasiaScore: aphScore,
+    sperlingWholeScore: spWhole,
+    sperlingCuedScore: spCued,
+    flashLagCompleted: d.flashLagCompleted === true,
     vellumTriggered: d.vellumTriggered === true,
     splitBrainCut: d.splitBrainCut === true,
     splitBrainEverCut: d.splitBrainEverCut === true || d.splitBrainCut === true,
@@ -307,8 +340,42 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const setCerebellumTested = useCallback(
+    (cerebellumTested: boolean) => setState((prev) => ({ ...prev, cerebellumTested })),
+    [],
+  );
+
+  const setHepTested = useCallback(
+    (hepTested: boolean) => setState((prev) => ({ ...prev, hepTested })),
+    [],
+  );
+
   const setMaryBet = useCallback(
     (maryBet: Exclude<MaryBet, null>) => setState((prev) => ({ ...prev, maryBet })),
+    [],
+  );
+
+  const setAphantasiaScore = useCallback(
+    (score: number) =>
+      setState((prev) => ({
+        ...prev,
+        aphantasiaScore: Math.max(0, Math.min(5, Math.round(score))),
+      })),
+    [],
+  );
+
+  const setSperlingResult = useCallback(
+    (whole: number | null, cued: number | null) =>
+      setState((prev) => ({
+        ...prev,
+        sperlingWholeScore: whole !== null ? Math.max(0, Math.min(12, Math.round(whole))) : prev.sperlingWholeScore,
+        sperlingCuedScore: cued !== null ? Math.max(0, Math.min(4, Math.round(cued))) : prev.sperlingCuedScore,
+      })),
+    [],
+  );
+
+  const setFlashLagCompleted = useCallback(
+    (flashLagCompleted: boolean) => setState((prev) => ({ ...prev, flashLagCompleted })),
     [],
   );
 
@@ -457,7 +524,11 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
     () => ({
       'plate-00': state.mooneyExposed,
       prologue: state.prologueExplored,
+      'ch-cerebellum': state.cerebellumTested,
+      'ch-homunculus': state.hepTested,
       'ch-1': state.maryBet !== null,
+      'ch-aphantasia': state.aphantasiaScore !== null,
+      'ch-overflow': state.sperlingCuedScore !== null || state.flashLagCompleted,
       'ch-3': state.vellumTriggered,
       'ch-2': state.splitBrainEverCut,
       'ch-4': state.cogitateBet !== null,
@@ -469,10 +540,30 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
     [state, icuStats.attempted],
   );
 
-  const completedCount = useMemo(() => {
-    const experimentKeys = ['plate-00', 'ch-1', 'ch-3', 'ch-2', 'ch-4', 'ch-5', 'ch-6', 'ch-7'];
-    return experimentKeys.filter((k) => completedChapters[k]).length;
-  }, [completedChapters]);
+  const EXPERIMENT_KEYS = useMemo(
+    () => [
+      'plate-00',
+      'ch-cerebellum',
+      'ch-homunculus',
+      'ch-1',
+      'ch-aphantasia',
+      'ch-overflow',
+      'ch-3',
+      'ch-2',
+      'ch-4',
+      'ch-5',
+      'ch-6',
+      'ch-7',
+    ],
+    [],
+  );
+
+  const totalExperiments = EXPERIMENT_KEYS.length;
+
+  const completedCount = useMemo(
+    () => EXPERIMENT_KEYS.filter((k) => completedChapters[k]).length,
+    [EXPERIMENT_KEYS, completedChapters],
+  );
 
   // Strict precondition-masked Consistency Engine (Bug #11 fix: NEVER falsely praises skipped key bets!)
   const consistency = useMemo<ConsistencyVerdict>(() => {
@@ -481,7 +572,7 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
       return {
         author: 'seth',
         stampTitle: 'НЕЗАПОЛНЕННЫЙ ПРОТОКОЛ',
-        stampSubtitle: `Пройдено ${completedCount} из 8 опытов`,
+        stampSubtitle: `Пройдено ${completedCount} из ${totalExperiments} опытов`,
         commentary:
           'Вы прошли меньше трёх ключевых экспериментов. Чтобы редакция смогла проверить ваши интуиции на противоречие, сделайте ставки в Комнате Мэри, COGITATE и в Акте V.',
         isContradiction: false,
@@ -553,6 +644,7 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
     };
   }, [
     completedCount,
+    totalExperiments,
     state.maryBet,
     state.cogitateBet,
     state.ribbonChecked,
@@ -566,7 +658,12 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
       setMooneyGuess,
       setMooneyResult,
       setPrologueExplored,
+      setCerebellumTested,
+      setHepTested,
       setMaryBet,
+      setAphantasiaScore,
+      setSperlingResult,
+      setFlashLagCompleted,
       setSplitBrainCut,
       setSplitBrainCard,
       setVellumTriggered,
@@ -584,6 +681,7 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
       icuStats,
       activeTribunalCount,
       completedCount,
+      totalExperiments,
       consistency,
       completedChapters,
     }),
@@ -592,7 +690,12 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
       setMooneyGuess,
       setMooneyResult,
       setPrologueExplored,
+      setCerebellumTested,
+      setHepTested,
       setMaryBet,
+      setAphantasiaScore,
+      setSperlingResult,
+      setFlashLagCompleted,
       setSplitBrainCut,
       setSplitBrainCard,
       setVellumTriggered,
@@ -610,6 +713,7 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
       icuStats,
       activeTribunalCount,
       completedCount,
+      totalExperiments,
       consistency,
       completedChapters,
     ],

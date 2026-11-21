@@ -301,13 +301,13 @@ export function Chapter6IcuJournal({
       ref={sectionRef}
       data-hud-theme="dark"
       className="relative bg-[#111419] text-[#FAF9F5] pt-24 pb-20 md:pt-28 md:pb-24 overflow-hidden scroll-mt-0"
-      aria-label="Глава VI — Тихий свет в реанимации"
+      aria-label="Глава IV.3 — Тихий свет в реанимации"
     >
       <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20">
         {/* Dark Folio Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-[#FAF9F5]/14 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#8E98A8]">
-          <span className="text-[#34D399] font-semibold">АКТ IV · ПОД ЧЕРЕПОМ · ГЛАВА VI</span>
-          <span>ДЕЖУРСТВО В РЕАНИМАЦИИ · NEJM 2024 · стр. 86</span>
+          <span className="text-[#34D399] font-semibold">АКТ IV · ПОД ЧЕРЕПОМ · ГЛАВА IV.3</span>
+          <span>ДЕЖУРСТВО В РЕАНИМАЦИИ · NEJM 2024 · стр. 106</span>
         </div>
 
         {/* Clinical Opening */}

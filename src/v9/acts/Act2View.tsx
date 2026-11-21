@@ -1,5 +1,7 @@
 import { useCallback } from 'react';
 import { Chapter1MaryRoom } from '../../v7/components/Chapter1MaryRoom';
+import { Act2AphantasiaLab } from '../chapters/Act2AphantasiaLab';
+import { Act2OverflowBlindsightTime } from '../chapters/Act2OverflowBlindsightTime';
 import { ActBottomTurn, ActTopAnchor } from '../components/ActTransitionBridge';
 import type { ActViewProps } from './Act1View';
 
@@ -24,6 +26,8 @@ export default function Act2View({
         onActiveChange={noop}
         onNextChapter={() => onSwitchAct('act-3')}
       />
+      <Act2AphantasiaLab />
+      <Act2OverflowBlindsightTime />
       <ActBottomTurn actId="act-2" onSwitchAct={onSwitchAct} />
     </div>
   );

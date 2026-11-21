@@ -192,8 +192,9 @@ export function ScrollMicroZoom() {
 
         if (gridLayerRef.current) {
           const fadeIn = Math.min(1, Math.max(0, (p - 0.16) / 0.24));
-          const fadeOut = 1 - Math.min(1, Math.max(0, (p - 0.72) / 0.24));
-          const gridScale = 0.9 + p * 0.28;
+          // Fade out cleanly before Step 3/3 (p = 0.60..0.76) so layer labels never clip against the zoomed frame edge!
+          const fadeOut = 1 - Math.min(1, Math.max(0, (p - 0.58) / 0.18));
+          const gridScale = 0.92 + p * 0.22;
           gridLayerRef.current.style.opacity = `${(fadeIn * fadeOut * 0.96).toFixed(3)}`;
           gridLayerRef.current.style.transform = `scale(${gridScale.toFixed(3)})`;
         }
@@ -398,7 +399,7 @@ export function ScrollMicroZoom() {
         </div>
 
         <div className="max-w-[1240px] mx-auto w-full flex items-center justify-between font-mono-tech text-[10px] uppercase tracking-[0.12em] text-[#7A7872] relative z-20">
-          <span>ПЕРЕХОД: ГЛ. IV (АТЛАС) → ГЛ. V (КЛЕТКА)</span>
+          <span>ПЕРЕХОД: ГЛ. IV.1 (АТЛАС) → ГЛ. IV.2 (КЛЕТКА)</span>
           <span>100 ММ → 2 ММ (СЕРЕБРО ГОЛЬДЖИ) → 0.2 ММ</span>
         </div>
       </div>
