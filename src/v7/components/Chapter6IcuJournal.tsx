@@ -5,7 +5,7 @@ import { CheckCircle2, FileArchive, Lock, XCircle, Zap } from 'lucide-react';
 import { ICU_TRUTH, useExplorer, type IcuVerdict } from '../context/ExplorerContext';
 import { DossierTrigger } from '../../v9/components/NoesisDossierSheet';
 import { LabHonestyBadge } from '../../v9/components/NoesisInstrumentFrame';
-import { NoesisBrain3D } from '../../v9/three/NoesisBrain3D';
+import { NoesisBrainStage3D } from '../../v10/webgl/NoesisBrainStage3D';
 import { ruTypo } from '../../v9/utils/ruTypo';
 
 interface Chapter6IcuJournalProps {
@@ -301,14 +301,14 @@ export function Chapter6IcuJournal({
       id="ch-6"
       ref={sectionRef}
       data-hud-theme="dark"
-      className="relative bg-[#111419] text-[#FAF9F5] pt-24 pb-20 md:pt-28 md:pb-24 overflow-hidden scroll-mt-0"
-      aria-label="Глава IV.3 — Тихий свет в реанимации"
+      className="relative bg-[#0B0D11] text-[#FAF9F5] pt-14 pb-20 md:pt-18 md:pb-24 overflow-hidden scroll-mt-0"
+      aria-label="Глава 07 — Тихий свет в реанимации"
     >
       <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20">
         {/* Dark Folio Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-[#FAF9F5]/14 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#8E98A8]">
-          <span className="text-[#34D399] font-semibold">АКТ IV · ПОД ЧЕРЕПОМ · ГЛАВА IV.3</span>
-          <span>ДЕЖУРСТВО В РЕАНИМАЦИИ · NEJM 2024 · стр. 106</span>
+          <span className="text-[#34D399] font-semibold">АКТ IV · ГРАНИЦЫ РАЗУМА · ГЛАВА 07</span>
+          <span>ДЕЖУРСТВО В РЕАНИМАЦИИ · NEJM 2024 · стр. 108</span>
         </div>
 
         {/* Clinical Opening */}
@@ -471,15 +471,15 @@ export function Chapter6IcuJournal({
               <p className="text-[13px] leading-[1.52] text-[#A8B2C1]">{ruTypo(patient.clinicalChart)}</p>
             </div>
 
-            {/* Real Darkroom 3D MRI Brain (TMS-EEG PCI* cortical propagation wave from Pz!) */}
-            <div className="relative w-full h-[210px] rounded-xl overflow-hidden bg-[#0E1117] border border-[#FAF9F5]/10">
-              <NoesisBrain3D
+            {/* Real Darkroom 122k PBR 3D MRI Brain (TMS-EEG PCI* cortical propagation wave from Pz — neutral amber before diagnosis!) */}
+            <div className="relative w-full h-[220px] rounded-xl overflow-hidden bg-[#0E1117] border border-[#FAF9F5]/10">
+              <NoesisBrainStage3D
                 mode="tms"
                 dark
-                focusMode={patient.spread > 0.5 ? 1 : 0}
+                focusMode={isDiagnosed ? (patient.spread > 0.5 ? 1 : 0) : patient.spread > 0.5 ? 3 : 2}
                 pulseKey={isZapped ? pulseKey + (patient.id === 'p1' ? 10 : patient.id === 'p2' ? 20 : 30) : 0}
                 className="w-full h-full"
-                caption="3D МРТ · Точка удара Pz · Отклик коры"
+                caption="МРТ · СТИМУЛ Pz (ТЕМЯ)"
               />
             </div>
 
@@ -498,7 +498,7 @@ export function Chapter6IcuJournal({
             <div className="flex flex-wrap items-center justify-between gap-3 font-mono-tech text-[11px]">
               <span className="text-[#C8D0DC]">
                 {isZapped
-                  ? '5-КАНАЛЬНАЯ ЭЭГ · ОТКЛИК ОТ Pz · 0 → 300 МС'
+                  ? '5-КАНАЛЬНАЯ ЭЭГ (Fz лоб · Pz темя · T4 висок) · 0 → 300 МС'
                   : 'НАЖМИТЕ «ШАГ 1 · ПОДАТЬ ИМПУЛЬС», ЧТОБЫ СНЯТЬ ЭХО КОРЫ'}
               </span>
               <span className="text-[#FACC15]">ПОРОГ МАССИМИНИ: PCI* = 0.31</span>
@@ -534,8 +534,8 @@ export function Chapter6IcuJournal({
                     key={lbl}
                     x="4"
                     y={40 + ch * 44}
-                    fill="#64748B"
-                    fontSize="9.5"
+                    fill="#A8B4C6"
+                    fontSize="10"
                     fontFamily="JetBrains Mono Variable, monospace"
                   >
                     {lbl}
@@ -721,7 +721,7 @@ export function Chapter6IcuJournal({
           <DossierTrigger
             dossier="icu-cmd-2024"
             label="Командный тест Оуэна («Теннис vs Дом») и данные NEJM авг. 2024 (60/241)"
-            meta="Архивное досье IV.3 · Уровень 2"
+            meta="Архивное досье IV.1 · Уровень 2"
             dark
           />
           <p className="font-serif-editorial italic text-[14.5px] text-[#9AA3B2] max-w-md">

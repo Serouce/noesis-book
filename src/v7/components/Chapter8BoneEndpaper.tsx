@@ -97,6 +97,20 @@ const BIBLIOGRAPHY = [
     note: 'Систематический набор архитектурных индикаторов, отделяющий имитацию речи от субъектности.',
   },
   {
+    year: '2009 / 14',
+    journal: 'J. Comp. Neurol. / Brain',
+    title: 'Equal numbers of neuronal and nonneuronal cells & Complete cerebellar agenesis',
+    authors: 'F. A. C. Azevedo, S. Herculano-Houzel и др. (2009); F. Yu и др. (Brain 2014)',
+    note: '69 млрд нейронов в мозжечке против 16 млрд в коре — и сохранное сознание при полном отсутствии мозжечка.',
+  },
+  {
+    year: '2025',
+    journal: 'Science, Vol. 388',
+    title: 'Human high-order thalamic nuclei gate conscious perception',
+    authors: 'Z. Fang, M. Zhang и др. (апрель 2025)',
+    note: 'Глубинные ядра Высшего таламуса опережают префронтальную кору в тета-диапазоне 2–8 Гц при рождении осознанного образа.',
+  },
+  {
     year: '2020',
     journal: 'Cell, Vol. 180',
     title: 'General Anesthesia Decouples Cortical Pyramidal Neurons',

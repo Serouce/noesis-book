@@ -151,13 +151,13 @@ export function Act2AphantasiaLab() {
     <section
       id="ch-aphantasia"
       className="relative bg-[#FAF9F5] text-[#141413] py-18 md:py-24 border-b border-[#141413]/10"
-      aria-label="Глава II.2 — Внутренний проектор и афантазия"
+      aria-label="Глава 02 — Внутренний проектор и афантазия"
     >
       <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20">
         {/* Folio Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#141413]/12 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
-          <span className="text-[#FC4109] font-semibold">АКТ II · ГЛАВА II.2 · ВНУТРЕННИЙ ПРОЕКТОР</span>
-          <span>АФАНТАЗИЯ И ЗРАЧОК · стр. 30</span>
+          <span className="text-[#FC4109] font-semibold">АКТ II · ГЛАВА 02 · ВНУТРЕННИЙ ПРОЕКТОР</span>
+          <span>АФАНТАЗИЯ И ЗРАЧОК · стр. 32</span>
         </div>
 
         <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
@@ -236,7 +236,7 @@ export function Act2AphantasiaLab() {
           {/* Right 7 cols: Studio Apple Plate + 0..5 Dial + Live Pupillary Reflex */}
           <div className="lg:col-span-7">
             <NoesisInstrumentFrame
-              code="ПРИБОР II.2 · ШКАЛА ЯРКОСТИ ВНУТРЕННЕГО ОБРАЗА (0–5)"
+              code="ПРИБОР II.1 · ШКАЛА ЯРКОСТИ ВНУТРЕННЕГО ОБРАЗА (0–5)"
               badge="self-test"
               telemetry={
                 isSaved
@@ -472,7 +472,7 @@ export function Act2AphantasiaLab() {
             )}
           </p>
           <span className="font-mono-tech text-[10px] uppercase tracking-[0.14em] text-[#FC4109]">
-            ДАЛЕЕ · ГЛАВА II.3 ↓
+            ДАЛЕЕ · ГЛАВА 03 ↓
           </span>
         </div>
       </div>

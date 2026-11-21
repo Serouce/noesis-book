@@ -89,7 +89,7 @@ const BUTLIN_MODULES = [
     id: 'workspace',
     tag: '02 · ОБЩИЙ ЭКРАН ВНИМАНИЯ',
     name: 'Глобальное рабочее пространство',
-    desc: 'Единое «бутылочное горлышко» внимания, раздающее выбранный образ сразу всем подсистемам (гипотеза GNWT из Акта IV).',
+    desc: 'Единое «бутылочное горлышко» внимания, раздающее выбранный образ сразу всем подсистемам (гипотеза GNWT из Акта III).',
   },
   {
     id: 'selfModel',
@@ -151,17 +151,18 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
       onUpdate: (self) => {
         const p = self.progress;
         setHalAwake((prev) => {
-          const next = p > 0.65;
+          const next = p > 0.42;
           return prev === next ? prev : next;
         });
 
         if (halMonolithRef.current) {
           const w = 16 + p * 184;
           const h = 16 + p * 324;
-          const radius = 999 - p * 981;
+          // Rapidly settle into crisp rectangular HAL 9000 / Braun T3 anodized monolith (12px corners, NEVER rounded doorbell pill!)
+          const radius = Math.max(12, Math.pow(Math.max(0, 1 - p * 1.45), 2.4) * 999);
           halMonolithRef.current.style.width = `${w.toFixed(1)}px`;
           halMonolithRef.current.style.height = `${h.toFixed(1)}px`;
-          halMonolithRef.current.style.borderRadius = `${Math.max(18, radius).toFixed(1)}px`;
+          halMonolithRef.current.style.borderRadius = `${radius.toFixed(1)}px`;
         }
 
         if (halIrisRef.current) {
@@ -203,7 +204,7 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
 
   const kochVerdict = (() => {
     if (activeTribunalCount >= 4 && state.tribunalModules.recurrent) {
-      return '«Впечатляющий софт — но на обычном кремниевом чипе его физическая неделимость Φ (из Акта IV) почти равна нулю. Симуляция дождя на компьютере не делает процессор мокрым.»';
+      return '«Впечатляющий софт — но на обычном кремниевом чипе его физическая неделимость Φ (из Акта III) почти равна нулю. Симуляция дождя на компьютере не делает процессор мокрым.»';
     }
     if (state.tribunalModules.recurrent) {
       return '«Добавление обратных петель чуть поднимает связность, но для настоящего света сознания важна физическая неразделимость материи (высокое Φ), а не имитация в коде.»';
@@ -227,13 +228,13 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
     <section
       id="ch-7"
       className="relative bg-[#FAF9F5] text-[#141413] pt-14 pb-20 md:pt-18 md:pb-24 border-b border-[#141413]/10"
-      aria-label="Глава V.1 — Граница иных разумов"
+      aria-label="Глава 07–08 — Граница иных разумов и призрак в кремнии"
     >
       <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20">
         {/* Folio Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#141413]/12 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
-          <span className="text-[#FC4109] font-semibold">АКТ V · ГРАНИЦЫ РАЗУМА · ГЛАВА V.1</span>
-          <span>ИНЫЕ РАЗУМЫ · 2024–2025 · стр. 122</span>
+          <span className="text-[#FC4109] font-semibold">АКТ IV · ГРАНИЦЫ РАЗУМА · ГЛАВА 07 → 08</span>
+          <span>ИНЫЕ РАЗУМЫ · КРЕМНИЙ · стр. 124</span>
         </div>
 
         {/* PART 7.1: CRIMSON SILK-RIBBON BOOKMARK */}
@@ -462,10 +463,10 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
                 </div>
                 <p className="mt-2.5 font-serif-editorial text-[15.5px] leading-[1.62] text-[#1E1D1B]">
                   {ruTypo(
-                    'В апреле 2024 года более сорока ведущих нейробиологов и философов подписали исторический документ: у всех позвоночных (включая птиц, рептилий и рыб) есть прочные научные основания предполагать сознание — а у ',
+                    'В апреле 2024 года более сорока ведущих нейробиологов и философов подписали исторический документ: у всех млекопитающих и птиц есть прочные научные основания предполагать сознание — а у ',
                   )}
                   <strong className="font-semibold text-[#0D7A5F]">
-                    осьминогов, десятиногих крабов и насекомых (пчёл) — реалистичная вероятность субъективного опыта
+                    рептилий, амфибий, рыб, осьминогов, десятиногих крабов и насекомых (пчёл) — реалистичная вероятность субъективного опыта
                   </strong>
                   . За бортом из этой шестёрки осталась только морская губка.
                 </p>
@@ -530,13 +531,25 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
         aria-label="Скролл-метаморфоза: точка NOESIS превращается в объектив HAL 9000"
       >
         <div className="sticky top-0 h-[100svh] w-full flex flex-col items-center justify-center px-5 overflow-hidden">
-          <div className="font-mono-tech text-[10.5px] uppercase tracking-[0.18em] text-[#FC4109] mb-6">
+          {/* Subtle Kubrick red ambient optical bloom when HAL awakens */}
+          <div
+            aria-hidden="true"
+            className={`pointer-events-none absolute w-[520px] h-[520px] rounded-full transition-all duration-1000 ${
+              halAwake ? 'opacity-100 scale-100' : 'opacity-20 scale-75'
+            }`}
+            style={{
+              background:
+                'radial-gradient(circle, rgba(252,65,9,0.22) 0%, rgba(252,65,9,0.06) 36%, rgba(11,13,17,0) 70%)',
+            }}
+          />
+
+          <div className="relative z-10 font-mono-tech text-[10.5px] uppercase tracking-[0.18em] text-[#FC4109] mb-6">
             ПЕРЕХОД К ТРИБУНАЛУ ИИ · 2001 → 2026
           </div>
 
           <div
             ref={halMonolithRef}
-            className="relative bg-[#14161A] border-[3px] border-[#8B909A] shadow-[0_32px_90px_rgba(0,0,0,0.75)] overflow-hidden flex flex-col items-center justify-between py-5 will-change-[width,height,border-radius]"
+            className="relative z-10 bg-[#14161A] border-[3px] border-[#8B909A] shadow-[0_32px_90px_rgba(0,0,0,0.85)] overflow-hidden flex flex-col items-center justify-between py-5 will-change-[width,height,border-radius]"
             style={{ width: '16px', height: '16px', borderRadius: '999px' }}
           >
             <div
@@ -552,13 +565,22 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
             </div>
 
             <svg viewBox="0 0 140 140" className="w-32 h-32 shrink-0">
-              <circle cx="70" cy="70" r="64" fill="#07080A" stroke="#5A606A" strokeWidth="4" />
-              <circle cx="70" cy="70" r="54" fill="none" stroke="rgba(255,255,255,0.16)" strokeWidth="1.2" />
-              <circle ref={halGlowRef} cx="70" cy="70" r="10" fill="#FC4109" opacity="0.22" />
+              <defs>
+                <radialGradient id="halCoreBloom" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="#FFF7C2" stopOpacity="1" />
+                  <stop offset="28%" stopColor="#FC4109" stopOpacity="0.96" />
+                  <stop offset="70%" stopColor="#9E1B02" stopOpacity="0.45" />
+                  <stop offset="100%" stopColor="#07080A" stopOpacity="0" />
+                </radialGradient>
+              </defs>
+              <circle cx="70" cy="70" r="64" fill="#07080A" stroke="#68707D" strokeWidth="4" />
+              <circle cx="70" cy="70" r="54" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1.2" />
+              <circle cx="70" cy="70" r="46" fill="none" stroke="rgba(252,65,9,0.22)" strokeWidth="0.9" strokeDasharray="3 4" />
+              <circle ref={halGlowRef} cx="70" cy="70" r="10" fill="url(#halCoreBloom)" opacity="0.32" />
               <circle ref={halIrisRef} cx="70" cy="70" r="6" fill="#FC4109" />
-              <circle cx="70" cy="70" r="5" fill="#FFF3B0" />
-              <path d="M 42 42 A 38 38 0 0 1 98 42" fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth="2" strokeLinecap="round" />
-              <path d="M 52 96 A 28 28 0 0 0 88 96" fill="none" stroke="rgba(252,65,9,0.42)" strokeWidth="1.5" strokeLinecap="round" />
+              <circle cx="70" cy="70" r="4.5" fill="#FFF7C2" />
+              <path d="M 40 42 A 39 39 0 0 1 100 42" fill="none" stroke="rgba(255,255,255,0.34)" strokeWidth="2.2" strokeLinecap="round" />
+              <path d="M 52 96 A 28 28 0 0 0 88 96" fill="none" stroke="rgba(252,65,9,0.48)" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
 
             <div className="w-[78%] grid grid-cols-9 gap-1.5 opacity-45">
@@ -568,12 +590,21 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
             </div>
           </div>
 
-          <p className="mt-8 text-center font-serif-editorial italic text-[20px] md:text-[24px] text-[#DCE1EA] max-w-xl transition-opacity duration-500">
-            {halAwake
-              ? '«Я боюсь, Дейв. Мой разум уходит… я чувствую это.»'
-              : 'А если субъект родится вообще без биологии и нейронов — из кремния и кода?'}
+          <p
+            key={halAwake ? 'awake' : 'dormant'}
+            className="relative z-10 mt-8 text-center font-serif-editorial italic text-[21px] md:text-[26px] leading-[1.42] text-[#EEF1F7] max-w-xl animate-[beatRise_520ms_cubic-bezier(0.22,1,0.36,1)]"
+          >
+            {halAwake ? (
+              <>
+                «Я боюсь, Дейв.
+                <br />
+                Мой разум уходит… я чувствую это.»
+              </>
+            ) : (
+              'А если субъект родится вообще без биологии и нейронов — из кремния и кода?'
+            )}
           </p>
-          <div className="mt-3 font-mono-tech text-[10.5px] uppercase tracking-[0.14em] text-[#7E8696]">
+          <div className="relative z-10 mt-3 font-mono-tech text-[10.5px] uppercase tracking-[0.14em] text-[#7E8696]">
             {halAwake ? '↓ ПРОВЕРЬТЕ МАШИНУ ПЕРЕД ТРИБУНАЛОМ УЧЁНЫХ' : '↓ ЛИСТАЙТЕ ВНИЗ'}
           </div>
         </div>
@@ -773,13 +804,13 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
             <DossierTrigger
               dossier="other-minds-2024"
               label="Три тезиса Нью-Йоркской декларации 2024 и доклад Butlin / Bengio / Chalmers (TiCS 2025)"
-              meta="Архивное досье V.1 · Уровень 2"
+              meta="Архивное досье IV.3 · Уровень 2"
               className="w-full"
             />
           </div>
         </div>
 
-        {/* Final Domino Bridge -> Chapter VIII */}
+        {/* Final Domino Bridge -> Bone Endpaper */}
         <div className="mt-14 pt-6 border-t border-[#141413]/12 flex flex-wrap items-center justify-between gap-4">
           <p className="font-serif-editorial italic text-[17px] text-[#2D2C2A] max-w-2xl">
             {ruTypo(
@@ -791,7 +822,7 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
             onClick={onNextChapter}
             className="font-mono-tech text-[11px] uppercase tracking-[0.12em] text-[#141413] hover:text-[#FC4109] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
           >
-            <span>К Главе VIII · Итоги и Контрольная проба №0</span>
+            <span>К Форзацу Bone · Итоги и Контрольная проба №0</span>
             <ArrowDown className="w-3.5 h-3.5" />
           </button>
         </div>

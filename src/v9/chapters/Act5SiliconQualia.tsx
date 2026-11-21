@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Cpu, Flame, MessageSquareText, Sprout } from 'lucide-react';
 import { NoesisInstrumentFrame } from '../components/NoesisInstrumentFrame';
 import { DossierTrigger } from '../components/NoesisDossierSheet';
-import { NoesisBrain3D } from '../three/NoesisBrain3D';
+import { NoesisBrainStage3D } from '../../v10/webgl/NoesisBrainStage3D';
 import { ruTypo } from '../utils/ruTypo';
 
 type SiliconLens = 'chalmers' | 'iit_cpu' | 'varela';
@@ -104,7 +104,7 @@ export function Act5SiliconQualia() {
           <DossierTrigger
             dossier="ai-mechanistic-2026"
             label="Вскрытие трансформеров 2024–2026: «Мост Золотые ворота», Circuit Tracing, интроспекция ~20% и мораторий Метцингера 2050"
-            meta="Инженерное досье V.A · Уровень 2"
+            meta="Инженерное досье IV.2 · Уровень 2"
             className="w-full"
           />
         </div>
@@ -177,20 +177,20 @@ export function Act5SiliconQualia() {
         {/* Right 7 cols: Real 3D MRI Silicon Phase-Transition Shader + Invariant Speech vs Subjective Qualia Meter */}
         <div className="lg:col-span-7">
           <NoesisInstrumentFrame
-            code="ПРИБОР V.1 · 3D КРИСТАЛЛИЗАЦИЯ КОРЫ (ВЫЦВЕТАЮЩИЕ КВАЛИА)"
+            code="ПРИБОР IV.2 · 3D КРИСТАЛЛИЗАЦИЯ КОРЫ (ВЫЦВЕТАЮЩИЕ КВАЛИА)"
             badge="reconstruction"
             telemetry={`КРЕМНИЙ: ${siliconPct}% · ЖИВАЯ ТКАНЬ: ${100 - siliconPct}%`}
             surface="vellum"
-            footnote="Chalmers (1995) · Tononi (IIT) · Maturana & Varela (Автопоэзис) · 3D МРТ FreeSurfer fsaverage5"
+            footnote="Chalmers (1995) · Tononi (IIT) · Maturana & Varela (Автопоэзис) · МРТ-атлас ICBM152"
           >
             <div className="space-y-4">
-              {/* Live 3D MRI Brain with Block-by-Block Silicon Replacement Shader! */}
+              {/* Live Anatomical 3D MRI Brain with Architectural Micro-Voxel Silicon Replacement Shader! */}
               <div className="rounded-xl border border-[#141413]/14 bg-[#FAF9F5] overflow-hidden">
-                <NoesisBrain3D
+                <NoesisBrainStage3D
                   mode="silicon"
                   progress={siliconPct / 100}
-                  className="w-full h-[330px] sm:h-[370px]"
-                  caption="3D МРТ · Вращайте мышкой · Поблочная замена коры на кремний (fsaverage5)"
+                  className="w-full h-[360px] sm:h-[420px]"
+                  caption="МРТ-АТЛАС ICBM152 · ПОБЛОЧНАЯ КРИСТАЛЛИЗАЦИЯ КОРЫ В КРЕМНИЙ"
                 />
               </div>
 

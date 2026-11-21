@@ -71,8 +71,8 @@
   }
 
   ::selection {
-    background-color: rgba(252, 65, 9, 0.18);
-    color: var(--ink);
+    background-color: rgba(252, 65, 9, 0.24);
+    color: inherit;
   }
 }
 

@@ -198,7 +198,7 @@ export function Chapter1WhatIsConsciousness({
             <div className="lg:col-span-6 text-[16px] leading-[1.68] text-[#353431]">
               <p>
                 {ruTypo(
-                  'В 1714 году Готфрид Лейбниц предложил мысленный эксперимент: увеличьте мыслящую машину до размеров ветряной мельницы и зайдите внутрь. Вы увидите только шестерни, толкающие друг друга, — но нигде не встретите самого переживания. Замените деревянные колёса на 86 миллиардов нейронов, ионные каналы и спайки — пропасть останется прежней: приборы видят движение вещества, но не саму боль и не вкус кофе.',
+                  'Даже если увеличить человеческий мозг в миллион раз и прошагать сквозь 86 миллиардов нейронов, ионные каналы и электрические разряды — приборы увидят лишь движение вещества, но не саму боль и не вкус кофе. Прокрутите вниз, чтобы войти внутрь этой знаменитой мысленной машины 1714 года.',
                 )}
               </p>
             </div>
@@ -440,14 +440,9 @@ export function Chapter1WhatIsConsciousness({
           </div>
         </section>
 
-        {/* DOMINO BRIDGE TO ACT II */}
-        <footer className="pt-4 flex flex-wrap items-center justify-between gap-4">
-          <p className="font-serif-editorial italic text-[16px] text-[#454440] max-w-2xl">
-            {ruTypo(
-              'Если внутренний свет не удаётся подсмотреть среди шестерён снаружи, поймаем его в чистом виде: войдём в комнату без единой краски и посмотрим, откуда мозг вообще берёт цвет, образ и ощущение «сейчас».',
-            )}
-          </p>
-          {onContinueToAct2 && (
+        {/* Clean closing spacer — single ActBottomTurn bridge lives directly below! */}
+        {onContinueToAct2 && (
+          <footer className="pt-4 flex justify-end">
             <button
               type="button"
               onClick={onContinueToAct2}
@@ -456,8 +451,8 @@ export function Chapter1WhatIsConsciousness({
               <span>К Акту II · Театр восприятия</span>
               <ArrowDown className="w-4 h-4 text-[#FC4109]" />
             </button>
-          )}
-        </footer>
+          </footer>
+        )}
       </div>
     </article>
   );

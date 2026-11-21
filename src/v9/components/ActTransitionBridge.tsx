@@ -8,13 +8,15 @@ interface ActTopAnchorProps {
   actId: ActId;
   visitedActs: Record<string, boolean>;
   onSwitchAct: (act: ActId) => void;
+  /** True when the Act opens seamlessly inside a dark room (e.g. Act IV ICU right after Propofol!) */
+  dark?: boolean;
 }
 
 /**
  * Editorial Act Opening Masthead & Domino Anchor:
  * Gives direct cold-link visitors clean orientation without forcing them back to Act I.
  */
-export function ActTopAnchor({ actId, visitedActs, onSwitchAct }: ActTopAnchorProps) {
+export function ActTopAnchor({ actId, visitedActs, onSwitchAct, dark = false }: ActTopAnchorProps) {
   const meta = getActMeta(actId);
   const prevAct = getPrevAct(actId);
   if (!prevAct || !meta.prevAnchorNote) return null;
@@ -25,7 +27,12 @@ export function ActTopAnchor({ actId, visitedActs, onSwitchAct }: ActTopAnchorPr
   return (
     <section
       aria-label={`Начало акта: ${meta.title}`}
-      className="pt-24 pb-8 md:pt-28 md:pb-10 px-6 md:px-10 bg-[#FAF9F5] text-[#141413] border-b border-[#141413]/8"
+      data-hud-theme={dark ? 'dark' : undefined}
+      className={`pt-24 pb-8 md:pt-28 md:pb-10 px-6 md:px-10 border-b ${
+        dark
+          ? 'bg-[#0B0D11] text-[#FAF9F5] border-[#FAF9F5]/10'
+          : 'bg-[#FAF9F5] text-[#141413] border-[#141413]/8'
+      }`}
     >
       <div className="max-w-[1180px] mx-auto">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -33,8 +40,8 @@ export function ActTopAnchor({ actId, visitedActs, onSwitchAct }: ActTopAnchorPr
             <span className="font-mono-tech text-[10.5px] uppercase tracking-[0.16em] text-[#FC4109] font-semibold">
               {meta.code}
             </span>
-            <span className="text-[#141413]/25">·</span>
-            <span className="font-mono-tech text-[10.5px] uppercase tracking-[0.12em] text-[#5E5D59]">
+            <span className={dark ? 'text-[#FAF9F5]/25' : 'text-[#141413]/25'}>·</span>
+            <span className={`font-mono-tech text-[10.5px] uppercase tracking-[0.12em] ${dark ? 'text-[#9AA3B2]' : 'text-[#5E5D59]'}`}>
               {meta.durationLabel}
             </span>
           </div>
@@ -42,7 +49,11 @@ export function ActTopAnchor({ actId, visitedActs, onSwitchAct }: ActTopAnchorPr
           <button
             type="button"
             onClick={() => onSwitchAct(prevAct)}
-            className="v6-pill inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F3F1E9] hover:bg-[#E9E6DC] border border-[#141413]/12 font-mono-tech text-[10px] uppercase tracking-[0.1em] text-[#30302E] cursor-pointer"
+            className={`v6-pill inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border font-mono-tech text-[10px] uppercase tracking-[0.1em] cursor-pointer ${
+              dark
+                ? 'bg-[#151922] hover:bg-[#1E2431] border-[#FAF9F5]/14 text-[#E2E8F0]'
+                : 'bg-[#F3F1E9] hover:bg-[#E9E6DC] border-[#141413]/12 text-[#30302E]'
+            }`}
           >
             <ArrowLeft className="w-3 h-3" />
             <span>
@@ -53,10 +64,18 @@ export function ActTopAnchor({ actId, visitedActs, onSwitchAct }: ActTopAnchorPr
 
         <div className="mt-5 grid grid-cols-1 lg:grid-cols-12 gap-6 items-end">
           <div className="lg:col-span-7">
-            <h1 className="font-serif-editorial font-serif-display text-[clamp(2.1rem,4.4vw,3.6rem)] leading-[1.04] tracking-[-0.024em] text-[#141413] [text-wrap:balance]">
+            <h1
+              className={`font-serif-editorial font-serif-display text-[clamp(2.1rem,4.4vw,3.6rem)] leading-[1.04] tracking-[-0.024em] [text-wrap:balance] ${
+                dark ? 'text-[#FAF9F5]' : 'text-[#141413]'
+              }`}
+            >
               {ruTypo(meta.title)}
             </h1>
-            <p className="mt-2.5 text-[15.5px] leading-[1.6] text-[#5E5D59] max-w-[58ch] [text-wrap:pretty]">
+            <p
+              className={`mt-2.5 text-[15.5px] leading-[1.6] max-w-[58ch] [text-wrap:pretty] ${
+                dark ? 'text-[#A8B1C0]' : 'text-[#5E5D59]'
+              }`}
+            >
               {ruTypo(meta.subtitle)}
             </p>
           </div>
@@ -64,18 +83,26 @@ export function ActTopAnchor({ actId, visitedActs, onSwitchAct }: ActTopAnchorPr
           <div className="lg:col-span-5">
             <div
               className={`p-4 rounded-xl border ${
-                isColdJump
-                  ? 'bg-[#F3F1E9] border-[#004EDF]/30 border-l-[3px] border-l-[#004EDF]'
-                  : 'bg-[#F3F1E9]/70 border-[#141413]/10'
+                dark
+                  ? isColdJump
+                    ? 'bg-[#151922] border-[#34D399]/30 border-l-[3px] border-l-[#34D399]'
+                    : 'bg-[#151922]/85 border-[#FAF9F5]/12'
+                  : isColdJump
+                    ? 'bg-[#F3F1E9] border-[#004EDF]/30 border-l-[3px] border-l-[#004EDF]'
+                    : 'bg-[#F3F1E9]/70 border-[#141413]/10'
               }`}
             >
-              <div className="flex items-center gap-1.5 font-mono-tech text-[9.5px] uppercase tracking-[0.13em] text-[#004EDF] font-semibold">
+              <div
+                className={`flex items-center gap-1.5 font-mono-tech text-[9.5px] uppercase tracking-[0.13em] font-semibold ${
+                  dark ? 'text-[#34D399]' : 'text-[#004EDF]'
+                }`}
+              >
                 <Compass className="w-3.5 h-3.5" />
                 <span>
                   {isColdJump ? `ВЫ ОТКРЫЛИ АКТ ${meta.roman} НАПРЯМУЮ` : `МОСТИК ИЗ АКТА ${prevMeta.roman}`}
                 </span>
               </div>
-              <p className="mt-1.5 text-[13px] leading-[1.58] text-[#30302E] [text-wrap:pretty]">
+              <p className={`mt-1.5 text-[13px] leading-[1.58] [text-wrap:pretty] ${dark ? 'text-[#CBD3DF]' : 'text-[#30302E]'}`}>
                 {ruTypo(meta.prevAnchorNote)}
               </p>
             </div>

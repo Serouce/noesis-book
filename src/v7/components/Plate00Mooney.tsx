@@ -108,12 +108,12 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
   return (
     <section
       id="plate-00"
-      className="relative min-h-[100svh] bg-[#FAF9F5] text-[#141413] pt-24 pb-16 md:pt-28 md:pb-24 px-5 md:px-12 lg:px-20 flex flex-col justify-between border-b border-[#141413]/10"
+      className="relative min-h-[100svh] bg-[#FAF9F5] text-[#141413] pt-20 pb-10 md:pt-22 md:pb-14 px-5 md:px-12 lg:px-20 flex flex-col justify-between border-b border-[#141413]/10"
       aria-label="Таблица 00 — Порог восприятия"
     >
       <div className="max-w-[1240px] mx-auto w-full flex-1 flex flex-col justify-center">
         {/* Top Book Plate Folio Line */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#141413]/12 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-[#141413]/12 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
           <span className="flex items-center gap-2.5">
             <span className="w-2 h-2 rounded-full bg-[#FC4109]" />
             <span>NOESIS · АКТ I · ИНТЕРАКТИВНАЯ КНИГА О СОЗНАНИИ</span>
@@ -121,10 +121,10 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
           <span>ТАБЛ. 00 · ПРОВЕРКА ОПТИКИ · стр. 01</span>
         </div>
 
-        {/* Main Asymmetric Book Spread */}
-        <div className="mt-10 md:mt-14 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+        {/* Main Asymmetric Book Spread — items-start guarantees 0.0px button shift before/during/after click! */}
+        <div className="mt-7 md:mt-10 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
           {/* Left Column: Static Hook + Unmoving Primary Control + Post-Reveal Below */}
-          <div className="lg:col-span-6 space-y-6">
+          <div className="lg:col-span-6 lg:pt-6 space-y-6">
             <h1 className="text-[clamp(38px,5.4vw,68px)] leading-[1.02] tracking-[-0.032em]">
               <span className="font-display font-bold block">Не верьте</span>
               <span className="font-serif-display italic font-normal block text-[#2D2C2A] mt-1">
@@ -153,8 +153,8 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
                 }}
                 className={`v6-pill h-12 px-6 rounded-full font-sans-ui text-[14px] font-medium inline-flex items-center gap-2.5 cursor-pointer select-none touch-none ${
                   showingKey
-                    ? 'bg-[#FC4109] text-[#FAF9F5] shadow-[0_12px_32px_rgba(252,65,9,0.28)]'
-                    : 'bg-[#141413] hover:bg-[#2A2A28] text-[#FAF9F5] shadow-[0_12px_30px_rgba(20,20,19,0.16)]'
+                    ? 'bg-[#FC4109] text-[#FAF9F5]'
+                    : 'bg-[#141413] hover:bg-[#2A2A28] text-[#FAF9F5]'
                 }`}
               >
                 <Eye className={`w-4 h-4 ${showingKey ? 'text-[#FAF9F5]' : 'text-[#FC4109]'}`} />
@@ -208,7 +208,7 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
             <NoesisInstrumentFrame
               code="ОТТИСК № 00 · ИЛЛЮЗИЯ МУНИ"
               badge="self-test"
-              telemetry={showingKey ? '● ИСХОДНИК (ЭКСПОЗИЦИЯ)' : '○ ДВУХТОНОВАЯ МАТРИЦА'}
+              telemetry={showingKey ? '● ИСХОДНИК' : '○ 2 ТОНА'}
               surface="vellum"
               footnote="Крейг Муни (1957) · Необратимое узнавание"
               footnoteRight={<span className="font-mono-tech text-[10.5px]">1 : 1</span>}

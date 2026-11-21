@@ -4,9 +4,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ArrowUpRight } from 'lucide-react';
 import { useExplorer } from '../context/ExplorerContext';
 import { ScholarMarginDuel } from './ScholarMarginalia';
-import { NoesisInstrumentFrame } from '../../v9/components/NoesisInstrumentFrame';
 import { useDossier } from '../../v9/components/DossierContext';
-import { DossierTrigger } from '../../v9/components/NoesisDossierSheet';
 import { assetUrl } from '../../v9/utils/assetUrl';
 import { ruTypo } from '../../v9/utils/ruTypo';
 
@@ -21,32 +19,30 @@ interface Chapter1MaryRoomProps {
 
 const MARY_BEATS = [
   {
-    kicker: 'ГЛАВА II.1 · ЧАСТЬ 1/4 · КОМНАТА МЭРИ (Ф. ДЖЕКСОН, 1982)',
+    kicker: 'ГЛАВА 02 · ЧАСТЬ 1/4 · КОМНАТА МЭРИ (Ф. ДЖЕКСОН, 1982)',
     headlineMain: 'Она знает о\u00A0красном всё —',
     headlineAccent: 'кроме того, каково его видеть.',
     note: 'Нейробиолог Мэри выросла в абсолютно чёрно-белой лаборатории. Она знает длину волны 650\u00A0нм, реакцию цветовых датчиков глаза и путь каждого импульса в зрительной коре — но никогда не видела ни единого цветного луча.',
   },
   {
-    kicker: 'ГЛАВА II.1 · ЧАСТЬ 2/4 · ФИЗИКА БЕЗ ОПЫТА',
+    kicker: 'ГЛАВА 02 · ЧАСТЬ 2/4 · ФИЗИКА БЕЗ ОПЫТА',
     headlineMain: 'В\u00A0спектре нет красного —',
     headlineAccent: 'там есть только частота 461\u00A0ТГц.',
-    note: 'В объективном мире свет бесцветен: это электромагнитные колебания разной длины. Можно выучить до микрона разницу между бумагой «слоновая кость» (Bone) и «яичная скорлупа» (Eggshell) — но это всё ещё сухие числа, а не сам оттенок перед глазами.',
+    note: 'В объективном мире свет бесцветен: это электромагнитные колебания разной длины. Мэри знает длину волны до нанометра и карту каждого нейрона — но это всё ещё сухие числа, а не сам оттенок перед глазами.',
   },
   {
-    kicker: 'ГЛАВА II.1 · ЧАСТЬ 3/4 · МОМЕНТ ПОРОГА',
+    kicker: 'ГЛАВА 02 · ЧАСТЬ 3/4 · МОМЕНТ ПОРОГА',
     headlineMain: 'Дверь открывается.',
     headlineAccent: 'Мозг получает сигнал, который уже знал по\u00A0учебникам…',
     note: 'По зрительному нерву бежит точно тот каскад импульсов, который Мэри сто раз чертила на доске. Ни одной новой формулы физика ей не дала. Но происходит нечто, чего не было ни в одной книге.',
   },
   {
-    kicker: 'ГЛАВА II.1 · ЧАСТЬ 4/4 · РОЖДЕНИЕ КВАЛИА',
+    kicker: 'ГЛАВА 02 · ЧАСТЬ 4/4 · ВСПЫШКА КВАЛИА',
     headlineMain: 'Красный обрушивается на\u00A0неё.',
-    headlineAccent: 'Это и есть Трудная проблема сознания.',
-    note: 'Субъективное качество переживания — «красность красного», боль ожога, вкус кофе — философы называют квалиа. Почему физическая химия в темноте черепа вообще сопровождается внутренним кино?',
+    headlineAccent: 'Трудная проблема в\u00A0чистом виде.',
+    note: 'Перед нами те самые квалиа из Главы 01 — живое переживание «красности красного». Ни одна формула оптики не объясняет, почему этот каскад милливольт вообще зажигается внутренним светом.',
   },
 ];
-
-type SpectrometerMode = 'single' | 'metamer' | 'magenta';
 
 function wavelengthToHex(nm: number) {
   const rawL = Math.exp(-Math.pow((nm - 595) / 58, 2));
@@ -91,8 +87,6 @@ export function Chapter1MaryRoom({
 
   const [activeBeat, setActiveBeat] = useState(0);
   const [isColoredPhase, setIsColoredPhase] = useState(false);
-  const [wavelength, setWavelength] = useState(650);
-  const [specMode, setSpecMode] = useState<SpectrometerMode>('single');
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -226,54 +220,6 @@ export function Chapter1MaryRoom({
   }, [onHudThemeChange, onActiveChange, onCanvasInHudChange]);
 
   const beat = MARY_BEATS[activeBeat] ?? MARY_BEATS[0];
-  const baseSpec = wavelengthToHex(wavelength);
-  const frequencyThz = Math.round(299792 / wavelength);
-
-  // Active eyepiece reading (Single wavelength vs Metamerism vs Non-spectral Magenta!)
-  const eyepiece = (() => {
-    if (specMode === 'metamer') {
-      return {
-        hex: '#D4A017',
-        title: 'Метамеризм: два разных света = один жёлтый',
-        waveLabel: '580 нм (1 луч)  ≡  530 + 640 нм (смесь)',
-        freqLabel: 'Две разные физики',
-        lCone: 92,
-        mCone: 81,
-        sCone: 2,
-        explain:
-          'Ваш экран не умеет излучать настоящий жёлтый 580 нм — он смешивает зелёный и красный пиксели. Но тройка чисел (L=92, M=81, S=2) совпадает, и кора рисует неотличимый жёлтый.',
-      };
-    }
-    if (specMode === 'magenta') {
-      return {
-        hex: '#C0267D',
-        title: 'Пурпур (маджента) — цвет без длины волны',
-        waveLabel: '440 + 650 нм · вне радуги',
-        freqLabel: 'Несуществующая волна',
-        lCone: 88,
-        mCone: 4,
-        sCone: 94,
-        explain:
-          'В солнечном спектре нет «пурпурного» фотона! Когда срабатывают крайние синие (S) и красные (L) колбочки, а зелёные (M) молчат, мозг сам достраивает цвет, замыкая спектр в кольцо.',
-      };
-    }
-    return {
-      hex: baseSpec.hex,
-      title: baseSpec.name,
-      waveLabel: `${wavelength} нм`,
-      freqLabel: `${frequencyThz} ТГц`,
-      lCone: baseSpec.lCone,
-      mCone: baseSpec.mCone,
-      sCone: baseSpec.sCone,
-      explain:
-        state.maryBet === 'learns_new'
-          ? 'Вы поставили на Чалмерса: даже зная точные проценты L, M и S выше, Мэри никогда не могла вывести из них сам свет внутри этого окуляра.'
-          : state.maryBet === 'knows_all'
-            ? 'Вы поставили на Деннета: если бы Мэри знала всю физику активации L, M и S в своей коре, этот оттенок не стал бы для неё новостью.'
-            : 'Подвигайте длину волны или переключитесь на «Пурпур» — вы увидите, что цвет рождается не в фотоне, а в вычислении трёх типов колбочек.',
-    };
-  })();
-
   const maryStillLifeSrc = assetUrl('/v6/mary-still-life.jpg');
 
   return (
@@ -281,13 +227,13 @@ export function Chapter1MaryRoom({
       id="ch-1"
       ref={sectionRef}
       className="relative bg-[#FAF9F5] text-[#141413]"
-      aria-label="Глава II.1 — Загадка цвета и Комната Мэри"
+      aria-label="Глава 02 — Загадка цвета и Комната Мэри"
     >
       {/* PRE-EXIT BET SPREAD */}
       <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20 py-14 md:py-20">
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#141413]/12 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
-          <span className="text-[#FC4109] font-semibold">АКТ II · ОПТИКА · ГЛАВА II.1</span>
-          <span>ЗАГАДКА ЦВЕТА · стр. 22</span>
+          <span className="text-[#FC4109] font-semibold">АКТ II · ТЕАТР ВОСПРИЯТИЯ · ГЛАВА 02</span>
+          <span>КОМНАТА МЭРИ · стр. 22</span>
         </div>
 
         <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
@@ -393,7 +339,7 @@ export function Chapter1MaryRoom({
                 gesture: 'slash',
                 quote:
                   state.maryBet === 'learns_new'
-                    ? 'Классическая ловушка воображения! Вы записали ставку в пользу магии — я запомню это и проверю вас в Акте V, когда перед вами окажется ИИ.'
+                    ? 'Классическая ловушка воображения! Вы записали ставку в пользу магии — я запомню это и проверю вас в Акте IV, когда перед вами окажется ИИ.'
                     : 'Браво! Почти все попадаются на этот трюк, потому что не умеют по-настоящему представить «знать ВСЮ физику мозга». Мэри бы даже не моргнула.',
               }}
             />
@@ -596,157 +542,21 @@ export function Chapter1MaryRoom({
         </div>
       </div>
 
-      {/* BUG #3 FIX: Single Darkroom Optical Eyepiece Spectrometer (Zero duplicate drawer slider!) */}
+      {/* Poetic bridge directly into the Live WebGL Glass Optical Prism (Chapter2PrismAndAphantasia) */}
       <div className="bg-[#FAF9F5] border-b border-[#141413]/10">
-        <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20 py-16 space-y-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            <div className="lg:col-span-5 space-y-4">
-              <div className="font-mono-tech text-[10.5px] uppercase tracking-[0.14em] text-[#FC4109]">
-                ОПЫТ РУКАМИ · ПОЧЕМУ ЦВЕТ ЖИВЁТ НЕ В СВЕТЕ
-              </div>
-              <h3 className="font-serif-editorial text-[28px] md:text-[32px] leading-[1.14] text-[#141413]">
-                {ruTypo('Окуляр спектрометра: число, метамеризм и несуществующий пурпур')}
-              </h3>
-              <p className="text-[14.5px] leading-[1.64] text-[#454440]">
-                {ruTypo(
-                  'В сетчатке живут всего три типа датчиков — колбочки L, M и S. Они переводят бесцветную физику волн в три процента. Покрутите ползунок и нажмите «Пурпур» — вы увидите цвет, которого не существует ни в одном луче радуги.',
-                )}
-              </p>
-
-              <DossierTrigger
-                dossier="qualia-metamerism"
-                label="Почему Деннет не верит в парадокс Мэри + метамеризм 580 нм"
-                meta="Архивное досье II.1 · Уровень 2"
-                className="w-full"
-              />
-            </div>
-
-            <div className="lg:col-span-7">
-              <NoesisInstrumentFrame
-                code="ПРИБОР II.1 · ОКУЛЯР L / M / S"
-                badge="self-test"
-                telemetry={eyepiece.waveLabel}
-                surface="darkroom"
-                footnote="Колбочки S (442 нм) · M (538 нм) · L (595 нм) · Пурпур замыкает спектр в круг"
-              >
-                {/* Mode selector tabs */}
-                <div className="flex flex-wrap gap-2 pb-5 border-b border-[#FAF9F5]/10">
-                  {[
-                    { id: 'single' as const, label: 'Один луч (420–690 нм)' },
-                    { id: 'metamer' as const, label: 'Метамеризм (жёлтый обман)' },
-                    { id: 'magenta' as const, label: 'Пурпур (нет в радуге!)' },
-                  ].map((tab) => {
-                    const active = specMode === tab.id;
-                    return (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        onClick={() => setSpecMode(tab.id)}
-                        className={`v6-pill px-3.5 py-1.5 rounded-full text-[12px] font-medium border cursor-pointer ${
-                          active
-                            ? 'bg-[#FAF9F5] text-[#141413] border-[#FAF9F5]'
-                            : 'bg-[#191E28] text-[#FAF9F5]/78 border-[#FAF9F5]/14 hover:bg-[#222936]'
-                        }`}
-                      >
-                        {tab.label}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Big 96px Leica Optical Eyepiece + Live Cone Bars */}
-                <div className="mt-5 grid grid-cols-1 sm:grid-cols-12 gap-6 items-center">
-                  <div className="sm:col-span-4 flex flex-col items-center justify-center">
-                    <div className="relative w-28 h-28 rounded-full border border-[#FAF9F5]/22 p-2 bg-[#090B0E] flex items-center justify-center">
-                      <div
-                        className="w-full h-full rounded-full transition-colors duration-200 border border-[#FAF9F5]/15"
-                        style={{ backgroundColor: eyepiece.hex }}
-                      />
-                      {/* Optical crosshair lines */}
-                      <span
-                        aria-hidden="true"
-                        className="pointer-events-none absolute inset-x-4 top-1/2 h-[1px] bg-[#FAF9F5]/22"
-                      />
-                      <span
-                        aria-hidden="true"
-                        className="pointer-events-none absolute inset-y-4 left-1/2 w-[1px] bg-[#FAF9F5]/22"
-                      />
-                    </div>
-                    <div className="mt-2.5 text-center font-mono-tech text-[10.5px] uppercase tracking-[0.1em] text-[#FAF9F5]/72">
-                      {eyepiece.freqLabel}
-                    </div>
-                  </div>
-
-                  <div className="sm:col-span-8 space-y-3.5">
-                    <div>
-                      <div className="font-display font-bold text-[17px] text-[#FAF9F5]">
-                        {eyepiece.title}
-                      </div>
-                      <p className="text-[13px] leading-[1.58] text-[#C5CBD6] mt-1">
-                        {ruTypo(eyepiece.explain)}
-                      </p>
-                    </div>
-
-                    {/* Crisp L / M / S bar meters */}
-                    <div className="grid grid-cols-3 gap-2.5 font-mono-tech text-[11px]">
-                      {[
-                        { label: 'L (длин.)', val: eyepiece.lCone, color: '#FC4109' },
-                        { label: 'M (сред.)', val: eyepiece.mCone, color: '#10B981' },
-                        { label: 'S (корот.)', val: eyepiece.sCone, color: '#60A5FA' },
-                      ].map((cone) => (
-                        <div
-                          key={cone.label}
-                          className="p-2.5 rounded-xl bg-[#181D27] border border-[#FAF9F5]/10"
-                        >
-                          <div className="flex items-center justify-between text-[10px] text-[#9AA3B2]">
-                            <span>{cone.label}</span>
-                            <span className="text-[#FAF9F5] font-semibold">{cone.val}%</span>
-                          </div>
-                          <div className="mt-2 h-1.5 rounded-full bg-[#FAF9F5]/10 overflow-hidden">
-                            <div
-                              className="h-full rounded-full transition-all duration-200"
-                              style={{ width: `${cone.val}%`, backgroundColor: cone.color }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Wavelength Slider (active in single mode; moving it switches smoothly to single mode) */}
-                <div className="mt-6 pt-4 border-t border-[#FAF9F5]/10 space-y-2">
-                  <div className="flex items-center justify-between font-mono-tech text-[10.5px] text-[#9AA3B2]">
-                    <span>ДЛИНА ВОЛНЫ · 420–690 НМ</span>
-                    <span className="text-[#FAF9F5]">
-                      {specMode === 'single' ? `${wavelength} нм` : 'Потяните для ручной настройки'}
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={420}
-                    max={690}
-                    value={wavelength}
-                    onChange={(e) => {
-                      setSpecMode('single');
-                      setWavelength(Number(e.target.value));
-                    }}
-                    className="v6-wavelength-slider w-full cursor-pointer"
-                    aria-label="Длина волны фотона от 420 до 690 нанометров"
-                  />
-                </div>
-              </NoesisInstrumentFrame>
-            </div>
-          </div>
-
-          {/* Quiet Poetic Domino Reflection -> Aphantasia 5-sec Test below */}
-          <div className="pt-6 border-t border-[#141413]/10">
-            <p className="font-serif-editorial italic text-[16.5px] leading-[1.6] text-[#353431] max-w-2xl">
-              {ruTypo(
-                'Если краски живут не в фотонах, а на внутреннем экране мозга — значит ли это, что у всех людей этот экран вообще включён? Проверьте себя за 5 секунд прямо ниже.',
-              )}
-            </p>
-          </div>
+        <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20 py-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <p className="font-serif-editorial italic text-[17px] leading-[1.6] text-[#353431] max-w-2xl">
+            {ruTypo(
+              state.maryBet === 'learns_new'
+                ? 'Вы поставили на Чалмерса: никакая физика длин волн не содержит в себе сам свет переживания. Ниже — оптическое доказательство: посмотрите на цвет, которого вообще нет в природе.'
+                : state.maryBet === 'knows_all'
+                  ? 'Вы поставили на Деннета: полный мозг-аналитик якобы вывел бы цвет из формул. Проверьте это на живой стеклянной призме ниже — там рождается цвет, не имеющий длины волны.'
+                  : 'Если в солнечном спектре нет красного, откуда он берётся? Проверьте на стеклянной призме ниже: там рождается цвет, которого вообще нет в физике.',
+            )}
+          </p>
+          <span className="font-mono-tech text-[10.5px] uppercase tracking-[0.14em] text-[#FC4109] shrink-0">
+            ПРИЗМА WEBGL ↓
+          </span>
         </div>
       </div>
     </section>

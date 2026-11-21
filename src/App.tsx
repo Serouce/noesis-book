@@ -17,7 +17,7 @@ import { BookHud } from './v7/components/BookHud';
 import { BookIndexDrawer } from './v7/components/BookIndexDrawer';
 import { DossierProvider } from './v9/components/DossierContext';
 import { NoesisDossierSheet } from './v9/components/NoesisDossierSheet';
-import { prefetchMriBrain } from './v9/three/mriBrainLoader';
+import { prefetchHiResBrain } from './v10/webgl/brainHiresLoader';
 import { ACTS_META, getActMeta } from './v9/data/actsMeta';
 import {
   buildHashUrl,
@@ -194,7 +194,7 @@ function NoesisBookShell() {
     if ('scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual';
     }
-    prefetchMriBrain();
+    prefetchHiResBrain();
 
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const lenis = new Lenis({

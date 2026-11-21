@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowDown, Volume2, VolumeX } from 'lucide-react';
+import { Volume2, VolumeX } from 'lucide-react';
 import { useExplorer, type TurntableMode } from '../context/ExplorerContext';
 import { DossierTrigger } from '../../v9/components/NoesisDossierSheet';
 import { LabHonestyBadge } from '../../v9/components/NoesisInstrumentFrame';
@@ -35,7 +35,7 @@ const MODES: ModeSpec[] = [
     shaftIntact: true,
     headline: 'Обе антенны замкнуты в одну живую вспышку',
     description:
-      'Нижние ветви клетки принимают сырой сигнал мира, верхние — внутренние прогнозы мозга из Акта III. Когда оба потока встречаются в стволе, клетка запускает сложную живую волну — и вы осознаёте мир.',
+      'Нижние ветви клетки принимают сырой сигнал мира, верхние — внутренние прогнозы мозга из Акта II. Когда оба потока встречаются в стволе, клетка запускает сложную живую волну — и вы осознаёте мир.',
     accent: '#004EDF',
   },
   {
@@ -54,28 +54,28 @@ const MODES: ModeSpec[] = [
   {
     id: 'rem',
     label: 'REM-сон / Кетамин',
-    shortExplain: 'Яркие сны · тело отрезано от мира',
+    shortExplain: 'Диссоциативный сон · тело отрезано',
     badge: 'CLUB SILENCIO',
     complexityLabel: 'ВЫСОКАЯ СЛОЖНОСТЬ',
     needleDown: false,
     shaftIntact: true,
     headline: 'Игла поднята с диска — но музыка продолжает играть',
     description:
-      'В фазе быстрых снов (REM) или под кетамином вход от органов чувств отрезан: игла физически отрывается от пластинки. Но верхняя петля коры сама раскачивает нейрон — внутри неподвижного тела полыхают ярчайшие сны.',
+      'В фазе быстрых снов (REM) или под субанестетической дозой кетамина (диссоциативный анестетик) вход от органов чувств отрезан: игла отрывается от пластинки. Но верхняя петля коры сама раскачивает нейрон — внутри неподвижного тела полыхают ярчайшие сны.',
     cinemaWhisper: '«No hay banda» — оркестра нет, внешнего входа нет, а мелодия опыта звучит.',
     accent: '#0D7A5F',
   },
   {
     id: 'psilocybin',
     label: 'Псилоцибин',
-    shortExplain: 'Рецепторы 5-HT2A на верхушке клетки',
+    shortExplain: 'Психоделик · рецепторы 5-HT2A',
     badge: 'ГИПЕРСВЯЗНОСТЬ',
     complexityLabel: 'СВЕРХВЫСОКАЯ СЛОЖНОСТЬ',
     needleDown: true,
     shaftIntact: true,
     headline: 'Верхние фильтры ослабевают — мозг сбрасывает шаблоны',
     description:
-      'Молекула псилоцибина связывается с рецепторами 5-HT2A прямо на верхней антенне этого нейрона. Привычные прогнозы (приоры) слабеют, и далёкие зоны коры начинают перекликаться напрямую (Ort et al., 2023; Siegel et al., Nature 2024).',
+      'Молекула псилоцибина (классический психоделик) связывается с серотониновыми рецепторами 5-HT2A на верхней антенне этого нейрона. Привычные прогнозы (приоры) слабеют, и далёкие зоны коры начинают перекликаться напрямую (Ort et al., 2023; Siegel et al., Nature 2024).',
     accent: '#C84319',
   },
   {
@@ -88,7 +88,7 @@ const MODES: ModeSpec[] = [
     shaftIntact: false,
     headline: 'Ствол нейрона рвётся пополам — плёнка обрывается посреди такта',
     description:
-      'Пропофол не «усыпляет» органы чувств — сигналы по-прежнему приходят в кору. Но препарат через тормозные ГАМК-А рецепторы электрически перерезает середину ствола пирамидальной клетки (Suzuki & Larkum, Cell 2020): мир не «темнеет» — он мгновенно прекращается.',
+      'Пропофол не «усыпляет» органы чувств — сигналы всё ещё приходят в кору. Но через главные тормозные каналы (ГАМК-А) он обрывает связку между антеннами клетки (по модели дендритной развязки Suzuki & Larkum, Cell 2020): мир не «темнеет» — он мгновенно прекращается.',
     cinemaWhisper: 'Считайте вслух: 10… 9… 8… — и резкий обрыв в тишину прямо посреди ноты.',
     accent: '#FC4109',
   },
@@ -102,7 +102,7 @@ const MODES: ModeSpec[] = [
  * 3. Muted-First Propofol drama works at 100% impact even with sound muted + crisp 6ms Web Audio cut when opt-in audio is ON.
  * 4. Level-2 Archival Dossier trigger ("larkum-dendrites").
  */
-export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntableProps) {
+export function Chapter5CajalTurntable({ onNextChapter: _onNextChapter }: Chapter5CajalTurntableProps) {
   const { state, setTurntableMode } = useExplorer();
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [infusionStage, setInfusionStage] = useState<'idle' | 'infusing' | 'snapping' | 'settled'>('idle');
@@ -392,7 +392,7 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
       id="ch-5"
       ref={stageSectionRef}
       className="relative bg-[#FAF9F5] text-[#141413] pt-24 pb-0 md:pt-28"
-      aria-label="Глава IV.2 — Клеточный транзистор и тишина"
+      aria-label="Глава 06 — Клеточный транзистор и тишина"
     >
       {/* FULL-SCREEN HARD CUT-TO-BLACK (Muted-First dramatic choreography!) */}
       {cutBlackPhase !== 'none' && (
@@ -412,7 +412,7 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
       <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20">
         {/* Folio Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#141413]/12 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
-          <span className="text-[#FC4109] font-semibold">АКТ IV · ПОД ЧЕРЕПОМ · ГЛАВА IV.2</span>
+          <span className="text-[#FC4109] font-semibold">АКТ III · ПОД ЧЕРЕПОМ · ГЛАВА 06</span>
           <span>КЛЕТОЧНЫЙ ТРАНЗИСТОР · ×1000 · стр. 90</span>
         </div>
 
@@ -432,7 +432,7 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
                 'Нейробиолог Мэтью Ларкум открыл поразительный клеточный переключатель: у ',
               )}
               <strong className="font-semibold text-[#141413]">пирамидального нейрона 5-го слоя</strong> две антенны. Нижняя слушает сырой мир, а верхняя — те самые{' '}
-              <em>внутренние прогнозы из Акта III</em>. Пока ствол между ними цел — сознание горит.
+              <em>внутренние прогнозы из Акта II</em>. Пока ствол между ними цел — сознание горит.
             </p>
           </div>
         </div>
@@ -526,7 +526,7 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
           {/* LEFT PAGE: Cajal Pyramidal Neuron */}
           <div className="lg:col-span-6 rounded-2xl border border-[#141413]/14 bg-[#F5F3EC] p-6 flex flex-col justify-between">
             <div className="flex items-center justify-between gap-2 font-mono-tech text-[10px] uppercase tracking-[0.11em] text-[#5E5D59]">
-              <span className="whitespace-nowrap">РИС. V.1 · НЕЙРОН СЛОЯ V</span>
+              <span className="whitespace-nowrap">РИС. III.1 · НЕЙРОН СЛОЯ V</span>
               <span
                 className={`whitespace-nowrap ${
                   effectiveShaftIntact ? 'text-[#0D7A5F] font-semibold' : 'text-[#FC4109] font-semibold'
@@ -551,7 +551,7 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
                   СЛОЙ I · ВЕРХНЯЯ АНТЕННА
                 </text>
                 <text x="14" y="52" fill="#004EDF" fontSize="11.5" fontWeight="600" fontFamily="JetBrains Mono Variable, monospace">
-                  ПРОГНОЗЫ МОЗГА (АКТ III)
+                  ПРОГНОЗЫ МОЗГА (АКТ II)
                 </text>
 
                 <text x="14" y="286" fill="#5E5D59" fontSize="11" fontFamily="JetBrains Mono Variable, monospace">
@@ -729,7 +729,7 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
           {/* RIGHT PAGE: Dieter Rams Laboratory Turntable-Oscilloscope */}
           <div className="lg:col-span-6 rounded-2xl border border-[#141413]/14 bg-[#EFECE3] p-6 flex flex-col justify-between">
             <div className="flex items-center justify-between gap-2 font-mono-tech text-[10px] uppercase tracking-[0.11em] text-[#5E5D59]">
-              <span className="whitespace-nowrap">ПРИБОР V.2 · DIETER RAMS</span>
+              <span className="whitespace-nowrap">ПРИБОР III.2 · DIETER RAMS</span>
               <span className="font-semibold whitespace-nowrap" style={{ color: activeAccent }}>
                 {isPropofolInfusing ? 'ИНФУЗИЯ · 10… 9… 8…' : mode.complexityLabel}
               </span>
@@ -830,34 +830,19 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
           <DossierTrigger
             dossier="larkum-dendrites"
             label="Как общие анестетики обрывают кальциевый спайк (Suzuki & Larkum, Cell 2020)"
-            meta="Архивное досье IV.2 · Уровень 2"
+            meta="Архивное досье III.3 · Уровень 2"
           />
         </div>
       </div>
 
-      {/* SMOOTH "LIGHTS-OUT" ATMOSPHERIC TRANSITION BRIDGE INTO DARK CHAPTER VI */}
+      {/* SMOOTH "LIGHTS-OUT" ATMOSPHERIC DECOMPRESSION INTO DARK ACT IV BRIDGE (single CTA lives in ActBottomTurn below!) */}
       <div
-        className="mt-14 pt-14 pb-16 px-5 md:px-12 lg:px-20"
+        aria-hidden="true"
+        className="mt-12 h-28 w-full pointer-events-none"
         style={{
-          background: 'linear-gradient(180deg, #FAF9F5 0%, #DFDDD5 28%, #282C34 72%, #111419 100%)',
+          background: 'linear-gradient(180deg, #FAF9F5 0%, #DCD9CF 30%, #242830 74%, #0E1117 100%)',
         }}
-      >
-        <div className="max-w-[1240px] mx-auto pt-8 flex flex-wrap items-center justify-between gap-6">
-          <p className="font-serif-editorial italic text-[17.5px] leading-[1.55] text-[#E3E7EF] max-w-2xl">
-            {ruTypo(
-              'Вы только что видели, как сознание может ярко гореть внутри парализованного тела (как в REM-сне с поднятой иглой). Как врачу в реанимации услышать этот тихий свет у пациента в коме?',
-            )}
-          </p>
-          <button
-            type="button"
-            onClick={onNextChapter}
-            className="v6-pill h-11 px-5 rounded-full bg-[#FAF9F5] hover:bg-[#EAE7DD] text-[#141413] font-mono-tech text-[11px] uppercase tracking-[0.12em] font-semibold inline-flex items-center gap-2 cursor-pointer shadow-lg"
-          >
-            <span>Войти в реанимацию · Глава IV.3</span>
-            <ArrowDown className="w-3.5 h-3.5 text-[#0D7A5F]" />
-          </button>
-        </div>
-      </div>
+      />
     </section>
   );
 }

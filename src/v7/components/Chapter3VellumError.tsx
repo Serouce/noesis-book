@@ -165,13 +165,13 @@ export function Chapter3VellumError({ onNextChapter }: Chapter3VellumErrorProps)
     <section
       id="ch-3"
       className="relative bg-[#FAF9F5] text-[#141413] pt-14 pb-20 md:pt-18 md:pb-24 border-b border-[#141413]/10"
-      aria-label="Глава III.1 — Управляемая галлюцинация"
+      aria-label="Глава 03 — Управляемая галлюцинация"
     >
       <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20">
         {/* Folio Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#141413]/12 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
-          <span className="text-[#FC4109] font-semibold">АКТ III · КОНСТРУКТОР «Я» · ГЛАВА III.1</span>
-          <span>УПРАВЛЯЕМАЯ ГАЛЛЮЦИНАЦИЯ · стр. 48</span>
+          <span className="text-[#FC4109] font-semibold">АКТ II · ТЕАТР ВОСПРИЯТИЯ · ГЛАВА 03</span>
+          <span>УПРАВЛЯЕМАЯ ГАЛЛЮЦИНАЦИЯ · стр. 40</span>
         </div>
 
         {/* Opening Editorial Prose */}
@@ -207,7 +207,7 @@ export function Chapter3VellumError({ onNextChapter }: Chapter3VellumErrorProps)
         <div ref={stageCardRef} className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           <div className="lg:col-span-8 flex flex-col">
             <NoesisInstrumentFrame
-              code="ПРИБОР III.1 · ОПТИКА ПРЕДСКАЗАНИЯ «DREI GLÄSER»"
+              code="ПРИБОР II.2 · ОПТИКА ПРЕДСКАЗАНИЯ «DREI GLÄSER»"
               badge="reconstruction"
               telemetry={`ПРИОР: ${priorWeight}%`}
               surface="vellum"
@@ -562,11 +562,11 @@ export function Chapter3VellumError({ onNextChapter }: Chapter3VellumErrorProps)
 
             <div className="rounded-2xl border border-[#141413]/12 bg-[#F5F3EB] p-5 space-y-3">
               <div className="font-mono-tech text-[10.5px] uppercase tracking-[0.13em] text-[#FC4109]">
-                ДАЛЬШЕ В АКТЕ III · ГЛАВА III.2
+                ДАЛЬШЕ В ГЛАВЕ 03 · МОНТАЖ ВРЕМЕНИ
               </div>
               <p className="font-serif-editorial italic text-[15.5px] leading-[1.55] text-[#282725]">
                 {ruTypo(
-                  'Если мозг так легко дорисовывает внешний мир — не дорисовывает ли он и самого рассказчика внутри нашей головы? Проверим, разрезав связь между полушариями.',
+                  'Если мозг дорисовывает картинку прямо перед глазами, не редактирует ли он и само «сейчас»? Проверим за 5 секунд на живой оптической вспышке.',
                 )}
               </p>
               <button
@@ -574,7 +574,7 @@ export function Chapter3VellumError({ onNextChapter }: Chapter3VellumErrorProps)
                 onClick={onNextChapter}
                 className="pt-1 font-mono-tech text-[11px] uppercase tracking-[0.12em] text-[#141413] hover:text-[#FC4109] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
               >
-                <span>К Главе III · Расколотый штурвал</span>
+                <span>К опыту Flash-Lag (80 мс)</span>
                 <ArrowDown className="w-3.5 h-3.5" />
               </button>
             </div>
