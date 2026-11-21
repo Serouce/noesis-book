@@ -32,37 +32,39 @@ const STORAGE_KEY = 'noesis_v9_state_v1';
 const SCHEMA_VERSION = 1;
 
 export interface ExplorerState {
-  // Табл. 00 — Иллюзия Муни + Пролог + Акт I (Волна 2)
+  // Акт I — Иллюзия Муни + Гл. 01 «Что такое сознание?»
   mooneyGuess: MooneyGuess;
   mooneyExposed: boolean;
   mooneySeconds: number | null;
+  ch1Explored: boolean;
+  // Legacy v9 fields preserved until coordinator removes unused old chapter files
   prologueExplored: boolean;
   cerebellumTested: boolean;
   hepTested: boolean;
-  // Акт II — Комната Мэри + Афантазия + Сперлинг + Flash-Lag (Волна 2)
+  // Акт II — Комната Мэри + Афантазия + Flash-Lag (legacy sperling fields kept for tsc compatibility)
   maryBet: MaryBet;
   aphantasiaScore: number | null;
   sperlingWholeScore: number | null;
   sperlingCuedScore: number | null;
   flashLagCompleted: boolean;
-  // Акт III — Сдвиг кальки («Три пальца») + Разрезанный корешок
+  // Акт II / III — Сдвиг кальки («Три пальца») + Расколотый штурвал
   vellumTriggered: boolean;
   splitBrainCut: boolean;
   splitBrainEverCut: boolean;
   splitBrainCard: SplitBrainCard;
-  // Акт IV — Большое пари + COGITATE 2025 + Проигрыватель + Реанимация
+  // Акт III — Большое пари + COGITATE 2025 + Проигрыватель
   wagerUnsealed: boolean;
   cogitateBet: CogitateBet;
   turntableMode: TurntableMode;
   nremExperienced: boolean;
   remExperienced: boolean;
   propofolExperienced: boolean;
+  // Акт IV — Реанимация + Красная закладка NY 2024 + Трибунал ИИ
   icuDiagnoses: Partial<Record<'p1' | 'p2' | 'p3', IcuVerdict>>;
-  // Акт V — Красная закладка-ляссе (0..5) + Трибунал ИИ (5 модулей Butlin 2025)
   ribbonBoundaryIndex: number;
   ribbonChecked: boolean;
   tribunalModules: Record<string, boolean>;
-  // Навигация и архив v9
+  // Навигация и архив v10
   visitedActs: Record<string, boolean>;
   dossiersRead: string[];
 }
@@ -81,6 +83,7 @@ interface ExplorerContextValue {
   state: ExplorerState;
   setMooneyGuess: (guess: Exclude<MooneyGuess, null>) => void;
   setMooneyResult: (seconds: number) => void;
+  setCh1Explored: (v: boolean) => void;
   setPrologueExplored: (v: boolean) => void;
   setCerebellumTested: (v: boolean) => void;
   setHepTested: (v: boolean) => void;
@@ -122,6 +125,7 @@ const INITIAL_STATE: ExplorerState = {
   mooneyGuess: null,
   mooneyExposed: false,
   mooneySeconds: null,
+  ch1Explored: false,
   prologueExplored: false,
   cerebellumTested: false,
   hepTested: false,
@@ -200,7 +204,7 @@ function sanitizePersistedState(raw: unknown): ExplorerState {
     ? d.visitedActs
     : {}) as Record<string, unknown>;
   const visitedActs: Record<string, boolean> = { 'act-1': true };
-  for (const k of ['act-1', 'act-2', 'act-3', 'act-4', 'act-5']) {
+  for (const k of ['act-1', 'act-2', 'act-3', 'act-4']) {
     if (rawActs[k] === true) visitedActs[k] = true;
   }
 
@@ -233,6 +237,7 @@ function sanitizePersistedState(raw: unknown): ExplorerState {
       typeof d.mooneySeconds === 'number' && Number.isFinite(d.mooneySeconds) && d.mooneySeconds >= 0
         ? Number(d.mooneySeconds.toFixed(1))
         : null,
+    ch1Explored: d.ch1Explored === true,
     prologueExplored: d.prologueExplored === true,
     cerebellumTested: d.cerebellumTested === true,
     hepTested: d.hepTested === true,
@@ -333,6 +338,11 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
         mooneyExposed: true,
         mooneySeconds: prev.mooneySeconds ?? Math.max(0.4, Number(seconds.toFixed(1))),
       })),
+    [],
+  );
+
+  const setCh1Explored = useCallback(
+    (ch1Explored: boolean) => setState((prev) => ({ ...prev, ch1Explored })),
     [],
   );
 
@@ -524,31 +534,30 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
   const completedChapters = useMemo<Record<string, boolean>>(
     () => ({
       'plate-00': state.mooneyExposed,
-      prologue: state.prologueExplored,
-      'ch-cerebellum': state.cerebellumTested,
-      'ch-homunculus': state.hepTested,
-      'ch-1': state.maryBet !== null,
+      'ch-01': state.ch1Explored,
+      'ch-1': state.maryBet !== null || state.aphantasiaScore !== null,
       'ch-aphantasia': state.aphantasiaScore !== null,
-      'ch-overflow': state.sperlingCuedScore !== null || state.flashLagCompleted,
-      'ch-3': state.vellumTriggered,
+      'ch-3': state.vellumTriggered || state.flashLagCompleted,
       'ch-2': state.splitBrainEverCut,
       'ch-4': state.cogitateBet !== null,
       'ch-5': state.remExperienced || state.propofolExperienced || state.nremExperienced,
       'ch-6': icuStats.attempted === 3,
-      'ch-7': state.ribbonChecked,
+      'ch-7': state.ribbonChecked || activeTribunalCount > 0,
       'ch-8': true,
+      // Legacy aliases preserved for un-deleted files before coordinator cleanup
+      prologue: state.prologueExplored,
+      'ch-cerebellum': state.cerebellumTested,
+      'ch-homunculus': state.hepTested,
+      'ch-overflow': state.flashLagCompleted,
     }),
-    [state, icuStats.attempted],
+    [state, icuStats.attempted, activeTribunalCount],
   );
 
   const EXPERIMENT_KEYS = useMemo(
     () => [
       'plate-00',
-      'ch-cerebellum',
-      'ch-homunculus',
+      'ch-01',
       'ch-1',
-      'ch-aphantasia',
-      'ch-overflow',
       'ch-3',
       'ch-2',
       'ch-4',
@@ -566,51 +575,47 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
     [EXPERIMENT_KEYS, completedChapters],
   );
 
-  // Strict precondition-masked Consistency Engine (Bug #11 fix: NEVER falsely praises skipped key bets!)
+  // Strict precondition-masked Consistency Engine (4-Act v10 layout)
   const consistency = useMemo<ConsistencyVerdict>(() => {
-    // 0. If fewer than 3 core experiments completed -> clearly incomplete
     if (completedCount < 3) {
       return {
         author: 'seth',
         stampTitle: 'НЕЗАПОЛНЕННЫЙ ПРОТОКОЛ',
-        stampSubtitle: `Пройдено ${completedCount} из ${totalExperiments} опытов`,
+        stampSubtitle: `Пройдено ${completedCount} из ${totalExperiments} глав`,
         commentary:
-          'Вы прошли меньше трёх ключевых экспериментов. Чтобы редакция смогла проверить ваши интуиции на противоречие, сделайте ставки в Комнате Мэри, COGITATE и в Акте V.',
+          'Вы прошли меньше трёх ключевых этапов. Чтобы редакция смогла проверить ваши интуиции на противоречие, сделайте ставки в Комнате Мэри (Акт II), в пари COGITATE (Акт III) и в Акте IV.',
         isContradiction: false,
         isIncomplete: true,
       };
     }
 
-    // 1. Philosophical debate (Chalmers actually defends both; Dennett teases the tension!)
     if (state.maryBet === 'learns_new' && activeTribunalCount >= 4) {
       return {
         author: 'dennett',
         stampTitle: 'ШПИЛЬКА Д. ДЕННЕТА',
         stampSubtitle: 'Полемическая заметка на полях',
         commentary:
-          'Любопытный союз! В Акте II вы решили, что физика не объясняет красный цвет Мэри — а в Акте V выдали опыт кремниевой машине по архитектурным модулям. Сам Чалмерс защищает обе позиции сразу, но мне всё равно кажется, что вы незаметно сдали квалиа вычислительной схеме.',
+          'Любопытный союз! В Акте II вы решили, что физика не объясняет красный цвет Мэри — а в Акте IV выдали опыт кремниевой машине по архитектурным модулям. Сам Чалмерс защищает обе позиции сразу, но мне всё равно кажется, что вы незаметно сдали квалиа вычислительной схеме.',
         isContradiction: false,
         isPolemic: true,
       };
     }
 
-    // 2. Reverse paradox (requires Mary's Room bet + ribbon checked!)
     if (state.maryBet === 'knows_all' && state.ribbonChecked && state.ribbonBoundaryIndex >= 4) {
       return {
         author: 'chalmers',
         stampTitle: 'БИОЛОГИЧЕСКИЙ ШОВИНИЗМ',
         stampSubtitle: 'Замечание Д. Чалмерса',
         commentary:
-          'Любопытный парадокс: вы отмахнулись от загадки Мэри как от «просто обработки данных», но красной закладкой отсекли пчёл и осьминогов, оставив сознание узкому клубу с человеческой корой.',
+          'Любопытный парадокс: вы отмахнулись от загадки Мэри как от «просто обработки данных», но красной закладкой в Акте IV отсекли пчёл и осьминогов, оставив сознание узкому клубу с человеческой корой.',
         isContradiction: true,
       };
     }
 
-    // 3. Precondition check before praising consistency: did reader actually answer Mary + COGITATE + Act V?
     const missingAnchors: string[] = [];
     if (state.maryBet === null) missingAnchors.push('Комната Мэри (Акт II)');
-    if (state.cogitateBet === null) missingAnchors.push('пари COGITATE (Акт IV)');
-    if (!state.ribbonChecked) missingAnchors.push('красная закладка NY 2024 (Акт V)');
+    if (state.cogitateBet === null) missingAnchors.push('пари COGITATE (Акт III)');
+    if (!state.ribbonChecked) missingAnchors.push('красная закладка NY 2024 (Акт IV)');
 
     if (missingAnchors.length > 0) {
       return {
@@ -623,7 +628,6 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
       };
     }
 
-    // 4. Bold bet on a single pure theory in COGITATE
     if (state.cogitateBet === 'iit' || state.cogitateBet === 'gnwt') {
       return {
         author: 'seth',
@@ -635,7 +639,6 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
       };
     }
 
-    // 5. Earned strict consistency! (All 3 philosophical anchors answered without contradiction!)
     return {
       author: 'seth',
       stampTitle: 'СТРОГАЯ ПОСЛЕДОВАТЕЛЬНОСТЬ',
@@ -659,6 +662,7 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
       state,
       setMooneyGuess,
       setMooneyResult,
+      setCh1Explored,
       setPrologueExplored,
       setCerebellumTested,
       setHepTested,
@@ -691,6 +695,7 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
       state,
       setMooneyGuess,
       setMooneyResult,
+      setCh1Explored,
       setPrologueExplored,
       setCerebellumTested,
       setHepTested,

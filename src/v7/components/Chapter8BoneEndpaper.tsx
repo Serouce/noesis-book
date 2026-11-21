@@ -16,37 +16,44 @@ interface Chapter8BoneEndpaperProps {
 const FIVE_TAKEAWAYS = [
   {
     num: '01',
-    ref: 'Акт I',
-    title: 'Опыт рождает не число клеток, а связная кора внутри тела',
-    text: '80% нейронов (69 млрд) лежат в мозжечке без сознания. Зато 16 млрд клеток коры с обратными петлями, сеть SCAN и ритм сердца сшивают разум с живым телом.',
+    ref: 'Акт I · Гл. 01',
+    title: 'Внутренний свет нельзя свести к шестерням и рефлексам',
+    text: 'Декарт показал несомненность собственного опыта, Лейбниц — разрыв между деталями и чувством, Нагель — формулу «каково это», а Чалмерс — Трудную проблему.',
   },
   {
     num: '02',
-    ref: 'Акты II & III',
+    ref: 'Акт II · Гл. 02–03',
     title: 'Сознание — не прямой эфир, а управляемая галлюцинация',
-    text: 'Цвет и время (~80 мс постдикции) монтируются внутри, внутренний экран у всех разный, а говорящее полушарие мгновенно сочиняет алиби для скрытых решений.',
+    text: 'Цвет рождается в зрительной коре, внутренний экран у всех разный, а чтобы компенсировать задержку сигнала, мозг предсказывает мир и монтирует время (~80 мс).',
   },
   {
     num: '03',
-    ref: 'Акт IV',
+    ref: 'Акт III · Гл. 04–06',
     title: 'Выключатель прячется в связности и клеточных мостиках',
-    text: 'Спор 2025 года пробил обе макротеории. На клеточном уровне свет сознания зависит от того, сшивает ли пирамидальный нейрон прогнозы с миром.',
+    text: '69 млрд клеток мозжечка молчат, спор COGITATE 2025 пробил обе макротеории, а на уровне 5-го слоя коры пропофол разрывает кальциевый ствол пирамидального нейрона.',
   },
   {
     num: '04',
-    ref: 'Акт IV',
-    title: 'Сознание можно услышать даже в полной тишине',
-    text: 'Каждый четвёртый пациент в «вегетативной» коме сохраняет скрытый разум — и радар сложности эха PCI* (порог 0.31) помогает его услышать.',
+    ref: 'Акт IV · Гл. 07',
+    title: 'Сознание горит там, где мы привыкли видеть тишину',
+    text: 'Каждый четвёртый пациент в «вегетативной» коме сохраняет скрытый разум (NEJM 2024, порог PCI* 0.31), а Нью-Йоркская декларация 2024 признала вероятность опыта у осьминогов, крабов и пчёл.',
   },
   {
     num: '05',
-    ref: 'Акт V',
-    title: 'Разум шире человеческой коры — но речь ИИ ещё не чувство',
-    text: 'Осьминоги, крабы и пчёлы официально вошли в круг вероятных носителей опыта. А машине недостаточно красиво говорить «мне страшно» — важна её архитектура и уязвимость.',
+    ref: 'Акт IV · Гл. 08',
+    title: 'Блестящая речь машины — ещё не субъект внутри',
+    text: 'От сдвига к кремнию и выцветающих квалиа до монолита HAL 9000: текст диалога можно сымитировать (73% с ролевой маской), но подлинное чувство требует архитектуры и живой уязвимости.',
   },
 ];
 
 const BIBLIOGRAPHY = [
+  {
+    year: '1974 / 95',
+    journal: 'Phil. Review / JCS',
+    title: 'What Is It Like to Be a Bat? & Facing Up to the Problem of Consciousness',
+    authors: 'T. Nagel (1974); D. J. Chalmers (1995)',
+    note: 'Базовое определение субъективного опыта и разграничение «лёгких» (функциональных) и Трудной проблемы сознания.',
+  },
   {
     year: '2025',
     journal: 'Nature, Vol. 642',
@@ -59,21 +66,14 @@ const BIBLIOGRAPHY = [
     journal: 'Nature (2023 & Feb 2026)',
     title: 'A somato-cognitive action network alternates with effector regions in motor cortex (SCAN)',
     authors: 'E. M. Gordon, N. U. F. Dosenbach и др. (Nature 2023; Parkinson’s N = 863, Nature 2026)',
-    note: 'Взломанный гомункулус Пенфилда: 3 вставки сети SCAN связывают моторную кору с планом, осанкой и внутренними органами.',
+    note: 'Обновлённая карта моторной коры: три вставки сети SCAN связывают действие с планом, осанкой и внутренними органами.',
   },
   {
-    year: '2020/22',
-    journal: 'PNAS (2020) / eLife (2022)',
-    title: 'Heart–brain interactions shape somatosensory perception & The pupillary light response in aphantasia',
-    authors: 'E. Al, A. Villringer (PNAS 2020); L. Kay, J. Pearson и др. (eLife 2022)',
-    note: 'Затвор сердца в фазе систолы повышает порог ощущений, а зрачковый рефлекс объективно отличает афантазию от яркого воображения.',
-  },
-  {
-    year: '2000/08',
-    journal: 'Science (2000) / Current Biology (2008)',
-    title: 'Motion Integration and Postdiction in Visual Awareness & Intact navigation in blindsight (Patient TN)',
-    authors: 'D. M. Eagleman & T. J. Sejnowski (Science 2000); B. de Gelder и др. (Curr Biol 2008)',
-    note: 'Окно постдикции ~80 мс при монтаже настоящего момента и подкорковая навигация без первичной зрительной коры V1.',
+    year: '2000/22',
+    journal: 'Science (2000) / eLife (2022)',
+    title: 'Motion Integration and Postdiction in Visual Awareness & The pupillary light response in aphantasia',
+    authors: 'D. M. Eagleman & T. J. Sejnowski (Science 2000); L. Kay, J. Pearson и др. (eLife 2022)',
+    note: 'Окно постдикции ~80 мс при монтаже настоящего момента и зрачковый рефлекс как объективный маркер внутреннего экрана.',
   },
   {
     year: '2024',
@@ -145,9 +145,9 @@ export function Chapter8BoneEndpaper({
 
   const handleShareSpoilerFree = async () => {
     const cleanBaseUrl = typeof window !== 'undefined' ? `${window.location.href.split('#')[0]}#/act-1` : '';
-    const intro = state.mooneySeconds
-      ? `Я прошёл интерактивный атлас сознания NOESIS: ${state.mooneySeconds.toFixed(1)} сек разгадывал первый оттиск,`
-      : `Я проверил свою картину сознания в интерактивном атласе NOESIS:`;
+    const intro = state.mooneyExposed
+      ? `Я прошёл интерактивную книгу о сознании NOESIS:`
+      : `Я проверил свою картину сознания в книге NOESIS:`;
     const text = `${intro} верно поставил ${icuStats.correct}/3 диагнозов в реанимации и получил штамп «${consistency.stampTitle}». Проверь свой мозг без спойлеров: ${cleanBaseUrl}`;
 
     let ok = false;
@@ -212,12 +212,12 @@ export function Chapter8BoneEndpaper({
     <section
       id="ch-8"
       className="relative bg-[#FAF9F5] text-[#141413]"
-      aria-label="Глава V.2 — Синтез, Форзац и Контрольная проба №0"
+      aria-label="Глава 08 — Синтез, Форзац и Контрольная проба №0"
     >
       {/* PART 8.1: SYNTHESIS SPREAD */}
       <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20 pt-24 pb-16 md:pt-28 md:pb-20 border-b border-[#141413]/10">
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#141413]/12 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
-          <span className="text-[#FC4109] font-semibold">АКТ V · ГЛАВА V.2 · СИНТЕЗ И ФОРЗАЦ</span>
+          <span className="text-[#FC4109] font-semibold">АКТ IV · ГЛАВА 08 · СИНТЕЗ И ФОРЗАЦ</span>
           <span>ИТОГИ КНИГИ · стр. 138</span>
         </div>
 
@@ -304,10 +304,23 @@ export function Chapter8BoneEndpaper({
                   className="text-left p-3.5 rounded-xl bg-[#FAF9F5]/85 hover:bg-[#FAF9F5] border border-[#141413]/10 hover:border-[#141413]/28 transition-colors cursor-pointer"
                 >
                   <div className="font-mono-tech text-[9.5px] uppercase tracking-[0.11em] text-[#5E5D59]">
-                    Акт I · Слепота Муни
+                    Акт I · Кот Муни
                   </div>
-                  <div className="font-display font-bold text-[19px] mt-1 text-[#141413]">
-                    {state.mooneySeconds ? `${state.mooneySeconds.toFixed(1)} сек` : 'Пройти →'}
+                  <div className="font-display font-bold text-[17px] mt-1 text-[#141413]">
+                    {state.mooneyExposed ? 'Проявлен ✓' : 'Пройти →'}
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => jumpCell('act-1', 'ch-01')}
+                  className="text-left p-3.5 rounded-xl bg-[#FAF9F5]/85 hover:bg-[#FAF9F5] border border-[#141413]/10 hover:border-[#141413]/28 transition-colors cursor-pointer"
+                >
+                  <div className="font-mono-tech text-[9.5px] uppercase tracking-[0.11em] text-[#5E5D59]">
+                    Акт I · Гл. 01 с нуля
+                  </div>
+                  <div className="font-display font-semibold text-[14.5px] mt-1.5 text-[#141413]">
+                    {state.ch1Explored ? 'Разобрано ✓' : 'Открыть →'}
                   </div>
                 </button>
 
@@ -326,11 +339,24 @@ export function Chapter8BoneEndpaper({
 
                 <button
                   type="button"
-                  onClick={() => jumpCell('act-4', 'ch-4')}
+                  onClick={() => jumpCell('act-2', 'ch-aphantasia')}
                   className="text-left p-3.5 rounded-xl bg-[#FAF9F5]/85 hover:bg-[#FAF9F5] border border-[#141413]/10 hover:border-[#141413]/28 transition-colors cursor-pointer"
                 >
                   <div className="font-mono-tech text-[9.5px] uppercase tracking-[0.11em] text-[#5E5D59]">
-                    Акт IV · COGITATE 2025
+                    Акт II · Экран (Афантазия)
+                  </div>
+                  <div className="font-display font-bold text-[19px] mt-1 text-[#004EDF]">
+                    {state.aphantasiaScore !== null ? `${state.aphantasiaScore} / 5` : '5-сек тест →'}
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => jumpCell('act-3', 'ch-4')}
+                  className="text-left p-3.5 rounded-xl bg-[#FAF9F5]/85 hover:bg-[#FAF9F5] border border-[#141413]/10 hover:border-[#141413]/28 transition-colors cursor-pointer"
+                >
+                  <div className="font-mono-tech text-[9.5px] uppercase tracking-[0.11em] text-[#5E5D59]">
+                    Акт III · COGITATE 2025
                   </div>
                   <div className="font-display font-semibold text-[14.5px] mt-1.5 text-[#141413] leading-snug">
                     {cogitateSummary}
@@ -352,11 +378,11 @@ export function Chapter8BoneEndpaper({
 
                 <button
                   type="button"
-                  onClick={() => jumpCell('act-5', 'ch-7')}
+                  onClick={() => jumpCell('act-4', 'ch-7')}
                   className="text-left p-3.5 rounded-xl bg-[#FAF9F5]/85 hover:bg-[#FAF9F5] border border-[#141413]/10 hover:border-[#141413]/28 transition-colors cursor-pointer"
                 >
                   <div className="font-mono-tech text-[9.5px] uppercase tracking-[0.11em] text-[#5E5D59]">
-                    Акт V · Ляссе NY 2024
+                    Акт IV · Ляссе NY 2024
                   </div>
                   <div className="font-display font-semibold text-[14.5px] mt-1.5 text-[#141413]">
                     {!state.ribbonChecked
@@ -371,48 +397,11 @@ export function Chapter8BoneEndpaper({
 
                 <button
                   type="button"
-                  onClick={() => jumpCell('act-2', 'ch-aphantasia')}
+                  onClick={() => jumpCell('act-4', 'ch-7-tribunal')}
                   className="text-left p-3.5 rounded-xl bg-[#FAF9F5]/85 hover:bg-[#FAF9F5] border border-[#141413]/10 hover:border-[#141413]/28 transition-colors cursor-pointer"
                 >
                   <div className="font-mono-tech text-[9.5px] uppercase tracking-[0.11em] text-[#5E5D59]">
-                    Акт II · Экран (Афантазия)
-                  </div>
-                  <div className="font-display font-bold text-[19px] mt-1 text-[#004EDF]">
-                    {state.aphantasiaScore !== null ? `${state.aphantasiaScore} / 5` : '5-сек тест →'}
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => jumpCell('act-2', 'ch-overflow')}
-                  className="text-left p-3.5 rounded-xl bg-[#FAF9F5]/85 hover:bg-[#FAF9F5] border border-[#141413]/10 hover:border-[#141413]/28 transition-colors cursor-pointer"
-                >
-                  <div className="font-mono-tech text-[9.5px] uppercase tracking-[0.11em] text-[#5E5D59]">
-                    Акт II · Сперлинг и Время
-                  </div>
-                  <div className="font-display font-semibold text-[14.5px] mt-1.5 text-[#141413]">
-                    {state.sperlingCuedScore !== null
-                      ? `${state.sperlingCuedScore}/4 по стрелке`
-                      : state.sperlingWholeScore !== null
-                        ? `${state.sperlingWholeScore}/12 целиком`
-                        : 'Пройти вспышку →'}
-                  </div>
-                  <div
-                    className={`font-mono-tech text-[9.5px] uppercase tracking-[0.08em] mt-1 ${
-                      state.flashLagCompleted ? 'text-[#0D7A5F]' : 'text-[#5E5D59]'
-                    }`}
-                  >
-                    Flash-Lag: {state.flashLagCompleted ? 'пройден ✓' : 'ожидает'}
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => jumpCell('act-5', 'ch-7-tribunal')}
-                  className="text-left p-3.5 rounded-xl bg-[#FAF9F5]/85 hover:bg-[#FAF9F5] border border-[#141413]/10 hover:border-[#141413]/28 transition-colors cursor-pointer"
-                >
-                  <div className="font-mono-tech text-[9.5px] uppercase tracking-[0.11em] text-[#5E5D59]">
-                    Акт V · Трибунал ИИ
+                    Акт IV · Трибунал ИИ
                   </div>
                   <div className="font-display font-bold text-[19px] mt-1 text-[#141413]">
                     {activeTribunalCount} / 5 модулей
@@ -526,7 +515,7 @@ export function Chapter8BoneEndpaper({
                   <p className="font-serif-editorial italic text-[16px] leading-[1.6] text-[#DCE0E8]">
                     {ruTypo(
                       state.mooneyExposed
-                        ? `В начале этой книги вы смотрели на этот снимок ${state.mooneySeconds?.toFixed(1) ?? 'несколько'} сек и видели только хаос чёрно-белых пятен. Сейчас на экране — тот же самый файл, пиксель в пиксель. Но ваш мозг больше никогда не вернётся в прежнее состояние: он навсегда записал этот приор.`
+                        ? 'В начале этой книги вы смотрели на этот снимок и видели только хаос чёрно-белых пятен. Сейчас на экране — тот же самый файл, пиксель в пиксель. Но ваш мозг больше никогда не вернётся в прежнее состояние: он навсегда записал этот приор.'
                         : 'Посмотрите на пятна слева — пока это просто чёрно-белый хаос. Нажмите кнопку ниже на секунду, и ваш мозг за долю секунды навсегда перестроит восприятие этого кадра.',
                     )}
                   </p>
@@ -632,7 +621,7 @@ export function Chapter8BoneEndpaper({
               )}
             </p>
             <div className="font-mono-tech text-[10.5px] uppercase tracking-[0.14em] text-[#8E939E] pt-1">
-              КОЛОФОН · 5 АКТОВ · 12 ГЛАВ · ПРОТОКОЛ СОХРАНЯЕТСЯ ЛОКАЛЬНО · 2026
+              КОЛОФОН · 4 АКТА · 8 ГЛАВ · SHOWREEL EDITION · ПРОТОКОЛ СОХРАНЯЕТСЯ ЛОКАЛЬНО · 2026
             </div>
           </div>
 

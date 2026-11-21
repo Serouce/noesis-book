@@ -35,7 +35,6 @@ const ACT_LOADERS: Record<ActId, () => Promise<{ default: ComponentType<ActViewP
   'act-2': () => import('./v9/acts/Act2View'),
   'act-3': () => import('./v9/acts/Act3View'),
   'act-4': () => import('./v9/acts/Act4View'),
-  'act-5': () => import('./v9/acts/Act5View'),
 };
 
 const ACT_COMPONENTS: Record<ActId, ComponentType<ActViewProps>> = {
@@ -43,7 +42,6 @@ const ACT_COMPONENTS: Record<ActId, ComponentType<ActViewProps>> = {
   'act-2': lazy(ACT_LOADERS['act-2']),
   'act-3': lazy(ACT_LOADERS['act-3']),
   'act-4': lazy(ACT_LOADERS['act-4']),
-  'act-5': lazy(ACT_LOADERS['act-5']),
 };
 
 function ActLoadingPaper() {

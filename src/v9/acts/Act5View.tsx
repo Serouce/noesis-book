@@ -13,8 +13,8 @@ export default function Act5View({
   const noop = useCallback(() => undefined, []);
 
   return (
-    <div data-act-root="act-5">
-      <ActTopAnchor actId="act-5" visitedActs={visitedActs} onSwitchAct={onSwitchAct} />
+    <div data-act-root="act-4">
+      <ActTopAnchor actId="act-4" visitedActs={visitedActs} onSwitchAct={onSwitchAct} />
       <Chapter7OtherMinds onNextChapter={() => onNavigateLocal('ch-8')} />
       <Chapter8BoneEndpaper
         onFooterInView={noop}

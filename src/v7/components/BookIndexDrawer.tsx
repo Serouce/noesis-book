@@ -64,10 +64,10 @@ export function BookIndexDrawer({
           <div className="flex items-start justify-between gap-4 pb-5 border-b border-[#141413]/12">
             <div>
               <div className="font-mono-tech text-[10.5px] uppercase tracking-[0.14em] text-[#FC4109]">
-                NOESIS v9 · ИНТЕРАКТИВНЫЙ АТЛАС · 2026
+                NOESIS v10 · SHOWREEL EDITION · 2026
               </div>
               <h2 className="font-serif-editorial text-2xl md:text-[28px] mt-1.5 leading-tight">
-                Пять актов книги
+                Четыре акта книги
               </h2>
               <div className="mt-2 flex flex-wrap items-center gap-3 font-mono-tech text-[10.5px] text-[#5E5D59]">
                 <span>ОПЫТОВ ПРОЙДЕНО: {completedCount} / {totalExperiments}</span>

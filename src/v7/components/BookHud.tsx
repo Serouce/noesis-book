@@ -16,11 +16,11 @@ interface BookHudProps {
 }
 
 /**
- * Dieter Rams 3-Node Optical HUD (NOESIS v9.1):
- * - Top 2px 5-segment Act progress hairline (replaces redundant % pill!).
- * - Desktop (>= 1024px): grid-cols-[1fr_auto_1fr] -> [NOESIS • | ГЛ. · стр.] — [I II III IV V] — [Оглавление]
- * - Tablet (768–1023px): [NOESIS •] — [I II III IV V] — [Оглавление]
- * - Mobile (< 768px): [NOESIS •] — [АКТ II / V ▾] — [≡]
+ * Dieter Rams 3-Node Optical HUD (NOESIS v10):
+ * - Top 2px 4-segment Act progress hairline.
+ * - Desktop (>= 1024px): grid-cols-[1fr_auto_1fr] -> [NOESIS • | ГЛ. · стр.] — [I II III IV] — [Оглавление]
+ * - Tablet (768–1023px): [NOESIS •] — [I II III IV] — [Оглавление]
+ * - Mobile (< 768px): [NOESIS •] — [АКТ II / IV ▾] — [≡]
  * - Atomic light/dark contrast swap (zero muddy grey midpoints).
  */
 export function BookHud({
@@ -62,9 +62,9 @@ export function BookHud({
 
   return (
     <header className="fixed top-0 inset-x-0 z-50 pointer-events-none">
-      {/* 5-Segment Optical Act Progress Hairline (2px) */}
+      {/* 4-Segment Optical Act Progress Hairline (2px) */}
       <div
-        className="relative z-20 h-[2px] w-full grid grid-cols-5 gap-[2px] px-[1px]"
+        className="relative z-20 h-[2px] w-full grid grid-cols-4 gap-[2px] px-[1px]"
         aria-label={`Прогресс: Акт ${actMeta.roman}, ${Math.round(clampedProgress * 100)}%`}
       >
         {ACTS_META.map((act, idx) => {
@@ -143,10 +143,10 @@ export function BookHud({
 
         {/* NODE 2 (Center): Leica Rangefinder Act Dial (md+) OR Compact Mobile Picker (< md) */}
         <nav
-          aria-label="Навигация по пяти актам NOESIS"
+          aria-label="Навигация по четырём актам NOESIS"
           className="justify-self-center pointer-events-auto"
         >
-          {/* Desktop & Tablet Leica Dial [I II III IV V] */}
+          {/* Desktop & Tablet Leica Dial [I II III IV] */}
           <div
             className={`hidden md:inline-flex items-center h-9 p-1 rounded-full border backdrop-blur-md ${
               isDark
@@ -200,7 +200,7 @@ export function BookHud({
             onClick={onOpenIndex}
             className={`md:hidden h-9 px-3.5 rounded-full border backdrop-blur-md inline-flex items-center gap-1.5 font-mono-tech text-[10.5px] uppercase tracking-[0.1em] font-semibold cursor-pointer transition-transform duration-150 active:scale-[0.97] ${pillCls}`}
           >
-            <span>АКТ {actMeta.roman} / V</span>
+            <span>АКТ {actMeta.roman} / IV</span>
             <ChevronDown className="w-3.5 h-3.5 opacity-70" />
           </button>
         </nav>

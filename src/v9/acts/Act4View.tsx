@@ -21,7 +21,7 @@ export default function Act4View({
       <Chapter5CajalTurntable onNextChapter={() => onNavigateLocal('ch-6')} />
       <Chapter6IcuJournal
         onDarkInView={noop}
-        onNextChapter={() => onSwitchAct('act-5')}
+        onNextChapter={() => onSwitchAct('act-4')}
       />
       <ActBottomTurn actId="act-4" onSwitchAct={onSwitchAct} fromDark />
     </div>

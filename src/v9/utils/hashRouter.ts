@@ -1,6 +1,6 @@
-export type ActId = 'act-1' | 'act-2' | 'act-3' | 'act-4' | 'act-5';
+export type ActId = 'act-1' | 'act-2' | 'act-3' | 'act-4';
 
-export const VALID_ACTS: readonly ActId[] = ['act-1', 'act-2', 'act-3', 'act-4', 'act-5'] as const;
+export const VALID_ACTS: readonly ActId[] = ['act-1', 'act-2', 'act-3', 'act-4'] as const;
 
 export interface HashRoute {
   act: ActId;
@@ -9,8 +9,8 @@ export interface HashRoute {
 
 /**
  * Static-hosting-safe Hash Router:
- * Supports `#/act-1` ... `#/act-5` and deep chapter links `#/act-2?section=ch-1`.
- * Works identically on `python -m http.server`, GitHub Pages, and Vercel without 404 on F5.
+ * Supports `#/act-1` ... `#/act-4` and deep chapter links `#/act-2?section=ch-1`.
+ * Gracefully maps legacy `#/act-5` links to `act-4`.
  */
 export function parseHashRoute(rawHash: string): HashRoute {
   const cleaned = (rawHash || '').replace(/^#/, '').trim();
@@ -21,8 +21,9 @@ export function parseHashRoute(rawHash: string): HashRoute {
   const [pathPart, queryPart] = cleaned.split('?');
   const normalizedPath = pathPart.replace(/^\/+|\/+$/g, '').toLowerCase();
 
-  const act: ActId = (VALID_ACTS as readonly string[]).includes(normalizedPath)
-    ? (normalizedPath as ActId)
+  const mappedPath = normalizedPath === 'act-5' ? 'act-4' : normalizedPath;
+  const act: ActId = (VALID_ACTS as readonly string[]).includes(mappedPath)
+    ? (mappedPath as ActId)
     : 'act-1';
 
   let section: string | null = null;

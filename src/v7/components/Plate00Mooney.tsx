@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { ArrowDown, Eye } from 'lucide-react';
-import { useExplorer, type MooneyGuess } from '../context/ExplorerContext';
+import { useExplorer } from '../context/ExplorerContext';
 import { NoesisInstrumentFrame } from '../../v9/components/NoesisInstrumentFrame';
 import { assetUrl } from '../../v9/utils/assetUrl';
 import { ruTypo } from '../../v9/utils/ruTypo';
@@ -9,145 +9,101 @@ interface Plate00MooneyProps {
   onContinueToCh1: () => void;
 }
 
-const GUESS_OPTIONS: Array<{ id: Exclude<MooneyGuess, null>; label: string }> = [
-  { id: 'blobs', label: 'Только пятна чернил' },
-  { id: 'face_or_animal', label: 'Кажется, лицо или зверь' },
-  { id: 'object', label: 'Кажется, предмет' },
-];
+const FLASH_DURATION_MS = 1600;
+const SHORT_CLICK_THRESHOLD_MS = 320;
 
 export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
-  const { state, setMooneyGuess, setMooneyResult } = useExplorer();
+  const { state, setMooneyResult } = useExplorer();
   const [holding, setHolding] = useState(false);
   const [flashActive, setFlashActive] = useState(false);
-  const [elapsedSec, setElapsedSec] = useState(0);
+  const [scanCount, setScanCount] = useState(0);
 
-  const plateWrapRef = useRef<HTMLDivElement | null>(null);
-  const visibleAccumMsRef = useRef<number>(0);
-  const lastTickMsRef = useRef<number | null>(null);
   const pointerDownAtRef = useRef<number>(0);
   const flashTimerRef = useRef<number | null>(null);
 
-  // Bug #1 Fix: Stopwatch ticks ONLY while the Mooney plate is actually visible in the viewport AND tab is active!
   useEffect(() => {
-    if (state.mooneyExposed) return;
-    const el = plateWrapRef.current;
-    if (!el) return;
-
-    let isInView = false;
-    let isTabVisible = document.visibilityState === 'visible';
-    let intervalId: number | null = null;
-
-    const startClock = () => {
-      if (intervalId !== null) return;
-      lastTickMsRef.current = performance.now();
-      intervalId = window.setInterval(() => {
-        if (!isInView || !isTabVisible) return;
-        const now = performance.now();
-        if (lastTickMsRef.current !== null) {
-          visibleAccumMsRef.current += Math.min(300, now - lastTickMsRef.current);
-          setElapsedSec(visibleAccumMsRef.current / 1000);
-        }
-        lastTickMsRef.current = now;
-      }, 100);
-    };
-
-    const stopClock = () => {
-      if (intervalId !== null) {
-        window.clearInterval(intervalId);
-        intervalId = null;
+    return () => {
+      if (flashTimerRef.current !== null) {
+        window.clearTimeout(flashTimerRef.current);
       }
-      lastTickMsRef.current = null;
-    };
-
-    const syncClock = () => {
-      if (isInView && isTabVisible) startClock();
-      else stopClock();
-    };
-
-    const io = new IntersectionObserver(
-      (entries) => {
-        isInView = Boolean(entries[0]?.isIntersecting);
-        syncClock();
-      },
-      { threshold: 0.35 },
-    );
-    io.observe(el);
-
-    const onVisibility = () => {
-      isTabVisible = document.visibilityState === 'visible';
-      syncClock();
-    };
-    document.addEventListener('visibilitychange', onVisibility);
-
-    return () => {
-      stopClock();
-      io.disconnect();
-      document.removeEventListener('visibilitychange', onVisibility);
-    };
-  }, [state.mooneyExposed]);
-
-  useEffect(() => {
-    return () => {
-      if (flashTimerRef.current) window.clearTimeout(flashTimerRef.current);
     };
   }, []);
 
   const recordReveal = () => {
     if (!state.mooneyExposed) {
-      const secs = Math.max(0.6, visibleAccumMsRef.current / 1000);
-      setMooneyResult(secs);
+      setMooneyResult(1.0);
     }
   };
 
-  const revealStart = () => {
-    pointerDownAtRef.current = Date.now();
-    if (flashTimerRef.current) window.clearTimeout(flashTimerRef.current);
+  const revealStart = (e: PointerEvent<HTMLButtonElement>) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // Fallback for synthetic pointer events without active pointerId
+    }
+    pointerDownAtRef.current = performance.now();
+    if (flashTimerRef.current !== null) {
+      window.clearTimeout(flashTimerRef.current);
+      flashTimerRef.current = null;
+    }
     setFlashActive(false);
     setHolding(true);
-    recordReveal();
+    setScanCount((c) => c + 1);
   };
 
-  const revealEnd = () => {
+  const revealEnd = (e: PointerEvent<HTMLButtonElement>) => {
+    try {
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    } catch {
+      // Ignore release errors
+    }
     if (!holding) return;
-    const heldMs = Date.now() - pointerDownAtRef.current;
+    const heldMs = performance.now() - pointerDownAtRef.current;
     setHolding(false);
-    if (heldMs < 260) {
+
+    if (heldMs < SHORT_CLICK_THRESHOLD_MS) {
       setFlashActive(true);
-      if (flashTimerRef.current) window.clearTimeout(flashTimerRef.current);
+      if (flashTimerRef.current !== null) {
+        window.clearTimeout(flashTimerRef.current);
+      }
       flashTimerRef.current = window.setTimeout(() => {
         setFlashActive(false);
-      }, 1050);
+        flashTimerRef.current = null;
+        recordReveal();
+      }, FLASH_DURATION_MS);
+    } else {
+      recordReveal();
     }
   };
 
-  const revealCancel = () => {
+  const revealCancel = (e: PointerEvent<HTMLButtonElement>) => {
+    try {
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    } catch {
+      // Ignore release errors
+    }
     setHolding(false);
   };
 
   const handleKeyboardActivate = () => {
-    recordReveal();
+    setScanCount((c) => c + 1);
     setFlashActive(true);
-    if (flashTimerRef.current) window.clearTimeout(flashTimerRef.current);
+    if (flashTimerRef.current !== null) {
+      window.clearTimeout(flashTimerRef.current);
+    }
     flashTimerRef.current = window.setTimeout(() => {
       setFlashActive(false);
-    }, 1050);
+      flashTimerRef.current = null;
+      recordReveal();
+    }, FLASH_DURATION_MS);
   };
 
   const showingKey = holding || flashActive;
-  const shownSeconds = state.mooneySeconds ?? elapsedSec;
-
-  const guessFeedback = (() => {
-    if (state.mooneyGuess === 'blobs') {
-      return 'Секунду назад вы честно отметили «только пятна чернил» — и мозг действительно не видел ничего, пока не получил ключ.';
-    }
-    if (state.mooneyGuess === 'face_or_animal') {
-      return 'Хорошая догадка! Даже если силуэт мелькал на грани, после проявки образ «щёлкает» в замок и больше не рассыпается.';
-    }
-    if (state.mooneyGuess === 'object') {
-      return 'Вы ждали неодушевлённый предмет — но стоило мозгу увидеть живую фигуру, старая гипотеза исчезла без следа.';
-    }
-    return null;
-  })();
 
   return (
     <section
@@ -160,138 +116,95 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#141413]/12 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
           <span className="flex items-center gap-2.5">
             <span className="w-2 h-2 rounded-full bg-[#FC4109]" />
-            <span>NOESIS · АКТ I · ИНТЕРАКТИВНЫЙ АТЛАС СОЗНАНИЯ</span>
+            <span>NOESIS · АКТ I · ИНТЕРАКТИВНАЯ КНИГА О СОЗНАНИИ</span>
           </span>
           <span>ТАБЛ. 00 · ПРОВЕРКА ОПТИКИ · стр. 01</span>
         </div>
 
         {/* Main Asymmetric Book Spread */}
         <div className="mt-10 md:mt-14 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
-          {/* Left Column: Cold Human Hook */}
+          {/* Left Column: Static Hook + Unmoving Primary Control + Post-Reveal Below */}
           <div className="lg:col-span-6 space-y-6">
-            <h1 className="text-[clamp(36px,5.2vw,66px)] leading-[1.03] tracking-[-0.032em]">
+            <h1 className="text-[clamp(38px,5.4vw,68px)] leading-[1.02] tracking-[-0.032em]">
               <span className="font-display font-bold block">Не верьте</span>
               <span className="font-serif-display italic font-normal block text-[#2D2C2A] mt-1">
                 своим глазам.
               </span>
             </h1>
 
-            {!state.mooneyExposed ? (
-              <div className="space-y-4">
-                <p className="text-[17px] md:text-[18.5px] leading-[1.58] text-[#2F2E2B] max-w-lg">
-                  {ruTypo(
-                    'Посмотрите на этот чёрно-белый оттиск справа. Зафиксируйте свою первую догадку — и только потом проявляйте снимок.',
-                  )}
-                </p>
+            <p className="text-[17px] md:text-[18.5px] leading-[1.6] text-[#2F2E2B] max-w-lg">
+              {ruTypo(
+                'Посмотрите на этот чёрно-белый оттиск справа. Сейчас перед вами лишь случайные кляксы чернил. Но стоит на секунду увидеть исходный снимок — и ваш мозг уже никогда не сможет «развидеть» его обратно.',
+              )}
+            </p>
 
-                {/* Pre-reveal honest intuition chip */}
-                <div className="space-y-2">
-                  <div className="font-mono-tech text-[10px] uppercase tracking-[0.12em] text-[#5E5D59]">
-                    Шаг 1 · Что вы видите прямо сейчас?
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {GUESS_OPTIONS.map((opt) => {
-                      const active = state.mooneyGuess === opt.id;
-                      return (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          onClick={() => setMooneyGuess(opt.id)}
-                          className={`v6-pill px-3.5 py-2 rounded-full border text-[12.5px] font-medium cursor-pointer ${
-                            active
-                              ? 'bg-[#141413] text-[#FAF9F5] border-[#141413]'
-                              : 'bg-[#F3F1E9] hover:bg-[#EAE7DD] text-[#141413] border-[#141413]/14'
-                          }`}
-                        >
-                          {opt.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="inline-flex items-center gap-3 px-3.5 py-2 rounded-xl bg-[#F0EEE6] border border-[#141413]/10 font-mono-tech text-[12px] text-[#454440]">
-                  <span className="w-2 h-2 rounded-full bg-[#FC4109] animate-pulse" />
-                  <span>Время взгляда на пластину:</span>
-                  <span className="font-semibold text-[#141413] min-w-[44px]">
-                    {elapsedSec.toFixed(1)} с
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4 animate-[beatRise_420ms_cubic-bezier(0.22,1,0.36,1)]">
-                <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-[#FC4109]/10 border border-[#FC4109]/25 font-mono-tech text-[11px] uppercase tracking-[0.1em] text-[#C83407] font-semibold">
-                  <span>НЕОБРАТИМЫЙ ЩЕЛЧОК · {shownSeconds.toFixed(1)} СЕК ПОИСКА</span>
-                </div>
-
-                {guessFeedback && (
-                  <p className="text-[14.5px] leading-[1.58] text-[#004EDF] bg-[#004EDF]/6 border-l-2 border-[#004EDF] pl-3.5 pr-4 py-2.5 rounded-r-lg max-w-lg">
-                    {ruTypo(guessFeedback)}
-                  </p>
-                )}
-
-                <p className="text-[16px] md:text-[17.5px] leading-[1.62] text-[#252422] max-w-lg">
-                  Теперь отпустите кнопку и снова посмотрите на те же пятна.{' '}
-                  <strong className="font-semibold text-[#141413]">
-                    Ни один пиксель на экране не изменился
-                  </strong>{' '}
-                  — но ваше переживание этого снимка изменилось навсегда.
-                </p>
-
-                <p className="text-[15px] leading-[1.62] text-[#4D4C48] max-w-lg">
-                  {ruTypo(
-                    'Вы только что поймали собственный мозг за работой: за долю секунды он склеил бессмысленный шум в живой образ. Попробуйте снова «развидеть» его — не получится. Мы вернёмся к этой проверке на последней странице книги.',
-                  )}
-                </p>
-              </div>
-            )}
-
-            {/* Primary Tactile Exposure Control */}
+            {/* Primary Tactile Exposure Control — position NEVER shifts before/during/after click */}
             <div className="pt-1 flex flex-wrap items-center gap-3.5">
               <button
                 type="button"
                 onPointerDown={revealStart}
                 onPointerUp={revealEnd}
-                onPointerLeave={revealCancel}
+                onPointerCancel={revealCancel}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     handleKeyboardActivate();
                   }
                 }}
-                className="v6-pill h-12 px-6 rounded-full bg-[#141413] hover:bg-[#2A2A28] text-[#FAF9F5] font-sans-ui text-[14px] font-medium inline-flex items-center gap-2.5 shadow-[0_12px_30px_rgba(20,20,19,0.16)] cursor-pointer select-none"
+                className={`v6-pill h-12 px-6 rounded-full font-sans-ui text-[14px] font-medium inline-flex items-center gap-2.5 cursor-pointer select-none touch-none ${
+                  showingKey
+                    ? 'bg-[#FC4109] text-[#FAF9F5] shadow-[0_12px_32px_rgba(252,65,9,0.28)]'
+                    : 'bg-[#141413] hover:bg-[#2A2A28] text-[#FAF9F5] shadow-[0_12px_30px_rgba(20,20,19,0.16)]'
+                }`}
               >
-                <Eye className="w-4 h-4 text-[#FC4109]" />
+                <Eye className={`w-4 h-4 ${showingKey ? 'text-[#FAF9F5]' : 'text-[#FC4109]'}`} />
                 <span>
                   {showingKey
                     ? 'Проявка исходного снимка…'
                     : state.mooneyExposed
                       ? 'Проявить ещё раз'
-                      : 'Зажми — проявить снимок'}
+                      : 'Зажми или нажми — проявить снимок'}
                 </span>
               </button>
-
-              {state.mooneyExposed && (
-                <button
-                  type="button"
-                  onClick={onContinueToCh1}
-                  className="v6-pill h-12 px-6 rounded-full bg-[#FC4109] hover:bg-[#E43906] text-[#FAF9F5] font-sans-ui text-[14px] font-medium inline-flex items-center gap-2 cursor-pointer animate-[fadeScaleIn_350ms_ease]"
-                >
-                  <span>Что только что произошло?</span>
-                  <ArrowDown className="w-4 h-4" />
-                </button>
-              )}
             </div>
 
-            {!state.mooneyExposed && (
-              <p className="font-mono-tech text-[11px] text-[#7A7872]">
-                Совет: удержите кнопку или коротко кликните — исходный кадр вспыхнет на секунду.
-              </p>
-            )}
+            {/* Post-Reveal Editorial Insight (STRICTLY below the button so button coordinates stay 100% locked!) */}
+            <div className="min-h-[156px]">
+              {!state.mooneyExposed ? (
+                <p className="font-mono-tech text-[11px] leading-[1.6] text-[#7A7872] max-w-md pt-1">
+                  Нажмите один раз (снимок удержится на 1.6 с) или зажмите кнопку — затем отпустите и снова посмотрите на те же пятна.
+                </p>
+              ) : (
+                <div className="rounded-2xl border border-[#141413]/12 bg-[#F3F1E9] p-5 space-y-4 animate-[beatRise_380ms_cubic-bezier(0.22,1,0.36,1)]">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FC4109]/10 border border-[#FC4109]/25 font-mono-tech text-[10.5px] uppercase tracking-[0.11em] text-[#C83407] font-semibold">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#FC4109]" />
+                    <span>НЕОБРАТИМЫЙ ЩЕЛЧОК · ПИКСЕЛИ ТЕ ЖЕ</span>
+                  </div>
+
+                  <p className="text-[15.5px] leading-[1.62] text-[#252422]">
+                    <strong className="font-semibold text-[#141413]">
+                      Ни один пиксель на экране не изменился
+                    </strong>{' '}
+                    {ruTypo(
+                      '— но ваше переживание картинки переключилось навсегда. За долю секунды мозг сшил шум в живого кота. Попробуйте снова увидеть просто хаос — не выйдет. Именно с этого внутреннего зрителя и начинается книга.',
+                    )}
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={onContinueToCh1}
+                    className="v6-pill h-11 px-5 rounded-full bg-[#FC4109] hover:bg-[#E43906] text-[#FAF9F5] font-sans-ui text-[13.5px] font-medium inline-flex items-center gap-2 cursor-pointer"
+                  >
+                    <span>Начать книгу · Глава 1</span>
+                    <ArrowDown className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right Column: Leica Contact-Sheet Exposure Plate */}
-          <div className="lg:col-span-6" ref={plateWrapRef}>
+          <div className="lg:col-span-6">
             <NoesisInstrumentFrame
               code="ОТТИСК № 00 · ИЛЛЮЗИЯ МУНИ"
               badge="self-test"
@@ -311,16 +224,29 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
 
                 <img
                   src={assetUrl('/v7/mooney-key.jpg')}
-                  alt="Проявленный монохромный снимок"
+                  alt="Проявленный монохромный снимок кота"
                   className="absolute inset-0 w-full h-full object-cover select-none"
                   style={{
                     opacity: showingKey ? 1 : 0,
+                    transform: showingKey ? 'scale(1)' : 'scale(1.015)',
                     transition: showingKey
-                      ? 'opacity 220ms cubic-bezier(0.22, 1, 0.36, 1)'
-                      : 'opacity 1450ms cubic-bezier(0.22, 1, 0.36, 1)',
+                      ? 'opacity 240ms cubic-bezier(0.22, 1, 0.36, 1), transform 420ms cubic-bezier(0.22, 1, 0.36, 1)'
+                      : 'opacity 1250ms cubic-bezier(0.22, 1, 0.36, 1), transform 1250ms cubic-bezier(0.22, 1, 0.36, 1)',
                   }}
                   draggable={false}
                 />
+
+                {/* Leica optical scanline sweep on activation */}
+                {scanCount > 0 && showingKey && (
+                  <div
+                    key={scanCount}
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-x-0 h-[2px] bg-[#FC4109] shadow-[0_0_16px_3px_rgba(252,65,9,0.65)]"
+                    style={{
+                      animation: 'opticalScanSweep 520ms cubic-bezier(0.22, 1, 0.36, 1) forwards',
+                    }}
+                  />
+                )}
 
                 <div className="pointer-events-none absolute top-3 left-3 w-4 h-4 border-t border-l border-[#FAF9F5]/55" />
                 <div className="pointer-events-none absolute top-3 right-3 w-4 h-4 border-t border-r border-[#FAF9F5]/55" />
@@ -343,11 +269,11 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
         </div>
       </div>
 
-      {/* Domino Bridge to Prologue */}
+      {/* Domino Bridge to Chapter 01 */}
       <div className="max-w-[1240px] mx-auto w-full mt-12 pt-5 border-t border-[#141413]/10 flex flex-wrap items-center justify-between gap-4">
         <p className="font-serif-editorial italic text-[15px] text-[#4B4A46]">
           {ruTypo(
-            'Экран не изменился — изменилось само ваше ощущение картинки. С этого и начинается главная загадка науки: что вообще такое сознание?',
+            'Экран не изменился — изменилось само ваше переживание картинки. Откуда вообще берётся этот «внутренний свет»?',
           )}
         </p>
         <button
@@ -355,7 +281,7 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
           onClick={onContinueToCh1}
           className="font-mono-tech text-[11px] uppercase tracking-[0.12em] text-[#141413] hover:text-[#FC4109] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
         >
-          <span>К Прологу · Что такое сознание?</span>
+          <span>К Главе 01 · Что такое сознание?</span>
           <ArrowDown className="w-3.5 h-3.5" />
         </button>
       </div>

@@ -196,6 +196,23 @@ input[type='range'].v6-wavelength-slider::-webkit-slider-thumb:hover {
   }
 }
 
+@keyframes opticalScanSweep {
+  0% {
+    top: -4%;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    top: 102%;
+    opacity: 0;
+  }
+}
+
 /* Subtle New Yorker-style SVG Scholar Marginalia micro-animations (zero mouse-chasing!) */
 @keyframes browRaise {
   0%, 72%, 100% {
