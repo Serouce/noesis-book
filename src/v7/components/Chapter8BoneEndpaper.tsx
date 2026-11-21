@@ -388,7 +388,7 @@ export function Chapter8BoneEndpaper({
                   className="text-left p-3.5 rounded-xl bg-[#FAF9F5]/85 hover:bg-[#FAF9F5] border border-[#141413]/10 hover:border-[#141413]/28 transition-colors cursor-pointer"
                 >
                   <div className="font-mono-tech text-[9.5px] uppercase tracking-[0.11em] text-[#5E5D59]">
-                    Акт II · Сперлинг (P vs A)
+                    Акт II · Сперлинг и Время
                   </div>
                   <div className="font-display font-semibold text-[14.5px] mt-1.5 text-[#141413]">
                     {state.sperlingCuedScore !== null
@@ -396,6 +396,13 @@ export function Chapter8BoneEndpaper({
                       : state.sperlingWholeScore !== null
                         ? `${state.sperlingWholeScore}/12 целиком`
                         : 'Пройти вспышку →'}
+                  </div>
+                  <div
+                    className={`font-mono-tech text-[9.5px] uppercase tracking-[0.08em] mt-1 ${
+                      state.flashLagCompleted ? 'text-[#0D7A5F]' : 'text-[#5E5D59]'
+                    }`}
+                  >
+                    Flash-Lag: {state.flashLagCompleted ? 'пройден ✓' : 'ожидает'}
                   </div>
                 </button>
 
@@ -428,7 +435,9 @@ export function Chapter8BoneEndpaper({
                           ? 'border-[#5E5D59] text-[#5E5D59] bg-[#EAE7DD]'
                           : consistency.isContradiction
                             ? 'border-[#FC4109] text-[#FC4109] bg-[#FC4109]/8'
-                            : 'border-[#0D7A5F] text-[#0D7A5F] bg-[#0D7A5F]/8'
+                            : consistency.isPolemic
+                              ? 'border-[#004EDF] text-[#004EDF] bg-[#004EDF]/8'
+                              : 'border-[#0D7A5F] text-[#0D7A5F] bg-[#0D7A5F]/8'
                       }`}
                     >
                       {consistency.stampTitle}
@@ -623,7 +632,7 @@ export function Chapter8BoneEndpaper({
               )}
             </p>
             <div className="font-mono-tech text-[10.5px] uppercase tracking-[0.14em] text-[#8E939E] pt-1">
-              КОЛОФОН · 5 АКТОВ · 8 ГЛАВ · ПРОТОКОЛ СОХРАНЯЕТСЯ ЛОКАЛЬНО · 2026
+              КОЛОФОН · 5 АКТОВ · 12 ГЛАВ · ПРОТОКОЛ СОХРАНЯЕТСЯ ЛОКАЛЬНО · 2026
             </div>
           </div>
 

@@ -74,6 +74,7 @@ export interface ConsistencyVerdict {
   commentary: string;
   isContradiction: boolean;
   isIncomplete?: boolean;
+  isPolemic?: boolean;
 }
 
 interface ExplorerContextValue {
@@ -580,15 +581,16 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
       };
     }
 
-    // 1. Classic philosophical contradiction (requires Mary's Room bet!)
+    // 1. Philosophical debate (Chalmers actually defends both; Dennett teases the tension!)
     if (state.maryBet === 'learns_new' && activeTribunalCount >= 4) {
       return {
         author: 'dennett',
-        stampTitle: 'ШТАМП ПРОТИВОРЕЧИЯ',
-        stampSubtitle: 'Пометка Д. Деннета на полях',
+        stampTitle: 'ШПИЛЬКА Д. ДЕННЕТА',
+        stampSubtitle: 'Полемическая заметка на полях',
         commentary:
-          'Попался! В Акте II вы решили, что физика не объясняет красный цвет Мэри — а в Акте V щедро признали субъектом кремниевую машину, просто щёлкнув тумблерами архитектуры. Значит, сознание всё-таки вычисление?',
-        isContradiction: true,
+          'Любопытный союз! В Акте II вы решили, что физика не объясняет красный цвет Мэри — а в Акте V выдали опыт кремниевой машине по архитектурным модулям. Сам Чалмерс защищает обе позиции сразу, но мне всё равно кажется, что вы незаметно сдали квалиа вычислительной схеме.',
+        isContradiction: false,
+        isPolemic: true,
       };
     }
 

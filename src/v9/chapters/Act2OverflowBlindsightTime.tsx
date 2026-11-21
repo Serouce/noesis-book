@@ -12,8 +12,29 @@ import {
 } from '../canvas/noesisCanvasKit';
 import { ruTypo } from '../utils/ruTypo';
 
-// 16 unmistakable Cyrillic consonants for Sperling (zero ambiguous vowels/digits!)
-const CONSONANTS = ['Б', 'В', 'Г', 'Д', 'Ж', 'З', 'К', 'Л', 'М', 'Н', 'П', 'Р', 'С', 'Т', 'Ф', 'Х'] as const;
+// 20 unmistakable Cyrillic consonants for Sperling (zero ambiguous vowels/signs!)
+const CONSONANTS = [
+  'Б',
+  'В',
+  'Г',
+  'Д',
+  'Ж',
+  'З',
+  'К',
+  'Л',
+  'М',
+  'Н',
+  'П',
+  'Р',
+  'С',
+  'Т',
+  'Ф',
+  'Х',
+  'Ц',
+  'Ч',
+  'Ш',
+  'Щ',
+] as const;
 
 // Physical QWERTY -> ЙЦУКЕН mapping so desktop keyboards work seamlessly regardless of layout!
 const KEY_TO_CYRILLIC: Record<string, string> = {
@@ -33,6 +54,10 @@ const KEY_TO_CYRILLIC: Record<string, string> = {
   n: 'Т',
   a: 'Ф',
   '[': 'Х',
+  w: 'Ц',
+  x: 'Ч',
+  i: 'Ш',
+  o: 'Щ',
   б: 'Б',
   в: 'В',
   г: 'Г',
@@ -49,6 +74,10 @@ const KEY_TO_CYRILLIC: Record<string, string> = {
   т: 'Т',
   ф: 'Ф',
   х: 'Х',
+  ц: 'Ц',
+  ч: 'Ч',
+  ш: 'Ш',
+  щ: 'Щ',
 };
 
 function generateGrid12(): string[][] {
@@ -142,18 +171,31 @@ export function Act2OverflowBlindsightTime() {
   const [pickedLetters, setPickedLetters] = useState<string[]>([]);
   const [lastFlashMs, setLastFlashMs] = useState<number>(108);
   const [droppedFrameWarning, setDroppedFrameWarning] = useState(false);
-  const [lastScore, setLastScore] = useState<{ hits: number; max: number } | null>(null);
+  const [lastScore, setLastScore] = useState<{
+    hits: number;
+    misses: number;
+    netHits: number;
+    max: number;
+  } | null>(null);
   const spTimersRef = useRef<number[]>([]);
+  const spRafRef = useRef<number | null>(null);
+  const trialRunIdRef = useRef<number>(0);
 
-  const clearSpTimers = () => {
+  const clearSpTimers = useCallback(() => {
+    trialRunIdRef.current += 1;
     spTimersRef.current.forEach((id) => window.clearTimeout(id));
     spTimersRef.current = [];
-  };
+    if (spRafRef.current !== null) {
+      cancelAnimationFrame(spRafRef.current);
+      spRafRef.current = null;
+    }
+  }, []);
 
-  useEffect(() => clearSpTimers, []);
+  useEffect(() => clearSpTimers, [clearSpTimers]);
 
   const startSperlingTrial = async (mode: SperlingMode) => {
     clearSpTimers();
+    const runId = trialRunIdRef.current;
     setSpMode(mode);
     setPickedLetters([]);
     setLastScore(null);
@@ -167,11 +209,14 @@ export function Act2OverflowBlindsightTime() {
 
     // Calibrate VSync once silently; quantize directly from fresh cal.frameMs (zero stale closure!)
     const cal = metrics.calibrated ? metrics : await calibrate();
+    if (trialRunIdRef.current !== runId) return;
+
     const frameMs = cal.frameMs || 16.67;
     const quantizedMs = Math.round(Math.max(1, Math.round(108 / frameMs)) * frameMs);
     const targetDuration = cal.calibrated ? Math.max(96, Math.min(125, quantizedMs)) : 108;
 
     const tFix = window.setTimeout(() => {
+      if (trialRunIdRef.current !== runId) return;
       const flashStart = performance.now();
       setSpPhase('flash');
 
@@ -179,17 +224,19 @@ export function Act2OverflowBlindsightTime() {
       let prevTs = flashStart;
       let hadStutter = false;
       const watchFlash = (now: number) => {
+        if (trialRunIdRef.current !== runId) return;
         if (now - prevTs > 46) hadStutter = true;
         prevTs = now;
         if (now - flashStart >= targetDuration) {
+          spRafRef.current = null;
           setLastFlashMs(Math.round(now - flashStart));
           setDroppedFrameWarning(hadStutter);
           setSpPhase('recall');
         } else {
-          requestAnimationFrame(watchFlash);
+          spRafRef.current = requestAnimationFrame(watchFlash);
         }
       };
-      requestAnimationFrame(watchFlash);
+      spRafRef.current = requestAnimationFrame(watchFlash);
     }, 680);
 
     spTimersRef.current.push(tFix);
@@ -213,11 +260,13 @@ export function Act2OverflowBlindsightTime() {
     if (pickedLetters.length === 0) return;
     const targetSet = new Set(spMode === 'whole' ? spGrid.flat() : spGrid[cuedRow]);
     const hits = pickedLetters.filter((l) => targetSet.has(l)).length;
+    const misses = pickedLetters.length - hits;
+    const netHits = Math.max(0, hits - misses);
     const max = spMode === 'whole' ? 12 : 4;
-    setLastScore({ hits, max });
+    setLastScore({ hits, misses, netHits, max });
     setSpPhase('result');
-    if (spMode === 'whole') setSperlingResult(hits, null);
-    else setSperlingResult(null, hits);
+    if (spMode === 'whole') setSperlingResult(netHits, null);
+    else setSperlingResult(null, netHits);
   }, [pickedLetters, spMode, spGrid, cuedRow, setSperlingResult]);
 
   // Seamless desktop keyboard support (QWERTY -> ЙЦУКЕН + Backspace + Enter!)
@@ -240,12 +289,20 @@ export function Act2OverflowBlindsightTime() {
     return () => window.removeEventListener('keydown', onKey);
   }, [spPhase, toggleLetter, pickedLetters.length, submitSperlingRecall]);
 
-  // === INSTRUMENT 06: BLINDSIGHT TN CORRIDOR ===
+  // === INSTRUMENT 06: BLINDSIGHT TN CORRIDOR / PEGNA 2005 ===
   const [tnPathway, setTnPathway] = useState<TnPathway>('navigation');
   const [tnProgress, setTnProgress] = useState<number>(0.18);
   const tnProgressRef = useRef<number>(0.18);
   const [tnWalking, setTnWalking] = useState<boolean>(false);
+  const [tnFearStimulus, setTnFearStimulus] = useState<'fear' | 'neutral'>('fear');
   const tnWrapRef = useRef<HTMLDivElement | null>(null);
+
+  const handleSelectTnPathway = (next: TnPathway) => {
+    setTnPathway(next);
+    if (next !== 'navigation') {
+      setTnWalking(false);
+    }
+  };
 
   const stepTnWalk = useCallback((_nowMs: number, dtMs: number) => {
     const next = tnProgressRef.current + dtMs * 0.00018;
@@ -316,14 +373,17 @@ export function Act2OverflowBlindsightTime() {
 
     const omega = (Math.PI * 2) / cycleSec; // Exact 2π rad per cycle -> 100% seamless loop in Mode 1!
     let angle = -Math.PI / 2;
+    let showBar = true;
     if (mode === 'continuous') {
       angle = -Math.PI / 2 + dtFlash * omega;
     } else if (mode === 'terminated') {
-      // Moves up to exact flash instant, then STOPS DEAD at 12 o'clock!
+      // Eagleman & Sejnowski (Science 2000) Flash-Terminated: bar disappears right after the ~48ms flash!
       angle = dtFlash <= 0 ? -Math.PI / 2 + dtFlash * omega : -Math.PI / 2;
+      showBar = frozen || dtFlash <= 0.024;
     } else {
-      // Moves clockwise up to flash, then REVERSES counter-clockwise right AFTER flash!
+      // Flash-Reversal: clockwise sweep up to flash, reverses briefly after flash, then vanishes until next 6 o'clock sweep
       angle = dtFlash <= 0 ? -Math.PI / 2 + dtFlash * omega : -Math.PI / 2 - dtFlash * omega;
+      showBar = frozen || dtFlash <= 0.45;
     }
 
     // Subtle circular orbit track
@@ -345,19 +405,21 @@ export function Act2OverflowBlindsightTime() {
     ctx.stroke();
 
     // Moving white optical bar (inner spoke)
-    const barX1 = cx + Math.cos(angle) * (radius * 0.36);
-    const barY1 = cy + Math.sin(angle) * (radius * 0.36);
-    const barX2 = cx + Math.cos(angle) * (radius * 0.92);
-    const barY2 = cy + Math.sin(angle) * (radius * 0.92);
-    ctx.strokeStyle = '#FAF9F5';
-    ctx.lineWidth = 4.5;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(barX1, barY1);
-    ctx.lineTo(barX2, barY2);
-    ctx.stroke();
+    if (showBar) {
+      const barX1 = cx + Math.cos(angle) * (radius * 0.36);
+      const barY1 = cy + Math.sin(angle) * (radius * 0.36);
+      const barX2 = cx + Math.cos(angle) * (radius * 0.92);
+      const barY2 = cy + Math.sin(angle) * (radius * 0.92);
+      ctx.strokeStyle = '#FAF9F5';
+      ctx.lineWidth = 4.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(barX1, barY1);
+      ctx.lineTo(barX2, barY2);
+      ctx.stroke();
+    }
 
-    // Exact 42ms crimson alignment flash at 12 o'clock (outer extension of the EXACT SAME radius!)
+    // Exact ~48ms (~50ms) crimson alignment flash at 12 o'clock (outer extension of the EXACT SAME radius!)
     const flashOn = frozen || Math.abs(dtFlash) <= 0.024;
     if (flashOn) {
       ctx.strokeStyle = '#FC4109';
@@ -379,14 +441,6 @@ export function Act2OverflowBlindsightTime() {
       ctx.lineTo(Math.round(cx) + 0.5, height - 16);
       ctx.stroke();
       ctx.setLineDash([]);
-
-      ctx.font = '700 10.5px "JetBrains Mono Variable", monospace';
-      ctx.fillStyle = '#34D399';
-      ctx.fillText('СТОП-КАДР t = 0 МС · Δ = 0.0° (ИДЕАЛЬНО НА ОДНОЙ ЛИНИИ!)', 16, 24);
-    } else {
-      ctx.font = '600 10px "JetBrains Mono Variable", monospace';
-      ctx.fillStyle = 'rgba(250, 249, 245, 0.55)';
-      ctx.fillText('СМОТРИТЕ В ЦЕНТРАЛЬНЫЙ КРЕСТ + · ВСПЫШКА 42 МС НА 12 ЧАСАХ', 16, 22);
     }
     ctx.restore();
   }, []);
@@ -629,13 +683,23 @@ export function Act2OverflowBlindsightTime() {
                         <div className="font-mono-tech text-[10px] uppercase tracking-[0.12em] text-[#FC4109]">
                           {spMode === 'whole' ? 'ПОЛНЫЙ ОТЧЁТ' : `СТРОКА ${cuedRow + 1} ПО СТРЕЛКЕ`}
                         </div>
-                        <div className="font-display font-bold text-[20px] text-[#FAF9F5]">
-                          Совпало: {lastScore.hits} из {lastScore.max}
+                        <div className="font-display font-bold text-[19px] text-[#FAF9F5]">
+                          Верно: {lastScore.hits} из {lastScore.max}
+                          {lastScore.misses > 0 && (
+                            <span className="ml-2 font-mono-tech text-[12px] font-semibold text-[#FF8C66]">
+                              · Мимо: {lastScore.misses}
+                            </span>
+                          )}
                         </div>
+                        {lastScore.misses > 0 && (
+                          <div className="font-mono-tech text-[10.5px] text-[#FACC15]">
+                            С поправкой за промахи (верно − мимо): {lastScore.netHits} из {lastScore.max}
+                          </div>
+                        )}
                         <p className="text-[12.5px] leading-[1.5] text-[#C2C8D4]">
                           {spMode === 'whole'
-                            ? 'Обычно память схватывает лишь 3–5 букв. Теперь запустите «Частичный отчёт» — убедитесь, что вы видели почти всю сетку!'
-                            : `Если вы поймали ${lastScore.hits} из 4 в случайной строке, значит в момент вспышки в вашем опыте было доступно ~${lastScore.hits * 3} букв!`}
+                            ? 'Обычно память схватывает лишь 3–5 букв без догадок. Запустите «Частичный отчёт» — убедитесь, что вы видели почти всю сетку!'
+                            : `Если вы уверенно поймали ${lastScore.netHits} из 4 в случайной строке, в момент вспышки в вашем опыте было доступно ~${lastScore.netHits * 3} букв!`}
                         </p>
                       </div>
                     </div>
@@ -648,48 +712,60 @@ export function Act2OverflowBlindsightTime() {
                   </div>
                 )}
 
-                {/* 16 Tactile Cyrillic Consonant Tiles (Zero Mobile Keyboard Jump!) */}
-                {spPhase === 'recall' && (
-                  <div className="space-y-3 animate-[beatRise_200ms_ease]">
-                    <div className="grid grid-cols-8 gap-1.5">
-                      {CONSONANTS.map((ch) => {
-                        const selected = pickedLetters.includes(ch);
-                        return (
-                          <button
-                            key={ch}
-                            type="button"
-                            onClick={() => toggleLetter(ch)}
-                            className={`v6-pill h-10 rounded-lg border font-mono-tech text-[15px] font-bold cursor-pointer ${
-                              selected
-                                ? 'bg-[#FC4109] text-[#FAF9F5] border-[#FC4109]'
-                                : 'bg-[#181D27] hover:bg-[#232B39] text-[#FAF9F5] border-[#FAF9F5]/14'
-                            }`}
-                          >
-                            {ch}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="font-mono-tech text-[10.5px] text-[#9AA3B2]">
-                        ВЫБРАНО: {pickedLetters.length} / {maxPick}
-                      </span>
-                      <button
-                        type="button"
-                        disabled={pickedLetters.length === 0}
-                        onClick={submitSperlingRecall}
-                        className={`v6-pill h-9 px-5 rounded-full font-sans-ui text-[13px] font-semibold ${
-                          pickedLetters.length === 0
-                            ? 'bg-[#1F2532] text-[#64748B] cursor-not-allowed'
-                            : 'bg-[#34D399] hover:bg-[#2BC088] text-[#081A14] cursor-pointer'
-                        }`}
-                      >
-                        Проверить совпадения
-                      </button>
-                    </div>
+                {/* 20 Tactile Cyrillic Consonant Tiles — ALWAYS in DOM (zero Layout Shift during 250ms decay!) */}
+                <div
+                  aria-hidden={spPhase !== 'recall'}
+                  className={`space-y-3 transition-opacity duration-150 ${
+                    spPhase === 'recall'
+                      ? 'opacity-100'
+                      : 'opacity-25 pointer-events-none select-none'
+                  }`}
+                >
+                  <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
+                    {CONSONANTS.map((ch) => {
+                      const selected = pickedLetters.includes(ch);
+                      return (
+                        <button
+                          key={ch}
+                          type="button"
+                          disabled={spPhase !== 'recall'}
+                          tabIndex={spPhase === 'recall' ? 0 : -1}
+                          onClick={() => toggleLetter(ch)}
+                          className={`v6-pill h-10 rounded-lg border font-mono-tech text-[15px] font-bold ${
+                            spPhase !== 'recall' ? 'cursor-default' : 'cursor-pointer'
+                          } ${
+                            selected
+                              ? 'bg-[#FC4109] text-[#FAF9F5] border-[#FC4109]'
+                              : 'bg-[#181D27] hover:bg-[#232B39] text-[#FAF9F5] border-[#FAF9F5]/14'
+                          }`}
+                        >
+                          {ch}
+                        </button>
+                      );
+                    })}
                   </div>
-                )}
+
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <span className="font-mono-tech text-[10.5px] text-[#9AA3B2]">
+                      {spPhase === 'recall'
+                        ? `ВЫБРАНО: ${pickedLetters.length} / ${maxPick} · ОТМЕЧАЙТЕ БЕЗ УГАДЫВАНИЯ`
+                        : 'ПАНЕЛЬ ВВОДА АКТИВИРУЕТСЯ СРАЗУ ПОСЛЕ ВСПЫШКИ'}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={spPhase !== 'recall' || pickedLetters.length === 0}
+                      tabIndex={spPhase === 'recall' ? 0 : -1}
+                      onClick={submitSperlingRecall}
+                      className={`v6-pill h-9 px-5 rounded-full font-sans-ui text-[13px] font-semibold ${
+                        spPhase !== 'recall' || pickedLetters.length === 0
+                          ? 'bg-[#1F2532] text-[#64748B] cursor-not-allowed'
+                          : 'bg-[#34D399] hover:bg-[#2BC088] text-[#081A14] cursor-pointer'
+                      }`}
+                    >
+                      Проверить совпадения
+                    </button>
+                  </div>
+                </div>
               </div>
             </NoesisInstrumentFrame>
           </div>
@@ -772,10 +848,14 @@ export function Act2OverflowBlindsightTime() {
                     </div>
                   </div>
 
-                  {/* Top-Down Architectural Corridor Plan */}
+                  {/* Right Panel: Corridor Plan (de Gelder 2008) OR Seated Emotion Circuit (Pegna 2005) */}
                   <div className="sm:col-span-8 rounded-xl bg-[#FAF9F5] border border-[#141413]/14 p-3 flex flex-col justify-between">
-                    <div className="flex items-center justify-between font-mono-tech text-[9.5px] uppercase tracking-[0.11em] text-[#5E5D59] mb-1">
-                      <span>ПЛАН КОРИДОРА СВЕРХУ · 6 ПРЕПЯТСТВИЙ</span>
+                    <div className="flex flex-wrap items-center justify-between gap-2 font-mono-tech text-[9.5px] uppercase tracking-[0.11em] text-[#5E5D59] mb-1">
+                      <span>
+                        {tnPathway === 'amygdala'
+                          ? 'СИДЯЧИЙ ТЕСТ ЭМОЦИЙ · PEGNA ET AL., 2005'
+                          : 'ПЛАН КОРИДОРА СВЕРХУ · DE GELDER ET AL., 2008'}
+                      </span>
                       <span
                         className={
                           tnPathway === 'conscious'
@@ -786,145 +866,291 @@ export function Act2OverflowBlindsightTime() {
                         }
                       >
                         {tnPathway === 'conscious'
-                          ? 'ОСОЗНАННАЯ КАРТА: НЕТ'
+                          ? 'ОСОЗНАННАЯ КАРТА: 0% (СЛЕПОЕ ПЯТНО)'
                           : tnPathway === 'amygdala'
-                            ? 'РЕАКЦИЯ НА СТРАХ: ВЫШЕ ШАНСА'
+                            ? 'ТОЧНОСТЬ: ВЫШЕ ШАНСА (50%)'
                             : 'СТОЛКНОВЕНИЙ: 0'}
                       </span>
                     </div>
 
-                    <svg viewBox="0 0 420 144" className="w-full h-[126px] block">
-                      {/* Corridor walls */}
-                      <rect x="8" y="14" width="404" height="116" rx="8" fill="#F3F1E9" stroke="#141413" strokeOpacity="0.18" />
-                      {/* 6 Architectural Boxes/Chairs */}
-                      {TN_OBSTACLES.map((ob, idx) => (
-                        <rect
-                          key={idx}
-                          x={ob.x}
-                          y={ob.y}
-                          width={ob.w}
-                          height={ob.h}
-                          rx="3"
-                          fill="#141413"
-                          fillOpacity={tnPathway === 'conscious' ? 0.08 : 0.15}
-                          stroke="#141413"
-                          strokeOpacity={tnPathway === 'conscious' ? 0.24 : 0.42}
-                          strokeWidth="1.2"
-                        />
-                      ))}
+                    {tnPathway === 'amygdala' ? (
+                      <>
+                        {/* Seated fMRI / Emotion Guessing Schematic (Pegna et al., Nature Neuroscience 2005) */}
+                        <svg viewBox="0 0 420 144" className="w-full h-[126px] block">
+                          <rect x="8" y="10" width="404" height="124" rx="8" fill="#F3F1E9" stroke="#141413" strokeOpacity="0.18" />
 
-                      {/* Exact shared collision-free trajectory */}
-                      <polyline
-                        points={TN_SVG_POINTS}
-                        fill="none"
-                        stroke={
-                          tnPathway === 'conscious'
-                            ? '#7A7872'
-                            : tnPathway === 'amygdala'
-                              ? '#004EDF'
-                              : '#0D7A5F'
-                        }
-                        strokeOpacity={tnPathway === 'conscious' ? 0.25 : 0.45}
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeDasharray="5 4"
-                      />
+                          {/* Left: Stimulus Screen */}
+                          <rect x="20" y="34" width="84" height="76" rx="6" fill="#141413" />
+                          <text x="62" y="54" textAnchor="middle" fill="#9AA3B2" fontSize="8" fontFamily="JetBrains Mono Variable, monospace">
+                            СТИМУЛ
+                          </text>
+                          <text
+                            x="62"
+                            y="76"
+                            textAnchor="middle"
+                            fill={tnFearStimulus === 'fear' ? '#FC4109' : '#FAF9F5'}
+                            fontSize="10.5"
+                            fontWeight="700"
+                            fontFamily="JetBrains Mono Variable, monospace"
+                          >
+                            {tnFearStimulus === 'fear' ? 'ЛИЦО: СТРАХ' : 'НЕЙТРАЛЬНО'}
+                          </text>
+                          <text x="62" y="94" textAnchor="middle" fill="#8E98A8" fontSize="7.5" fontFamily="JetBrains Mono Variable, monospace">
+                            (БЕЗ ТРОСТИ)
+                          </text>
 
-                      {/* In Amygdala pathway: show fear-face stimulus target & direct subcortical pulse */}
-                      {tnPathway === 'amygdala' && (
-                        <g>
-                          <line
-                            x1={tnPos.x}
-                            y1={tnPos.y}
-                            x2={394}
-                            y2={68}
-                            stroke="#FC4109"
-                            strokeWidth="1.5"
-                            strokeDasharray="3 3"
-                            opacity="0.8"
-                          />
-                          <circle cx="394" cy="68" r="11" fill="#FC4109" fillOpacity="0.14" stroke="#FC4109" strokeWidth="1.5" />
-                          <circle cx="390.5" cy="65.5" r="1.4" fill="#FC4109" />
-                          <circle cx="397.5" cy="65.5" r="1.4" fill="#FC4109" />
-                          <ellipse cx="394" cy="72" rx="2.6" ry="3.2" fill="none" stroke="#FC4109" strokeWidth="1.2" />
-                        </g>
-                      )}
-
-                      {/* Live Patient TN marker + directional sensing cone */}
-                      <g transform={`translate(${tnPos.x.toFixed(1)}, ${tnPos.y.toFixed(1)})`}>
-                        {tnPathway !== 'conscious' && (
+                          {/* Top severed cortical route: Retina -> V1 */}
                           <path
-                            d="M 0 0 L 30 -13 L 30 13 Z"
-                            fill={tnPathway === 'amygdala' ? '#FC4109' : '#0D7A5F'}
-                            fillOpacity="0.18"
-                            transform={`rotate(${tnPos.headingDeg.toFixed(1)})`}
+                            d="M 104 54 L 166 54 L 222 38"
+                            fill="none"
+                            stroke="#141413"
+                            strokeOpacity="0.28"
+                            strokeWidth="1.5"
+                            strokeDasharray="4 3"
                           />
-                        )}
-                        <circle
-                          cx="0"
-                          cy="0"
-                          r="7.5"
-                          fill={
-                            tnPathway === 'conscious'
-                              ? '#7A7872'
-                              : tnPathway === 'amygdala'
-                                ? '#FC4109'
-                                : '#0D7A5F'
-                          }
-                          stroke="#FAF9F5"
-                          strokeWidth="2"
-                        />
-                        <text
-                          x="0"
-                          y="-11"
-                          textAnchor="middle"
-                          fill={
-                            tnPathway === 'conscious'
-                              ? '#5E5D59'
-                              : tnPathway === 'amygdala'
-                                ? '#FC4109'
-                                : '#0D7A5F'
-                          }
-                          fontSize="9"
-                          fontWeight="700"
-                          fontFamily="JetBrains Mono Variable, monospace"
-                        >
-                          TN
-                        </text>
-                      </g>
-                    </svg>
+                          <rect x="224" y="22" width="108" height="32" rx="5" fill="#FAF9F5" stroke="#FC4109" strokeOpacity="0.55" strokeDasharray="3 2" />
+                          <text x="278" y="36" textAnchor="middle" fill="#FC4109" fontSize="8" fontWeight="700" fontFamily="JetBrains Mono Variable, monospace">
+                            КОРА V1 · РАЗРУШЕНА
+                          </text>
+                          <text x="278" y="48" textAnchor="middle" fill="#5E5D59" fontSize="7.5" fontFamily="JetBrains Mono Variable, monospace">
+                            ОСОЗНАННЫЙ ОБРАЗ: 0%
+                          </text>
 
-                    <div className="flex items-center gap-3 mt-1.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (tnProgressRef.current >= 0.98) {
-                            tnProgressRef.current = 0;
-                            setTnProgress(0);
-                          }
-                          setTnWalking((w) => !w);
-                        }}
-                        className="v6-pill px-3 py-1 rounded-full bg-[#141413] text-[#FAF9F5] font-mono-tech text-[10px] uppercase tracking-[0.09em] inline-flex items-center gap-1.5 cursor-pointer shrink-0"
-                      >
-                        {tnWalking ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 text-[#34D399]" />}
-                        <span>{tnWalking ? 'Пауза' : 'Пройти коридор'}</span>
-                      </button>
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        value={Math.round(tnProgress * 100)}
-                        onChange={(e) => {
-                          setTnWalking(false);
-                          const v = Number(e.target.value) / 100;
-                          tnProgressRef.current = v;
-                          setTnProgress(v);
-                        }}
-                        className="w-full accent-[#0D7A5F] cursor-pointer"
-                        aria-label="Положение пациента TN в коридоре"
-                      />
-                    </div>
+                          {/* Bottom intact subcortical route: Eye -> Superior Colliculus / Pulvinar -> Right Amygdala */}
+                          <path
+                            d="M 104 88 L 166 88 L 224 102"
+                            fill="none"
+                            stroke={tnFearStimulus === 'fear' ? '#FC4109' : '#004EDF'}
+                            strokeWidth="2.4"
+                          />
+                          <circle cx="166" cy="88" r="14" fill="#FAF9F5" stroke="#141413" strokeWidth="1.4" />
+                          <text x="166" y="86" textAnchor="middle" fill="#141413" fontSize="7" fontWeight="700" fontFamily="JetBrains Mono Variable, monospace">
+                            ПОДКОРКА
+                          </text>
+                          <text x="166" y="95" textAnchor="middle" fill="#5E5D59" fontSize="6.5" fontFamily="JetBrains Mono Variable, monospace">
+                            ТАЛАМУС
+                          </text>
+
+                          <rect
+                            x="224"
+                            y="80"
+                            width="174"
+                            height="42"
+                            rx="6"
+                            fill={tnFearStimulus === 'fear' ? '#FC4109' : '#004EDF'}
+                            fillOpacity="0.1"
+                            stroke={tnFearStimulus === 'fear' ? '#FC4109' : '#004EDF'}
+                            strokeWidth="1.6"
+                          />
+                          <text
+                            x="311"
+                            y="97"
+                            textAnchor="middle"
+                            fill={tnFearStimulus === 'fear' ? '#C83407' : '#004EDF'}
+                            fontSize="8.5"
+                            fontWeight="700"
+                            fontFamily="JetBrains Mono Variable, monospace"
+                          >
+                            {tnFearStimulus === 'fear' ? 'ПРАВАЯ МИНДАЛИНА: СИГНАЛ' : 'ПРАВАЯ МИНДАЛИНА: ФОН'}
+                          </text>
+                          <text x="311" y="111" textAnchor="middle" fill="#282725" fontSize="7.8" fontFamily="JetBrains Mono Variable, monospace">
+                            {tnFearStimulus === 'fear'
+                              ? 'Ответ TN: угадывает страх'
+                              : 'Ответ TN: «не вижу, спокойно»'}
+                          </text>
+                        </svg>
+
+                        <div className="flex flex-wrap items-center justify-between gap-2 mt-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setTnFearStimulus('fear')}
+                              className={`v6-pill px-3 py-1 rounded-full font-mono-tech text-[10px] uppercase tracking-[0.08em] border cursor-pointer ${
+                                tnFearStimulus === 'fear'
+                                  ? 'bg-[#FC4109] text-[#FAF9F5] border-[#FC4109]'
+                                  : 'bg-[#F3F1E9] text-[#141413] border-[#141413]/14'
+                              }`}
+                            >
+                              Показать: Страх
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setTnFearStimulus('neutral')}
+                              className={`v6-pill px-3 py-1 rounded-full font-mono-tech text-[10px] uppercase tracking-[0.08em] border cursor-pointer ${
+                                tnFearStimulus === 'neutral'
+                                  ? 'bg-[#004EDF] text-[#FAF9F5] border-[#004EDF]'
+                                  : 'bg-[#F3F1E9] text-[#141413] border-[#141413]/14'
+                              }`}
+                            >
+                              Показать: Нейтрал
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleSelectTnPathway('navigation')}
+                            className="font-mono-tech text-[10px] uppercase tracking-[0.09em] text-[#5E5D59] hover:text-[#141413] cursor-pointer"
+                          >
+                            ← К коридору (2008)
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <svg viewBox="0 0 420 144" className="w-full h-[126px] block">
+                          {/* Corridor walls */}
+                          <rect x="8" y="14" width="404" height="116" rx="8" fill="#F3F1E9" stroke="#141413" strokeOpacity="0.18" />
+                          {/* 6 Architectural Boxes/Chairs */}
+                          {TN_OBSTACLES.map((ob, idx) => (
+                            <rect
+                              key={idx}
+                              x={ob.x}
+                              y={ob.y}
+                              width={ob.w}
+                              height={ob.h}
+                              rx="3"
+                              fill="#141413"
+                              fillOpacity={tnPathway === 'conscious' ? 0.05 : 0.15}
+                              stroke="#141413"
+                              strokeOpacity={tnPathway === 'conscious' ? 0.18 : 0.42}
+                              strokeDasharray={tnPathway === 'conscious' ? '3 3' : undefined}
+                              strokeWidth="1.2"
+                            />
+                          ))}
+
+                          {tnPathway === 'conscious' ? (
+                            <g>
+                              {/* Broken conscious map overlay: NO collision-free trajectory! */}
+                              <rect x="8" y="14" width="404" height="116" rx="8" fill="#141413" fillOpacity="0.06" />
+                              <line
+                                x1="44"
+                                y1="76"
+                                x2="96"
+                                y2="76"
+                                stroke="#FC4109"
+                                strokeWidth="2"
+                                strokeDasharray="4 4"
+                              />
+                              <text
+                                x="106"
+                                y="80"
+                                fill="#FC4109"
+                                fontSize="11"
+                                fontWeight="700"
+                                fontFamily="JetBrains Mono Variable, monospace"
+                              >
+                                × КАРТА ПРЕПЯТСТВИЙ НЕ ПОСТРОЕНА (V1 = 0%)
+                              </text>
+                              <circle cx="36" cy="76" r="7.5" fill="#7A7872" stroke="#FAF9F5" strokeWidth="2" />
+                              <text
+                                x="36"
+                                y="65"
+                                textAnchor="middle"
+                                fill="#5E5D59"
+                                fontSize="9"
+                                fontWeight="700"
+                                fontFamily="JetBrains Mono Variable, monospace"
+                              >
+                                TN
+                              </text>
+                            </g>
+                          ) : (
+                            <>
+                              {/* Exact shared collision-free trajectory */}
+                              <polyline
+                                points={TN_SVG_POINTS}
+                                fill="none"
+                                stroke="#0D7A5F"
+                                strokeOpacity="0.45"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeDasharray="5 4"
+                              />
+
+                              {/* Live Patient TN marker + directional sensing cone */}
+                              <g transform={`translate(${tnPos.x.toFixed(1)}, ${tnPos.y.toFixed(1)})`}>
+                                <path
+                                  d="M 0 0 L 30 -13 L 30 13 Z"
+                                  fill="#0D7A5F"
+                                  fillOpacity="0.18"
+                                  transform={`rotate(${tnPos.headingDeg.toFixed(1)})`}
+                                />
+                                <circle
+                                  cx="0"
+                                  cy="0"
+                                  r="7.5"
+                                  fill="#0D7A5F"
+                                  stroke="#FAF9F5"
+                                  strokeWidth="2"
+                                />
+                                <text
+                                  x="0"
+                                  y="-11"
+                                  textAnchor="middle"
+                                  fill="#0D7A5F"
+                                  fontSize="9"
+                                  fontWeight="700"
+                                  fontFamily="JetBrains Mono Variable, monospace"
+                                >
+                                  TN
+                                </text>
+                              </g>
+                            </>
+                          )}
+                        </svg>
+
+                        {tnPathway === 'conscious' ? (
+                          <div className="flex flex-wrap items-center justify-between gap-2 mt-1.5">
+                            <span className="font-mono-tech text-[10px] uppercase tracking-[0.08em] text-[#C83407]">
+                              Осознанный маршрут недоступен без коры V1
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleSelectTnPathway('navigation');
+                                tnProgressRef.current = 0;
+                                setTnProgress(0);
+                                setTnWalking(true);
+                              }}
+                              className="v6-pill px-3 py-1 rounded-full bg-[#0D7A5F] hover:bg-[#0A644E] text-[#FAF9F5] font-mono-tech text-[10px] uppercase tracking-[0.09em] cursor-pointer"
+                            >
+                              Включить 2. Обходной путь →
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3 mt-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (tnProgressRef.current >= 0.98) {
+                                  tnProgressRef.current = 0;
+                                  setTnProgress(0);
+                                }
+                                setTnWalking((w) => !w);
+                              }}
+                              className="v6-pill px-3 py-1 rounded-full bg-[#141413] text-[#FAF9F5] font-mono-tech text-[10px] uppercase tracking-[0.09em] inline-flex items-center gap-1.5 cursor-pointer shrink-0"
+                            >
+                              {tnWalking ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 text-[#34D399]" />}
+                              <span>{tnWalking ? 'Пауза' : 'Пройти коридор'}</span>
+                            </button>
+                            <input
+                              type="range"
+                              min={0}
+                              max={100}
+                              value={Math.round(tnProgress * 100)}
+                              onChange={(e) => {
+                                setTnWalking(false);
+                                const v = Number(e.target.value) / 100;
+                                tnProgressRef.current = v;
+                                setTnProgress(v);
+                              }}
+                              className="w-full accent-[#0D7A5F] cursor-pointer"
+                              aria-label="Положение пациента TN в коридоре"
+                            />
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -947,7 +1173,7 @@ export function Act2OverflowBlindsightTime() {
                       id: 'amygdala' as const,
                       title: '3. Канал страха',
                       status: 'ЦЕЛ (МИНДАЛИНА)',
-                      desc: 'Прямой подкорковый путь к центру тревоги: TN угадывал испуганные лица выше случайного (Pegna 2005).',
+                      desc: 'Сидячий тест: прямой подкорковый путь к центру тревоги — TN угадывал страх выше случайного (Pegna 2005).',
                     },
                   ].map((p) => {
                     const active = tnPathway === p.id;
@@ -955,7 +1181,7 @@ export function Act2OverflowBlindsightTime() {
                       <button
                         key={p.id}
                         type="button"
-                        onClick={() => setTnPathway(p.id)}
+                        onClick={() => handleSelectTnPathway(p.id)}
                         className={`v6-pill text-left p-3 rounded-xl border cursor-pointer ${
                           active
                             ? 'bg-[#141413] text-[#FAF9F5] border-[#141413]'
@@ -1039,7 +1265,7 @@ export function Act2OverflowBlindsightTime() {
             <NoesisInstrumentFrame
               code="ПРИБОР II.5 · ИЛЛЮЗИЯ FLASH-LAG (ПОСТДИКЦИЯ)"
               badge="self-test"
-              telemetry={flFrozen ? 'СТОП-КАДР t = 0 МС' : 'ВСПЫШКА 42 МС НА 12 ЧАСАХ'}
+              telemetry={flFrozen ? 'СТОП-КАДР t = 0 МС' : 'ВСПЫШКА ~50 МС НА 12 ЧАСАХ'}
               surface="darkroom"
               footnote="Eagleman & Sejnowski (Science, 2000) · сравните все 3 режима и проверьте Стоп-кадр!"
             >
@@ -1086,10 +1312,30 @@ export function Act2OverflowBlindsightTime() {
                   </button>
                 </div>
 
+                {/* Responsive HTML telemetry bar above canvas (never clips on 390px mobile!) */}
+                <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#0B0D11] border border-[#FAF9F5]/10 font-mono-tech text-[10px] uppercase tracking-[0.09em]">
+                  {flFrozen ? (
+                    <span className="text-[#34D399] font-semibold">
+                      СТОП-КАДР t = 0 МС · Δ = 0.0° (ИДЕАЛЬНО НА ОДНОЙ ЛИНИИ)
+                    </span>
+                  ) : (
+                    <span className="text-[#9AA3B2]">
+                      СМОТРИТЕ В ЦЕНТРАЛЬНЫЙ КРЕСТ + · ВСПЫШКА ~50 МС НА 12 ЧАСАХ
+                    </span>
+                  )}
+                  <span className="text-[#FAF9F5]/55">
+                    {flMode === 'continuous'
+                      ? 'СКВОЗНОЙ ЦИКЛ'
+                      : flMode === 'terminated'
+                        ? 'ИСЧЕЗАЕТ ПОСЛЕ ВСПЫШКИ'
+                        : 'ОТКАТ 450 МС ПОСЛЕ ВСПЫШКИ'}
+                  </span>
+                </div>
+
                 {/* Live 60/120Hz Flash-Lag Darkroom Canvas */}
                 <div
                   ref={flWrapRef}
-                  className="relative w-full h-[250px] rounded-xl overflow-hidden border border-[#FAF9F5]/12 bg-[#111419]"
+                  className="relative w-full h-[240px] rounded-xl overflow-hidden border border-[#FAF9F5]/12 bg-[#111419]"
                 >
                   <canvas ref={flCanvasRef} className="w-full h-full block" />
                 </div>
@@ -1106,7 +1352,7 @@ export function Act2OverflowBlindsightTime() {
                     </span>
                   ) : flMode === 'terminated' ? (
                     <span>
-                      <strong>Режим 2 (Стоп на вспышке):</strong> полоса замирает в момент вспышки — и иллюзия мгновенно исчезает! Значит, мозг НЕ предсказывал движение заранее.
+                      <strong>Режим 2 (Стоп на вспышке):</strong> полоса исчезает сразу после вспышки — и иллюзия мгновенно пропадает! Значит, мозг НЕ предсказывал её путь заранее.
                     </span>
                   ) : (
                     <span>

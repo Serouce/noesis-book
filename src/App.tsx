@@ -225,7 +225,6 @@ function NoesisBookShell() {
 
     const tick = (time: number) => {
       lenis.raf(time * 1000);
-      syncHudFromViewport(false);
     };
     gsap.ticker.add(tick);
     gsap.ticker.lagSmoothing(0);
@@ -406,14 +405,26 @@ function NoesisBookShell() {
     [syncHudFromViewport],
   );
 
-  // Listen to browser Back/Forward hashchange
+  const lastPopRouteRef = useRef<{ key: string; ts: number }>({ key: '', ts: 0 });
+
+  // Listen to browser Back/Forward (both popstate for pushState and hashchange)
   useEffect(() => {
-    const onHashChange = () => {
+    const onRouteSync = () => {
       const parsed = parseHashRoute(window.location.hash);
+      const key = buildHashUrl(parsed.act, parsed.section);
+      const now = performance.now();
+      if (lastPopRouteRef.current.key === key && now - lastPopRouteRef.current.ts < 80) {
+        return;
+      }
+      lastPopRouteRef.current = { key, ts: now };
       switchAct(parsed.act, parsed.section ?? undefined, false);
     };
-    window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
+    window.addEventListener('hashchange', onRouteSync);
+    window.addEventListener('popstate', onRouteSync);
+    return () => {
+      window.removeEventListener('hashchange', onRouteSync);
+      window.removeEventListener('popstate', onRouteSync);
+    };
   }, [switchAct]);
 
   // Ensure initial URL always has canonical hash if blank

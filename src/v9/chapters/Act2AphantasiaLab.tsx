@@ -35,7 +35,7 @@ interface VividnessLevel {
   label: string;
   archetype: string;
   population: string;
-  pupilMm: number;
+  pupilDeltaPct: number;
   explain: string;
   imgFilter: string;
   imgOpacity: number;
@@ -47,7 +47,7 @@ const VIVIDNESS_LEVELS: VividnessLevel[] = [
     label: '0 · Полная темнота',
     archetype: 'Афантазия (внутренний экран выключен)',
     population: '~2–4% людей',
-    pupilMm: 4.7,
+    pupilDeltaPct: 0,
     explain:
       'Вы точно знаете, что такое яблоко, какого оно цвета и формы, — но с закрытыми глазами перед вами нет никакой картинки. Знание есть, визуальных квалиа воображения — нет.',
     imgFilter: 'grayscale(1) brightness(0.1)',
@@ -58,7 +58,7 @@ const VIVIDNESS_LEVELS: VividnessLevel[] = [
     label: '1 · Едва уловимый след',
     archetype: 'Гипофантазия (на грани темноты)',
     population: '~10% людей',
-    pupilMm: 4.5,
+    pupilDeltaPct: -2,
     explain:
       'Мелькает едва различимый серый намёк на круглый контур, почти без цвета и объёма — и тут же растворяется.',
     imgFilter: 'grayscale(0.95) contrast(0.75) blur(3.5px) brightness(0.62)',
@@ -69,7 +69,7 @@ const VIVIDNESS_LEVELS: VividnessLevel[] = [
     label: '2 · Туманный силуэт',
     archetype: 'Слабое зрительное воображение',
     population: '~20% людей',
-    pupilMm: 4.1,
+    pupilDeltaPct: -5,
     explain:
       'Силуэт яблока узнаваем, проступает приглушённый тёмно-красный тон, но детали кожуры и тень остаются размытыми.',
     imgFilter: 'saturate(0.42) blur(2.2px) contrast(0.9)',
@@ -80,7 +80,7 @@ const VIVIDNESS_LEVELS: VividnessLevel[] = [
     label: '3 · Ясный полупрозрачный образ',
     archetype: 'Типичное зрительное воображение',
     population: '~45% людей',
-    pupilMm: 3.7,
+    pupilDeltaPct: -9,
     explain:
       'Отчётливое красное яблоко с черенком — вы легко удерживаете его в уме, хотя чувствуете, что оно чуть мягче реальной фотографии.',
     imgFilter: 'saturate(0.78) blur(0.9px)',
@@ -91,7 +91,7 @@ const VIVIDNESS_LEVELS: VividnessLevel[] = [
     label: '4 · Чёткий цветной образ',
     archetype: 'Яркое зрительное воображение',
     population: '~15% людей',
-    pupilMm: 3.3,
+    pupilDeltaPct: -12,
     explain:
       'Насыщенный цвет, объём и блик света на кожуре; можно мысленно повернуть яблоко в руке и разглядеть черенок.',
     imgFilter: 'saturate(0.96) blur(0.25px)',
@@ -102,7 +102,7 @@ const VIVIDNESS_LEVELS: VividnessLevel[] = [
     label: '5 · Как живая фотография',
     archetype: 'Гиперфантазия (эффект присутствия)',
     population: '~3–5% людей',
-    pupilMm: 3.0,
+    pupilDeltaPct: -14,
     explain:
       'Ослепительно резкий внутренний снимок — видны крапинки на кожуре, тень на бумаге и ощущение веса. Почти как открытые глаза.',
     imgFilter: 'saturate(1.06) contrast(1.03)',
@@ -112,21 +112,29 @@ const VIVIDNESS_LEVELS: VividnessLevel[] = [
 
 /**
  * ACT II · TEST 04 (PROMOTED TO MAINSTREAM!): "5-секундный тест красного яблока (Афантазия)"
- * - Real self-test using our studio Leica still-life (/v9/aphantasia-apple.jpg) with programmatic 5 -> 0 vividness degradation.
- * - Live Pupillary Light Reflex (Kay et al., eLife 2022) visual proof that mental imagery isn't just vocabulary.
- * - Records personal score (0..5) into ExplorerContext -> localStorage -> Bone Passport!
+ * - Swiss anti-priming shutter keeps the studio Leica still-life (/v9/aphantasia-apple.jpg) concealed until 5s timer finishes or user explicitly opens the scale.
+ * - Honest 2-step preview (0..5) -> commit ("Записать X / 5 в Паспорт книги").
+ * - Relative Pupillary Light Reflex (Δ зрачка: 0% -> −14%, Kay et al., eLife 2022) comparing bright vs dark imagined stimuli.
  */
 export function Act2AphantasiaLab() {
   const { state, setAphantasiaScore } = useExplorer();
   const [countdown, setCountdown] = useState<number | null>(null);
   const [chimeEnabled, setChimeEnabled] = useState(false);
+  const [appleRevealed, setAppleRevealed] = useState<boolean>(() => state.aphantasiaScore !== null);
   const [previewScore, setPreviewScore] = useState<number>(state.aphantasiaScore ?? 3);
+
+  useEffect(() => {
+    if (state.aphantasiaScore !== null) {
+      setAppleRevealed(true);
+    }
+  }, [state.aphantasiaScore]);
 
   useEffect(() => {
     if (countdown === null || countdown <= 0) return;
     const id = window.setTimeout(() => {
-      if (countdown === 1 && chimeEnabled) {
-        playGentleChime();
+      if (countdown === 1) {
+        if (chimeEnabled) playGentleChime();
+        setAppleRevealed(true);
       }
       setCountdown((c) => (c !== null && c > 1 ? c - 1 : 0));
     }, 1000);
@@ -136,13 +144,8 @@ export function Act2AphantasiaLab() {
   const activeLevel = VIVIDNESS_LEVELS[previewScore] ?? VIVIDNESS_LEVELS[3];
   const isSaved = state.aphantasiaScore !== null;
 
-  const handleSelectScore = (score: number) => {
-    setPreviewScore(score);
-    setAphantasiaScore(score);
-  };
-
-  // Map physiological pupil diameter (3.0..4.7 mm) to SVG radius
-  const pupilRadius = 6.5 + ((activeLevel.pupilMm - 3.0) / 1.7) * 9.5;
+  // Map relative pupillary constriction (0% -> -14%) to SVG radius (15px baseline -> 7.5px constricted)
+  const pupilRadius = 15 + (activeLevel.pupilDeltaPct / 14) * 7.5;
 
   return (
     <section
@@ -244,23 +247,26 @@ export function Act2AphantasiaLab() {
               footnote="Ваш балл сохраняется в Паспорт Bone · Kay et al. (eLife, 2022)"
             >
               <div className="space-y-5">
-                {/* 0..5 Tactile Selector Pills (Strictly neutral until chosen — zero pre-selected black pill!) */}
+                {/* 0..5 Tactile Selector Pills (Preview first -> explicit Save button!) */}
                 <div className="space-y-1.5">
                   <div className="grid grid-cols-6 gap-2">
                     {VIVIDNESS_LEVELS.map((lvl) => {
                       const isChosen = state.aphantasiaScore === lvl.score;
-                      const isPreviewOnly = !isSaved && previewScore === lvl.score;
+                      const isPreviewOnly = appleRevealed && previewScore === lvl.score && !isChosen;
                       return (
                         <button
                           key={lvl.score}
                           type="button"
-                          onClick={() => handleSelectScore(lvl.score)}
-                          className={`v6-pill py-2.5 rounded-xl border font-mono-tech text-[13px] font-bold cursor-pointer ${
-                            isChosen
-                              ? 'bg-[#141413] text-[#FAF9F5] border-[#141413] shadow-sm'
-                              : isPreviewOnly
-                                ? 'bg-[#FAF9F5] text-[#141413] border-[#141413]/45 border-dashed'
-                                : 'bg-[#FAF9F5] hover:bg-[#EAE7DC] text-[#141413] border-[#141413]/14'
+                          disabled={!appleRevealed}
+                          onClick={() => setPreviewScore(lvl.score)}
+                          className={`v6-pill py-2.5 rounded-xl border font-mono-tech text-[13px] font-bold ${
+                            !appleRevealed
+                              ? 'bg-[#FAF9F5]/60 text-[#141413]/35 border-[#141413]/10 cursor-not-allowed'
+                              : isChosen
+                                ? 'bg-[#141413] text-[#FAF9F5] border-[#141413] shadow-sm cursor-pointer'
+                                : isPreviewOnly
+                                  ? 'bg-[#004EDF]/10 text-[#004EDF] border-[#004EDF] border-dashed cursor-pointer'
+                                  : 'bg-[#FAF9F5] hover:bg-[#EAE7DC] text-[#141413] border-[#141413]/14 cursor-pointer'
                           }`}
                         >
                           {lvl.score}
@@ -268,21 +274,29 @@ export function Act2AphantasiaLab() {
                       );
                     })}
                   </div>
-                  <div className="flex items-center justify-between font-mono-tech text-[9.5px] uppercase tracking-[0.11em] text-[#5E5D59] px-0.5">
+                  <div className="flex items-center justify-between gap-2 font-mono-tech text-[9.5px] uppercase tracking-[0.11em] text-[#5E5D59] px-0.5">
                     <span>0 · полная тьма</span>
-                    <span>{isSaved ? 'записано в паспорт' : 'нажмите ваш уровень'}</span>
+                    <span className="text-center">
+                      {!appleRevealed
+                        ? 'сначала закройте глаза или откройте шторку'
+                        : !isSaved
+                          ? `предпросмотр ${previewScore}/5 · запишите ниже`
+                          : previewScore !== state.aphantasiaScore
+                            ? `в паспорте ${state.aphantasiaScore}/5 · просмотр ${previewScore}/5`
+                            : `в паспорте: ${state.aphantasiaScore}/5`}
+                    </span>
                     <span>5 · как фотография</span>
                   </div>
                 </div>
 
-                {/* Main Split Visual: Left = Studio Apple Plate (5 -> 0), Right = Pupil Reflex + Diagnosis */}
+                {/* Main Split Visual: Left = Studio Apple Plate (with anti-priming Swiss Shutter!), Right = Pupil Reflex + Diagnosis */}
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-5 items-center">
-                  {/* Studio Leica Apple Photograph with programmatic vividness filter */}
+                  {/* Studio Leica Apple Photograph with programmatic vividness filter + anti-priming shutter */}
                   <div className="sm:col-span-6">
                     <div
                       className="relative aspect-square w-full rounded-xl overflow-hidden border border-[#141413]/15 transition-colors duration-300"
                       style={{
-                        backgroundColor: previewScore === 0 ? '#141413' : '#FAF9F5',
+                        backgroundColor: !appleRevealed || previewScore === 0 ? '#141413' : '#FAF9F5',
                       }}
                     >
                       <img
@@ -291,12 +305,55 @@ export function Act2AphantasiaLab() {
                         className="w-full h-full object-cover select-none transition-all duration-300"
                         style={{
                           filter: activeLevel.imgFilter,
-                          opacity: activeLevel.imgOpacity,
+                          opacity: appleRevealed ? activeLevel.imgOpacity : 0,
                         }}
                         draggable={false}
                       />
 
-                      {previewScore === 0 && (
+                      {!appleRevealed && (
+                        <div className="absolute inset-0 bg-[#141413] text-[#FAF9F5] p-5 flex flex-col justify-between">
+                          <div className="flex items-center justify-between font-mono-tech text-[9.5px] uppercase tracking-[0.13em] text-[#9EA4B0]">
+                            <span className="text-[#FC4109] font-semibold">ШТОРКА · БЕЗ ПОДСКАЗКИ</span>
+                            <span>+</span>
+                          </div>
+
+                          <div className="text-center space-y-2.5 my-auto">
+                            {countdown !== null && countdown > 0 ? (
+                              <>
+                                <div className="font-mono-tech text-[42px] leading-none font-bold text-[#FC4109] tabular-nums">
+                                  0{countdown}
+                                </div>
+                                <p className="font-serif-editorial italic text-[15px] text-[#FAF9F5]/85 leading-snug">
+                                  {ruTypo('Закройте глаза и удерживайте образ красного яблока…')}
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <div className="w-10 h-10 mx-auto rounded-full border border-[#FAF9F5]/22 flex items-center justify-center font-mono-tech text-[11px] text-[#FAF9F5]/65">
+                                  5с
+                                </div>
+                                <p className="font-serif-editorial italic text-[15px] text-[#FAF9F5]/85 leading-snug">
+                                  {ruTypo(
+                                    'Фото скрыто, чтобы не сбить ваш внутренний экран. Закройте глаза на 5 секунд или откройте шкалу вручную.',
+                                  )}
+                                </p>
+                              </>
+                            )}
+                          </div>
+
+                          <div className="flex flex-col gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setAppleRevealed(true)}
+                              className="v6-pill w-full py-2.5 px-3.5 rounded-full bg-[#FAF9F5] hover:bg-[#EAE7DC] text-[#141413] font-sans-ui text-[12.5px] font-medium cursor-pointer"
+                            >
+                              Я уже представил · Открыть шкалу
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {appleRevealed && previewScore === 0 && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center p-5 text-center">
                           <span className="font-mono-tech text-[10px] uppercase tracking-[0.14em] text-[#FC4109]">
                             ЭКРАН ВЫКЛЮЧЕН
@@ -307,14 +364,16 @@ export function Act2AphantasiaLab() {
                         </div>
                       )}
 
-                      <div className="pointer-events-none absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between font-mono-tech text-[9.5px] uppercase tracking-[0.1em]">
-                        <span className="px-2 py-0.5 rounded bg-[#141413]/78 text-[#FAF9F5]">
-                          {activeLevel.label}
-                        </span>
-                        <span className="px-2 py-0.5 rounded bg-[#FAF9F5]/92 text-[#141413] border border-[#141413]/12">
-                          {activeLevel.population}
-                        </span>
-                      </div>
+                      {appleRevealed && (
+                        <div className="pointer-events-none absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between font-mono-tech text-[9.5px] uppercase tracking-[0.1em]">
+                          <span className="px-2 py-0.5 rounded bg-[#141413]/78 text-[#FAF9F5]">
+                            {activeLevel.label}
+                          </span>
+                          <span className="px-2 py-0.5 rounded bg-[#FAF9F5]/92 text-[#141413] border border-[#141413]/12">
+                            {activeLevel.population}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -322,13 +381,17 @@ export function Act2AphantasiaLab() {
                   <div className="sm:col-span-6 space-y-4">
                     <div>
                       <div className="font-mono-tech text-[10px] uppercase tracking-[0.12em] text-[#004EDF] font-semibold">
-                        ВАШ ПРОФИЛЬ ВООБРАЖЕНИЯ
+                        {appleRevealed ? 'ПРОФИЛЬ ВООБРАЖЕНИЯ' : 'ПОСЛЕ ПРЕДСТАВЛЕНИЯ'}
                       </div>
                       <h3 className="font-display font-bold text-[18px] leading-snug text-[#141413] mt-1">
-                        {activeLevel.archetype}
+                        {appleRevealed ? activeLevel.archetype : 'Сначала представьте яблоко'}
                       </h3>
                       <p className="text-[13.5px] leading-[1.58] text-[#3B3A37] mt-1.5">
-                        {ruTypo(activeLevel.explain)}
+                        {ruTypo(
+                          appleRevealed
+                            ? activeLevel.explain
+                            : 'Запустите 5-секундный таймер слева или нажмите «Я уже представил · Открыть шкалу» на шторке, чтобы выбрать уровень от 0 до 5 без зрительной подсказки.',
+                        )}
                       </p>
                     </div>
 
@@ -345,7 +408,7 @@ export function Act2AphantasiaLab() {
                         <circle
                           cx="44"
                           cy="27"
-                          r={pupilRadius}
+                          r={appleRevealed ? pupilRadius : 13}
                           fill="#141413"
                           style={{ transition: 'r 260ms cubic-bezier(0.22, 1, 0.36, 1)' }}
                         />
@@ -354,29 +417,45 @@ export function Act2AphantasiaLab() {
                       <div className="min-w-0">
                         <div className="font-mono-tech text-[9.5px] uppercase tracking-[0.11em] text-[#5E5D59] inline-flex items-center gap-1">
                           <Eye className="w-3 h-3 text-[#FC4109]" />
-                          <span>РЕФЛЕКС ЗРАЧКА НА «СОЛНЦЕ»</span>
+                          <span>РЕФЛЕКС ЗРАЧКА · ЯРКОЕ VS ТЁМНОЕ</span>
                         </div>
-                        <div className="font-mono-tech text-[14px] font-bold text-[#141413] mt-0.5">
-                          Ø {activeLevel.pupilMm.toFixed(1)} мм{' '}
-                          <span className="text-[11px] font-normal text-[#5E5D59]">
-                            {previewScore === 0
-                              ? '(не сужается)'
-                              : previewScore >= 4
-                                ? '(сильно сужается)'
-                                : '(умеренное сужение)'}
-                          </span>
+                        <div className="font-mono-tech text-[13.5px] font-bold text-[#141413] mt-0.5">
+                          {appleRevealed ? (
+                            <>
+                              Δ зрачка: {activeLevel.pupilDeltaPct === 0 ? '0%' : `${activeLevel.pupilDeltaPct}%`}{' '}
+                              <span className="text-[11px] font-normal text-[#5E5D59]">
+                                {previewScore === 0
+                                  ? '(нет отклика · eLife 2022)'
+                                  : previewScore >= 4
+                                    ? '(сильное сужение · eLife 2022)'
+                                    : '(умеренное сужение · eLife 2022)'}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-[11.5px] font-normal text-[#5E5D59]">
+                              Шкала откроется после 5-секундной пробы
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
 
-                    {!isSaved && (
+                    {appleRevealed && (!isSaved || previewScore !== state.aphantasiaScore) && (
                       <button
                         type="button"
-                        onClick={() => handleSelectScore(previewScore)}
+                        onClick={() => setAphantasiaScore(previewScore)}
                         className="v6-pill w-full py-2.5 px-4 rounded-full bg-[#FC4109] hover:bg-[#E43806] text-[#FAF9F5] font-sans-ui text-[13px] font-medium cursor-pointer"
                       >
-                        Записать «{previewScore} / 5» в Паспорт книги
+                        {isSaved
+                          ? `Обновить в Паспорте на «${previewScore} / 5»`
+                          : `Записать «${previewScore} / 5» в Паспорт книги`}
                       </button>
+                    )}
+
+                    {appleRevealed && isSaved && previewScore === state.aphantasiaScore && (
+                      <div className="w-full py-2.5 px-4 rounded-full bg-[#0D7A5F]/10 border border-[#0D7A5F]/25 text-[#0D7A5F] font-mono-tech text-[11px] uppercase tracking-[0.09em] text-center font-semibold">
+                        ✓ Записано в Паспорт книги: {state.aphantasiaScore} / 5
+                      </div>
                     )}
                   </div>
                 </div>
