@@ -4,6 +4,9 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ArrowDown, Bookmark, Check, Sparkles, X } from 'lucide-react';
 import { useExplorer } from '../context/ExplorerContext';
 import { ScholarPortraitSvg } from './ScholarMarginalia';
+import { DossierTrigger } from '../../v9/components/NoesisDossierSheet';
+import { LabHonestyBadge } from '../../v9/components/NoesisInstrumentFrame';
+import { ruTypo } from '../../v9/utils/ruTypo';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -85,7 +88,7 @@ const BUTLIN_MODULES = [
     id: 'workspace',
     tag: '02 · ОБЩИЙ ЭКРАН ВНИМАНИЯ',
     name: 'Глобальное рабочее пространство',
-    desc: 'Единое «бутылочное горлышко» внимания, раздающее выбранный образ сразу всем подсистемам (гипотеза GNWT из Гл. IV).',
+    desc: 'Единое «бутылочное горлышко» внимания, раздающее выбранный образ сразу всем подсистемам (гипотеза GNWT из Акта IV).',
   },
   {
     id: 'selfModel',
@@ -108,12 +111,12 @@ const BUTLIN_MODULES = [
 ];
 
 /**
- * CHAPTER VII: "Граница иных разумов"
- * Upgraded v8:
- * 1. Species Field Dossier below the 6 cards + fixed mobile bookmark visibility + clean 0..5 range!
- * 2. USER'S IDEA: Cleaned main NY 2024 copy (zero clunky "(Сквидвард)/(мистер Крабс)" in prose!) + witty animated engraved margin stamp pop-out of a rectangular porous sea sponge with a tiny #FC4109 tie ("Porifera · 0 нейронов")!
- * 3. SIGNATURE SCROLL SETPIECE #3 (~155vh): Our #FC4109 book dot dilates on scroll into an unmistakable 1968 vertical brushed-aluminum + obsidian monolith HAL 9000 ("NOESIS · 9000") fisheye lens!
- * 4. Plain-Russian Butlin 2025 toggles + 2 presets ("Современная LLM 2026" vs "Полная система 5/5") + gradient rulings from all 3 judges + double ethical trap paragraph!
+ * ACT V · CHAPTER VII: "Граница иных разумов" (Bug #10 Fixes!):
+ * 1. Decouples inspecting a species card from moving the crimson bookmark!
+ *    Clicking a card opens its Field Note WITHOUT jumping the bookmark; explicit CTA or slider places the line.
+ * 2. Eliminates redundant duplicate vertical HAL 9000 monolith box below the 155vh HAL 9000 scroll runway —
+ *    replaces it with a crisp live optical aperture telemetry readout reacting to the 5 Butlin toggles!
+ * 3. Level-2 Archival Dossier trigger ("other-minds-2024").
  */
 export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
   const {
@@ -128,7 +131,6 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
   const [focusedSpeciesId, setFocusedSpeciesId] = useState<string>('octopus');
   const [showSpongeStamp, setShowSpongeStamp] = useState(false);
 
-  // Scroll Setpiece #3 refs (#FC4109 Dot -> Monolith HAL 9000!)
   const halRunwayRef = useRef<HTMLDivElement | null>(null);
   const halMonolithRef = useRef<HTMLDivElement | null>(null);
   const halIrisRef = useRef<SVGCircleElement | null>(null);
@@ -153,9 +155,9 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
         });
 
         if (halMonolithRef.current) {
-          const w = 16 + p * 184; // 16px signature dot -> 200px wide vertical monolith!
-          const h = 16 + p * 324; // 16px dot -> 340px tall vertical monolith!
-          const radius = 999 - p * 981; // circle -> crisp 18px brushed-aluminum bezel!
+          const w = 16 + p * 184;
+          const h = 16 + p * 324;
+          const radius = 999 - p * 981;
           halMonolithRef.current.style.width = `${w.toFixed(1)}px`;
           halMonolithRef.current.style.height = `${h.toFixed(1)}px`;
           halMonolithRef.current.style.borderRadius = `${Math.max(18, radius).toFixed(1)}px`;
@@ -182,9 +184,12 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
     setShowSpongeStamp(true);
   };
 
-  const focusedSpecies = SPECIES.find((s) => s.id === focusedSpeciesId) ?? SPECIES[3];
+  const focusedSpeciesIdx = Math.max(
+    0,
+    SPECIES.findIndex((s) => s.id === focusedSpeciesId),
+  );
+  const focusedSpecies = SPECIES[focusedSpeciesIdx] ?? SPECIES[3];
 
-  // Rich gradient verdicts for all 3 engraved judges reacting meaningfully to EVERY toggle!
   const dehaeneVerdict = (() => {
     if (state.tribunalModules.workspace && state.tribunalModules.selfModel && state.tribunalModules.recurrent) {
       return '«Осторожно: здесь есть и глобальная трансляция, и обратные петли, и самоконтроль. По критериям GNWT перед нами уже серьёзный кандидат на искусственное сознание.»';
@@ -197,7 +202,7 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
 
   const kochVerdict = (() => {
     if (activeTribunalCount >= 4 && state.tribunalModules.recurrent) {
-      return '«Впечатляющий софт — но на обычном кремниевом чипе его физическая неделимость Φ (из Главы IV) почти равна нулю. Симуляция дождя на компьютере не делает процессор мокрым.»';
+      return '«Впечатляющий софт — но на обычном кремниевом чипе его физическая неделимость Φ (из Акта IV) почти равна нулю. Симуляция дождя на компьютере не делает процессор мокрым.»';
     }
     if (state.tribunalModules.recurrent) {
       return '«Добавление обратных петель чуть поднимает связность, но для настоящего света сознания важна физическая неразделимость материи (высокое Φ), а не имитация в коде.»';
@@ -220,29 +225,29 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
   return (
     <section
       id="ch-7"
-      className="relative bg-[#FAF9F5] text-[#141413] pt-24 pb-20 md:pt-28 md:pb-28 border-b border-[#141413]/10"
+      className="relative bg-[#FAF9F5] text-[#141413] pt-14 pb-20 md:pt-18 md:pb-24 border-b border-[#141413]/10"
       aria-label="Глава VII — Граница иных разумов"
     >
       <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20">
         {/* Folio Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#141413]/12 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
-          <span className="text-[#FC4109] font-semibold">ЧАСТЬ III · ГРАНИЦЫ РАЗУМА · ГЛАВА VII</span>
+          <span className="text-[#FC4109] font-semibold">АКТ V · ГРАНИЦЫ РАЗУМА · ГЛАВА VII</span>
           <span>ИНЫЕ РАЗУМЫ · 2024–2025 · стр. 102</span>
         </div>
 
-        {/* PART 7.1: CRIMSON SILK-RIBBON BOOKMARK ("Красная закладка-ляссе") */}
+        {/* PART 7.1: CRIMSON SILK-RIBBON BOOKMARK */}
         <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
           <div className="lg:col-span-7">
             <h2 className="text-[clamp(32px,4.5vw,58px)] leading-[1.06] tracking-[-0.03em]">
               <span className="font-display font-bold block">Где вы проведёте</span>
-              <span className="font-serif-editorial italic font-normal text-[#30302E] block mt-1">
+              <span className="font-serif-display italic font-normal text-[#30302E] block mt-1">
                 красную черту чувствующего мира?
               </span>
             </h2>
           </div>
           <div className="lg:col-span-5 text-[15.5px] leading-[1.62] text-[#353431]">
             <p>
-              Сознание <strong className="font-semibold text-[#141413]">не зависит напрямую от числа нейронов</strong> (у африканского слона их 257 млрд — втрое больше, чем у нас). Сдвиньте красную книжную закладку-ляссе: слева останутся «биороботы», справа — существа, способные чувствовать.
+              Сознание <strong className="font-semibold text-[#141413]">не зависит напрямую от числа нейронов</strong> (у африканского слона их 257 млрд — втрое больше, чем у нас). Изучите виды ниже и проведите ползунком красную черту: слева — «биороботы», справа — чувствующие существа.
             </p>
           </div>
         </div>
@@ -250,7 +255,8 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
         {/* Interactive Ribbon Placement Bar */}
         <div className="mt-10 rounded-2xl border border-[#141413]/14 bg-[#F3F1E9] p-5 md:p-7 space-y-5 relative">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <LabHonestyBadge badge="self-test" />
               <div className="flex items-center gap-2.5 font-mono-tech text-[11px] uppercase tracking-[0.12em]">
                 <Bookmark className="w-4 h-4 text-[#FC4109] fill-current" />
                 <span>
@@ -302,10 +308,10 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
           </div>
 
           <p className="font-mono-tech text-[10px] uppercase tracking-[0.11em] text-[#6B6963]">
-            Наведите на вид для справки · кликните карточку или сдвиньте ползунок, чтобы поставить черту слева от вида
+            Кликните на любой вид, чтобы прочитать факты · двигайте ползунок (или нажмите кнопку в справке), чтобы поставить красную черту
           </p>
 
-          {/* 6 Modern Swiss Taxonomic Cards (Click any card to inspect its Field Note + place ribbon!) */}
+          {/* 6 Swiss Taxonomic Cards (Bug #10 Fix: clicking inspects ONLY, never accidentally jumps bookmark!) */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-2 pb-6">
             {SPECIES.map((sp, idx) => {
               const userConsidersConscious = idx >= state.ribbonBoundaryIndex;
@@ -316,7 +322,6 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
 
               return (
                 <div key={sp.id} className="relative flex flex-col">
-                  {/* User Crimson Bookmark Ribbon Marker (visible on desktop gap AND highlighted border on smaller screens!) */}
                   {isUserCutHere && (
                     <div
                       aria-hidden="true"
@@ -331,7 +336,6 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
                     </div>
                   )}
 
-                  {/* Official April 2024 NY Declaration Emerald Line right after Sea Sponge! */}
                   {isNyCutHere && (
                     <div
                       aria-hidden="true"
@@ -348,17 +352,13 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
 
                   <button
                     type="button"
-                    onClick={() => {
-                      setFocusedSpeciesId(sp.id);
-                      setRibbonBoundaryIndex(idx);
-                    }}
-                    onMouseEnter={() => setFocusedSpeciesId(sp.id)}
+                    onClick={() => setFocusedSpeciesId(sp.id)}
                     className={`v6-pill flex-1 text-left p-4 rounded-xl border flex flex-col justify-between gap-3 cursor-pointer transition-all ${
                       userConsidersConscious
                         ? 'bg-[#FAF9F5] border-[#141413]/22 text-[#141413] shadow-[0_8px_22px_rgba(20,20,19,0.06)]'
                         : 'bg-[#E9E6DC]/75 border-[#141413]/10 text-[#6A6862] opacity-85'
                     } ${isUserCutHere ? 'border-l-[3px] border-l-[#FC4109] lg:border-l' : ''} ${
-                      isFocused ? 'ring-1 ring-[#141413]/30' : ''
+                      isFocused ? 'ring-2 ring-[#004EDF]/45' : ''
                     }`}
                   >
                     <div>
@@ -398,7 +398,7 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
             })}
           </div>
 
-          {/* Slider cleanly bounded 0..5 so Human is always at least on the conscious side */}
+          {/* Dedicated Bookmark Slider */}
           <div className="pt-1 space-y-1.5">
             <input
               type="range"
@@ -416,17 +416,26 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
             </div>
           </div>
 
-          {/* LIVE 2-SENTENCE FIELD DOSSIER FOR THE FOCUSED SPECIES */}
-          <div className="rounded-xl bg-[#FAF9F5] border border-[#141413]/12 px-5 py-3.5 flex flex-wrap items-baseline justify-between gap-2">
-            <div className="space-y-1">
+          {/* LIVE FIELD DOSSIER + EXPLICIT "PLACE BOOKMARK HERE" BUTTON */}
+          <div className="rounded-xl bg-[#FAF9F5] border border-[#141413]/12 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1 flex-1 min-w-0">
               <div className="font-mono-tech text-[10px] uppercase tracking-[0.12em] text-[#004EDF] font-semibold">
                 ПОЛЕВАЯ СПРАВКА · {focusedSpecies.name.toUpperCase()} ({focusedSpecies.neurons})
               </div>
-              <p className="text-[13.5px] leading-[1.58] text-[#2F2E2B]">{focusedSpecies.fieldNote}</p>
+              <p className="text-[13.5px] leading-[1.58] text-[#2F2E2B]">
+                {ruTypo(focusedSpecies.fieldNote)}
+              </p>
             </div>
+            <button
+              type="button"
+              onClick={() => setRibbonBoundaryIndex(focusedSpeciesIdx)}
+              className="v6-pill px-3.5 py-2 rounded-full bg-[#F3F1E9] hover:bg-[#FC4109] hover:text-[#FAF9F5] border border-[#141413]/14 font-mono-tech text-[10px] uppercase tracking-[0.1em] text-[#141413] cursor-pointer shrink-0"
+            >
+              Поставить черту здесь
+            </button>
           </div>
 
-          {/* CLEAN SCIENTIFIC NY 2024 NOTE + WITTY ENGRAVED SEA-SPONGE EASTER-EGG STAMP (User's idea!) */}
+          {/* CLEAN SCIENTIFIC NY 2024 NOTE + ENGRAVED SEA-SPONGE EASTER-EGG STAMP */}
           {state.ribbonChecked && (
             <div className="mt-3 grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch animate-[beatRise_380ms_cubic-bezier(0.22,1,0.36,1)]">
               <div
@@ -449,7 +458,9 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
                   )}
                 </div>
                 <p className="mt-2.5 font-serif-editorial text-[15.5px] leading-[1.62] text-[#1E1D1B]">
-                  В апреле 2024 года более сорока ведущих нейробиологов и философов подписали исторический документ: у всех позвоночных (включая птиц, рептилий и рыб) есть прочные научные основания предполагать сознание — а у{' '}
+                  {ruTypo(
+                    'В апреле 2024 года более сорока ведущих нейробиологов и философов подписали исторический документ: у всех позвоночных (включая птиц, рептилий и рыб) есть прочные научные основания предполагать сознание — а у ',
+                  )}
                   <strong className="font-semibold text-[#0D7A5F]">
                     осьминогов, десятиногих крабов и насекомых (пчёл) — реалистичная вероятность субъективного опыта
                   </strong>
@@ -457,7 +468,6 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
                 </p>
               </div>
 
-              {/* Witty Engraved Margin Stamp (Rectangular Porous Sea Sponge + Crimson #FC4109 Bookmark Tie!) */}
               {showSpongeStamp && (
                 <aside className="lg:col-span-4 rounded-xl bg-[#141413] text-[#FAF9F5] p-4 border border-[#141413] flex items-center gap-4 relative animate-[fadeScaleIn_350ms_ease]">
                   <button
@@ -469,24 +479,19 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
                     <X className="w-3.5 h-3.5" />
                   </button>
 
-                  {/* Crisp New Yorker Engraved Rectangular Sea Sponge (Porifera) with tiny crimson tie! */}
                   <svg viewBox="0 0 76 92" className="w-16 h-20 shrink-0" aria-label="Гравюра прямоугольной морской губки с красным галстуком">
-                    {/* Wavy rectangular porous sponge silhouette */}
                     <path
                       d="M 14 14 Q 24 10 38 13 Q 52 10 62 15 Q 66 30 63 46 Q 66 60 61 68 L 15 68 Q 10 56 13 42 Q 10 26 14 14 Z"
                       fill="#FAF9F5"
                       stroke="#FAF9F5"
                       strokeWidth="1.5"
                     />
-                    {/* Organic biological sponge pores (oscule craters) */}
                     <circle cx="24" cy="24" r="3.4" fill="none" stroke="#141413" strokeWidth="1.3" />
                     <circle cx="52" cy="22" r="2.6" fill="none" stroke="#141413" strokeWidth="1.2" />
                     <circle cx="20" cy="46" r="2.5" fill="none" stroke="#141413" strokeWidth="1.2" />
                     <circle cx="55" cy="48" r="3.5" fill="none" stroke="#141413" strokeWidth="1.3" />
                     <circle cx="38" cy="36" r="2.2" fill="none" stroke="#141413" strokeWidth="1.1" />
-                    {/* Subtle cross-hatching */}
                     <path d="M 18 58 L 28 58 M 46 60 L 56 60" stroke="#141413" strokeWidth="0.9" opacity="0.45" />
-                    {/* Crisp collar & iconic tiny #FC4109 bookmark tie! */}
                     <path d="M 15 68 L 61 68 L 61 78 L 15 78 Z" fill="#2A2B2E" stroke="#FAF9F5" strokeWidth="1.2" />
                     <path d="M 28 68 L 38 74 L 48 68" fill="none" stroke="#FAF9F5" strokeWidth="1.2" />
                     <path d="M 38 72 L 42 82 L 38 88 L 34 82 Z" fill="#FC4109" />
@@ -510,10 +515,11 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
         </div>
       </div>
 
-      {/* SIGNATURE SCROLL SETPIECE #3 (~155vh): #FC4109 SIGNATURE DOT -> VERTICAL MONOLITH HAL 9000! */}
+      {/* SIGNATURE SCROLL SETPIECE #3 (~155vh): #FC4109 DOT -> VERTICAL MONOLITH HAL 9000! */}
       <div
         id="hal-monolith-runway"
         ref={halRunwayRef}
+        data-hud-theme="dark"
         className="mt-20 relative h-[155vh] bg-[#0B0D11] text-[#FAF9F5] border-t border-b border-[#FAF9F5]/10"
         aria-label="Скролл-метаморфоза: точка NOESIS превращается в объектив HAL 9000"
       >
@@ -522,13 +528,11 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
             ПЕРЕХОД К ТРИБУНАЛУ ИИ · 2001 → 2026
           </div>
 
-          {/* Expanding Vertical Brushed-Aluminum & Obsidian Monolith (HAL 9000 / Dieter Rams!) */}
           <div
             ref={halMonolithRef}
             className="relative bg-[#14161A] border-[3px] border-[#8B909A] shadow-[0_32px_90px_rgba(0,0,0,0.75)] overflow-hidden flex flex-col items-center justify-between py-5 will-change-[width,height,border-radius]"
             style={{ width: '16px', height: '16px', borderRadius: '999px' }}
           >
-            {/* Iconic 1968 Top Nameplate */}
             <div
               ref={halLabelRef}
               className="w-[82%] flex items-center justify-between px-2.5 py-1 rounded-xs border border-[#FAF9F5]/25 font-mono-tech text-[10px] tracking-[0.18em] font-bold"
@@ -541,19 +545,16 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
               <span>9000</span>
             </div>
 
-            {/* Multi-Layered Fisheye Optical Lens */}
             <svg viewBox="0 0 140 140" className="w-32 h-32 shrink-0">
               <circle cx="70" cy="70" r="64" fill="#07080A" stroke="#5A606A" strokeWidth="4" />
               <circle cx="70" cy="70" r="54" fill="none" stroke="rgba(255,255,255,0.16)" strokeWidth="1.2" />
               <circle ref={halGlowRef} cx="70" cy="70" r="10" fill="#FC4109" opacity="0.22" />
               <circle ref={halIrisRef} cx="70" cy="70" r="6" fill="#FC4109" />
               <circle cx="70" cy="70" r="5" fill="#FFF3B0" />
-              {/* Curved fisheye studio lens reflections */}
               <path d="M 42 42 A 38 38 0 0 1 98 42" fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth="2" strokeLinecap="round" />
               <path d="M 52 96 A 28 28 0 0 0 88 96" fill="none" stroke="rgba(252,65,9,0.42)" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
 
-            {/* Dieter Rams Perforated Speaker Grille */}
             <div className="w-[78%] grid grid-cols-9 gap-1.5 opacity-45">
               {Array.from({ length: 18 }).map((_, idx) => (
                 <span key={idx} className="w-1.5 h-1.5 rounded-full bg-[#9AA0AA] mx-auto" />
@@ -572,7 +573,7 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
         </div>
       </div>
 
-      {/* Smooth optical decompression from HAL 9000 obsidian runway back to crisp #FAF9F5 paper */}
+      {/* Smooth optical decompression */}
       <div
         aria-hidden="true"
         className="h-24 w-full pointer-events-none"
@@ -581,24 +582,27 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
         }}
       />
 
-      {/* PART 7.2: AI TRIBUNAL (BUTLIN ET AL., TiCS 2025) + INTERACTIVE MONOLITH HAL 9000 */}
+      {/* PART 7.2: AI TRIBUNAL (BUTLIN ET AL., TiCS 2025) — Streamlined Optical Aperture Strip (No Duplicate HAL Box!) */}
       <div id="ch-7-tribunal" className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20 pt-14 scroll-mt-16">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left 6 cols: Context + 2 Quick Presets + 5 Plain-Russian Indicator Modules */}
           <div className="lg:col-span-6 space-y-5">
             <div>
-              <div className="font-mono-tech text-[10.5px] uppercase tracking-[0.14em] text-[#FC4109]">
-                ЧЕРТЁЖ ТРИБУНАЛА ИИ · BUTLIN, BENGIO, CHALMERS (TiCS, 2025)
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="font-mono-tech text-[10.5px] uppercase tracking-[0.14em] text-[#FC4109]">
+                  ЧЕРТЁЖ ТРИБУНАЛА ИИ · BUTLIN, BENGIO, CHALMERS (TiCS, 2025)
+                </span>
+                <LabHonestyBadge badge="reconstruction" />
               </div>
               <h3 className="font-display font-bold text-[28px] md:text-[34px] leading-tight mt-2">
                 Соберите машину — и спросите трёх судей
               </h3>
               <p className="text-[14.5px] leading-[1.62] text-[#454440] mt-2">
-                Почему нейросеть 2026 года звучит как живой собеседник, но почти наверняка ничего не чувствует? Потому что речь — лишь фасад. 19 ведущих исследователей составили чеклист из 5 внутренних «органов», без которых система остаётся пустым зеркалом.
+                {ruTypo(
+                  'Почему нейросеть 2026 года звучит как живой собеседник, но почти наверняка ничего не чувствует? Потому что речь — лишь фасад. 19 ведущих исследователей составили чеклист из 5 внутренних «органов», без которых система остаётся пустым зеркалом.',
+                )}
               </p>
             </div>
 
-            {/* 2 Quick Comparison Presets — cleanly aligned on ONE horizontal row! */}
             <div className="space-y-1.5">
               <div className="font-mono-tech text-[10px] uppercase tracking-[0.11em] text-[#5E5D59]">
                 Быстрый пресет:
@@ -663,7 +667,7 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
                           enabled ? 'text-[#FAF9F5]/75' : 'text-[#52514C]'
                         }`}
                       >
-                        {mod.desc}
+                        {ruTypo(mod.desc)}
                       </p>
                     </div>
 
@@ -680,78 +684,54 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
             </div>
           </div>
 
-          {/* Right 6 cols: Live HAL 9000 Vertical Monolith Console + 3 Live Scholar Judges + Double Ethical Trap */}
+          {/* Right 6 cols: Compact Optical Iris Telemetry Strip (no duplicate HAL monolith!) + 3 Live Scholar Judges */}
           <div className="lg:col-span-6 space-y-5">
-            {/* Unmistakable Vertical Brushed-Aluminum HAL 9000 Monolith Card */}
-            <div className="rounded-2xl bg-[#111317] text-[#FAF9F5] p-6 border border-[#141413] flex flex-col sm:flex-row items-center gap-6">
-              {/* Compact vertical 1968 monolith bezel */}
-              <div className="w-28 h-44 rounded-xl bg-[#0B0C0E] border-2 border-[#7A808A] p-2.5 flex flex-col items-center justify-between shrink-0 shadow-[0_12px_32px_rgba(0,0,0,0.6)]">
-                <div
-                  className="w-full flex items-center justify-between px-1.5 py-0.5 rounded-[2px] border border-[#FAF9F5]/20 font-mono-tech text-[7.5px] tracking-[0.14em] font-bold"
-                  style={{
-                    background: 'linear-gradient(90deg, #0E4B8A 0%, #0E4B8A 48%, #141413 48%, #141413 100%)',
-                  }}
-                >
-                  <span>HAL</span>
-                  <span>9000</span>
-                </div>
+            <div className="rounded-2xl bg-[#111317] text-[#FAF9F5] p-5 border border-[#141413] flex items-center gap-5">
+              {/* Compact single optical aperture iris responding live to the 5 toggles */}
+              <svg viewBox="0 0 96 96" className="w-20 h-20 shrink-0" aria-hidden="true">
+                <circle cx="48" cy="48" r="44" fill="#07080A" stroke="#5A606A" strokeWidth="2.5" />
+                <circle cx="48" cy="48" r="35" fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="1" />
+                <circle
+                  cx="48"
+                  cy="48"
+                  r={10 + halDilation * 20}
+                  fill="#FC4109"
+                  opacity={0.16 + halDilation * 0.34}
+                  style={{ transition: 'all 360ms cubic-bezier(0.22,1,0.36,1)' }}
+                />
+                <circle
+                  cx="48"
+                  cy="48"
+                  r={5 + halDilation * 12}
+                  fill="#FC4109"
+                  opacity={0.55 + halDilation * 0.45}
+                  style={{ transition: 'all 360ms cubic-bezier(0.22,1,0.36,1)' }}
+                />
+                <circle cx="48" cy="48" r={2.5 + halDilation * 3.5} fill="#FFF3B0" />
+              </svg>
 
-                <svg viewBox="0 0 120 120" className="w-20 h-20">
-                  <circle cx="60" cy="60" r="55" fill="#060708" stroke="#4D525C" strokeWidth="3.5" />
-                  <circle cx="60" cy="60" r="45" fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="1" />
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r={12 + halDilation * 28}
-                    fill="#FC4109"
-                    opacity={0.14 + halDilation * 0.34}
-                    style={{ transition: 'all 420ms cubic-bezier(0.22,1,0.36,1)' }}
-                  />
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r={6 + halDilation * 16}
-                    fill="#FC4109"
-                    opacity={0.5 + halDilation * 0.48}
-                    style={{ transition: 'all 420ms cubic-bezier(0.22,1,0.36,1)' }}
-                  />
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r={3 + halDilation * 4.5}
-                    fill="#FFF3B0"
-                    style={{ transition: 'all 420ms cubic-bezier(0.22,1,0.36,1)' }}
-                  />
-                  <path d="M 38 36 A 32 32 0 0 1 82 36" fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth="1.6" strokeLinecap="round" />
-                </svg>
-
-                <div className="w-full grid grid-cols-7 gap-1 opacity-40">
-                  {Array.from({ length: 14 }).map((_, i) => (
-                    <span key={i} className="w-1 h-1 rounded-full bg-[#A0A6B0] mx-auto" />
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2 text-center sm:text-left">
-                <div className="font-mono-tech text-[10.5px] uppercase tracking-[0.14em] text-[#FC4109]">
+              <div className="space-y-1.5 min-w-0">
+                <div className="font-mono-tech text-[10px] uppercase tracking-[0.14em] text-[#FC4109]">
                   ИНДИКАТОРЫ BUTLIN 2025: {activeTribunalCount} / 5
                 </div>
-                <div className="font-display font-bold text-[20px] leading-snug">
+                <div className="font-display font-bold text-[19px] leading-snug">
                   {activeTribunalCount >= 4
                     ? '«Мне страшно, Дейв…»'
                     : activeTribunalCount >= 2
                       ? 'Сложный агент без субъектности'
                       : 'Чистый статистический автомат (LLM 2026)'}
                 </div>
-                <p className="font-serif-editorial italic text-[14px] leading-[1.55] text-[#C8CCD4]">
-                  {activeTribunalCount >= 4
-                    ? 'Система убедительно говорит о страхе и боли. Но в оптическом объективе реально живёт субъект — или безупречная имитация?'
-                    : 'Щёлкайте тумблеры слева (или нажмите пресет «5/5») и смотрите, как меняется взгляд HAL 9000 и вердикты трёх учёных ниже.'}
+                <p className="font-serif-editorial italic text-[13.5px] leading-[1.52] text-[#C8CCD4]">
+                  {ruTypo(
+                    activeTribunalCount >= 4
+                      ? 'Система убедительно говорит о страхе и боли. Внутри объектива живёт субъект — или безупречная имитация?'
+                      : 'Щёлкайте тумблеры слева и следите, как расходятся вердикты трёх главных школ ниже.',
+                  )}
                 </p>
               </div>
             </div>
 
-            {/* 3 Engraved SVG Scholar Judges delivering real-time conflicting rulings! */}
+            {/* 3 Engraved SVG Scholar Judges */}
             <div className="rounded-2xl border border-[#141413]/14 bg-[#F3F1E9] divide-y divide-[#141413]/10">
               {[
                 { id: 'dehaene' as const, school: 'GNWT · МЕГАФОН ВНИМАНИЯ', text: dehaeneVerdict },
@@ -768,14 +748,13 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
                       <span className="text-[#FC4109]">{judge.school}</span>
                     </div>
                     <p className="font-serif-editorial italic text-[13.5px] leading-[1.55] text-[#2D2C2A] mt-1">
-                      {judge.text}
+                      {ruTypo(judge.text)}
                     </p>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Double Ethical Trap of the 21st Century */}
             <div className="rounded-xl border border-[#141413]/12 bg-[#F5F3EB] p-4 space-y-1.5">
               <div className="font-mono-tech text-[10px] uppercase tracking-[0.12em] text-[#FC4109] font-semibold">
                 ДВОЙНАЯ ЭТИЧЕСКАЯ ЛОВУШКА XXI ВЕКА
@@ -784,13 +763,22 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
                 Ошибиться можно в обе стороны: <strong className="text-[#141413]">приписать душу пустому коду</strong> (и пожертвовать ради него живыми людьми) — или <strong className="text-[#141413]">не заметить рождение нового чувствующего субъекта</strong> и обречь его на цифровое страдание.
               </p>
             </div>
+
+            <DossierTrigger
+              dossier="other-minds-2024"
+              label="Три тезиса Нью-Йоркской декларации 2024 и доклад Butlin / Bengio / Chalmers (TiCS 2025)"
+              meta="Архивное досье V.1 · Уровень 2"
+              className="w-full"
+            />
           </div>
         </div>
 
         {/* Final Domino Bridge -> Chapter VIII */}
         <div className="mt-14 pt-6 border-t border-[#141413]/12 flex flex-wrap items-center justify-between gap-4">
           <p className="font-serif-editorial italic text-[17px] text-[#2D2C2A] max-w-2xl">
-            Мы прошли от одного пятна света на сетчатке до границ искусственного разума. Пора собрать всё воедино и проверить на форзаце, что эти минуты сделали с вашим собственным мозгом.
+            {ruTypo(
+              'Мы прошли от одного пятна света на сетчатке до границ искусственного разума. Пора собрать всё воедино и проверить на форзаце, что эти минуты сделали с вашим собственным мозгом.',
+            )}
           </p>
           <button
             type="button"

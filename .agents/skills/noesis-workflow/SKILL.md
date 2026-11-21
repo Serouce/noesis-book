@@ -12,6 +12,7 @@ description: >-
 
 ## Опорные файлы внутри скилла
 * **Актуальная точка передачи NOESIS v8 (`checkpoint-v8-9.9`) и хронология версий:** [handoff_state.md](./references/handoff_state.md)
+* **Фундаментальный кодекс фронтирного веб-дизайна, педагогики и зачистки AI Slop (2025–2026):** [FRONTIER_WEB_DESIGN_AND_ANTI_AI_PLAYBOOK.md](../../../docs/FRONTIER_WEB_DESIGN_AND_ANTI_AI_PLAYBOOK.md)
 * **Готовые системные промпты 3 субагентов (`visual-design-critic`, `socratic-partner`, `methodology-auditor`):** [subagent_prompts.md](./references/subagent_prompts.md)
 * Архивный план v7 (история): [implementation_plan.md](./references/implementation_plan.md)
 * Архивный протокол Сократовского диалога v7 (история): [socratic_dialogue_v7.md](./references/socratic_dialogue_v7.md)

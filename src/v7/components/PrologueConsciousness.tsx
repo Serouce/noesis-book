@@ -1,83 +1,114 @@
 import { useState } from 'react';
-import { ArrowDown, Brain, Eye, HeartPulse, Sparkles } from 'lucide-react';
+import { ArrowRight, Check, X } from 'lucide-react';
 import { useExplorer } from '../context/ExplorerContext';
+import { NoesisInstrumentFrame } from '../../v9/components/NoesisInstrumentFrame';
+import { ACTS_META } from '../../v9/data/actsMeta';
+import { ruTypo } from '../../v9/utils/ruTypo';
 
 interface PrologueConsciousnessProps {
   onContinueToPart1: () => void;
 }
 
-const THREE_TRAPS = [
+interface IntuitionCase {
+  id: 'intelligence' | 'wakefulness' | 'reaction';
+  code: string;
+  label: string;
+  claim: string;
+  yesLabel: string;
+  noLabel: string;
+  answer: 'yes' | 'no';
+  verdictTitle: string;
+  reality: string;
+  distinction: string;
+}
+
+const INTUITION_CASES: IntuitionCase[] = [
   {
     id: 'intelligence',
-    title: 'Сознание ≠ Интеллект',
-    badge: 'ЛОВУШКА 01',
-    myth: '«Если система умная и говорит как человек — значит, она осознанна».',
+    code: 'ПРОБА 01',
+    label: 'Интеллект',
+    claim: '«Нейросеть обыгрывает чемпиона мира по го и утешает в переписке — значит, она чувствует азарт и сочувствие».',
+    yesLabel: 'Да, это доказывает сознание',
+    noLabel: 'Нет, здесь подмена понятий',
+    answer: 'no',
+    verdictTitle: 'Сознание ≠ Интеллект',
     reality:
-      'Шахматный движок и языковая модель 2026 года обыграют гроссмейстера и напишут поэму, но при этом не чувствуют ни азарта, ни скуки, ни радости победы. Интеллект — это умение решать задачи. Сознание — это умение что-то переживать.',
-    example: 'Умный калькулятор ≠ чувствующий субъект',
+      'Интеллект — это умение решать задачи и прогнозировать следующий ход. Сознание — это умение что-то переживать. Движок Stockfish сильнее любого гроссмейстера, но внутри него нет ни капли радости победы или страха цейтнота.',
+    distinction: 'Решение задач снаружи ≠ переживание изнутри',
   },
   {
     id: 'wakefulness',
-    title: 'Сознание ≠ Бодрствование',
-    badge: 'ЛОВУШКА 02',
-    myth: '«Глаза открыты — сознание есть; глаза закрыты — сознания нет».',
+    code: 'ПРОБА 02',
+    label: 'Бодрствование',
+    claim: '«Человек лежит с закрытыми глазами и полностью обездвижен, но внутри него прямо сейчас может полыхать яркий осознанный мир».',
+    yesLabel: 'Да, такое вполне возможно',
+    noLabel: 'Нет, без бодрствования сознания нет',
+    answer: 'yes',
+    verdictTitle: 'Сознание ≠ Бодрствование',
     reality:
-      'В фазе ярких снов глаза закрыты, а тело полностью парализовано — но внутри полыхают целые миры. И наоборот: при лунатизме или в так называемом вегетативном состоянии глаза могут быть открыты, а внутри — полная темнота.',
-    example: 'Сон со сновидениями = сознание при закрытых глазах',
+      'Именно так! Каждую ночь в фазе ярких снов (REM) глаза закрыты, а тело парализовано — но внутри разворачиваются целые миры. И наоборот: при лунатизме или в вегетативном состоянии глаза открыты, а внутри может быть полная темнота.',
+    distinction: 'Внешняя поза тела ≠ наличие внутреннего света',
   },
   {
     id: 'reaction',
-    title: 'Сознание ≠ Реакция',
-    badge: 'ЛОВУШКА 03',
-    myth: '«Если существо или прибор реагирует на стимул, значит оно его чувствует».',
+    code: 'ПРОБА 03',
+    label: 'Реакция',
+    claim: '«Датчик автоматической двери замечает вас, а подсолнух тянется к солнцу — значит, они ощущают свет».',
+    yesLabel: 'Да, раз реагируют — значит чувствуют',
+    noLabel: 'Нет, реакция ещё не переживание',
+    answer: 'no',
+    verdictTitle: 'Сознание ≠ Реакция на стимул',
     reality:
-      'Датчик автоматической двери «видит» вас и вежливо расходится в стороны. Подсолнух поворачивается к солнцу. Но внутри датчика нет переживания света. Реакцию можно измерить снаружи — а свет сознания горит только изнутри.',
-    example: 'Фотоэлемент фиксирует свет, но не видит «синий»',
+      'Фотодиод исправно реагирует на фотоны и открывает створки, но внутри него нет переживания синего или яркого. Реакцию легко измерить приборами снаружи, а свет сознания горит только изнутри субъекта.',
+    distinction: 'Информационный отклик ≠ субъективное ощущение',
   },
 ];
 
-const THREE_STAKES = [
+const EDITORIAL_STAKES = [
   {
     num: '01',
-    icon: HeartPulse,
-    domain: 'БОЛЬНИЦА · ЧАСТЬ II',
-    title: 'Каждый четвёртый «немой» пациент может всё слышать',
-    text: 'В августе 2024 года врачи доказали: 25% пациентов в глубокой неподвижной коме сохраняют скрытое сознание. Как отличить тишину от живого разума внутри парализованного тела?',
+    metric: '25%',
+    metricCaption: '60 из 241 · NEJM 2024',
+    domain: 'КЛИНИКА · АКТ IV',
+    title: 'Каждый четвёртый «немой» пациент может слышать врачей',
+    text: 'В августе 2024 года врачи подтвердили: у четверти внешне неподвижных пациентов в коме кора осознанно выполняет мысленные команды. Как отличить тишину от запертого разума?',
   },
   {
     num: '02',
-    icon: Eye,
-    domain: 'ПРИРОДА · ЧАСТЬ III',
-    title: 'Где проходит граница боли и чувства?',
-    text: 'У слона втрое больше нейронов, чем у нас, а у пчелы их меньше миллиона — но она играет с шариками. Кого из живых существ мы по ошибке считали «биороботами»?',
+    metric: '257 млрд',
+    metricCaption: 'нейронов у слона (в 3× больше нас)',
+    domain: 'БИОЛОГИЯ · АКТ V',
+    title: 'Число нейронов не объясняет, кто способен чувствовать боль',
+    text: 'У пчелы меньше миллиона нейронов, но она катает шарики ради игры и понимает понятие нуля, а краб запоминает источник боли. В 2024 году учёные подписали Нью-Йоркскую декларацию, перечеркнув старое деление на «людей» и «биороботов».',
   },
   {
     num: '03',
-    icon: Brain,
-    domain: 'МАШИНЫ · ЧАСТЬ III',
-    title: 'ИИ уже пишет «мне страшно»',
-    text: 'В ближайшие годы человечеству грозят две равные ошибки: влюбиться в пустую имитацию речи — или причинить реальное страдание системе, в которой и правда зажёгся свет.',
+    metric: '73%',
+    metricCaption: 'приняли ИИ за человека (2025)',
+    domain: 'КРЕМНИЙ · АКТ V',
+    title: 'Языковые модели уже пишут «мне страшно, не выключай меня»',
+    text: 'У человечества две равные опасности: принять блестящую речевую имитацию за живую душу — или проглядеть момент, когда в новой кремниевой архитектуре действительно зажжётся свет.',
   },
 ];
 
 /**
- * PROLOGUE: "Что такое свет внутри черепа?"
- * Bridges the 10-second visceral Mooney shock (Plate 00) into the 3-Part monograph:
- * 1. Human Nagel definition (sleep vs waking) with 0 academic jargon
- * 2. Interactive 3-trap myth buster (Intelligence / Wakefulness / Reaction)
- * 3. Three 21st-century real-world stakes + clean 3-Act reading map
+ * PROLOGUE (Bug #2 Fix):
+ * - Replaces passive 3-tab myth list with a genuine Guess-Check Concept Reducer (user commits before verdict!).
+ * - Replaces the 3-column AI-slop card shelf with an asymmetric Swiss newspaper data ledger (hairlines + tabular-nums).
+ * - Displays the crisp 5-Act Atlas Map.
  */
-export function PrologueConsciousness({ onContinueToPart1 }: PrologueConsciousnessProps) {
+export function PrologueConsciousness({ onContinueToPart1: _onContinueToPart1 }: PrologueConsciousnessProps) {
   const { setPrologueExplored } = useExplorer();
-  const [activeTrapId, setActiveTrapId] = useState<string>('intelligence');
-  const [visitedTraps, setVisitedTraps] = useState<Record<string, boolean>>({ intelligence: true });
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [answers, setAnswers] = useState<Partial<Record<IntuitionCase['id'], 'yes' | 'no'>>>({});
 
-  const activeTrap = THREE_TRAPS.find((t) => t.id === activeTrapId) ?? THREE_TRAPS[0];
+  const current = INTUITION_CASES[activeIdx] ?? INTUITION_CASES[0];
+  const userChoice = answers[current.id];
+  const answeredCount = Object.keys(answers).length;
 
-  const handleSelectTrap = (id: string) => {
-    setActiveTrapId(id);
-    setVisitedTraps((prev) => {
-      const next = { ...prev, [id]: true };
+  const handleAnswer = (choice: 'yes' | 'no') => {
+    setAnswers((prev) => {
+      const next = { ...prev, [current.id]: choice };
       if (Object.keys(next).length >= 2) {
         setPrologueExplored(true);
       }
@@ -98,168 +129,259 @@ export function PrologueConsciousness({ onContinueToPart1 }: PrologueConsciousne
           <span>ОПРЕДЕЛЕНИЕ И СТАВКИ · стр. 04</span>
         </div>
 
-        {/* PART 0.1: HUMAN DEFINITION WITHOUT A SINGLE TEXTBOOK FORMULA */}
+        {/* PART 0.1: NAGEL DEFINITION + ACTIVE INTUITION REDUCER */}
         <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-          <div className="lg:col-span-6 space-y-5">
-            <h2 className="text-[clamp(32px,4.5vw,56px)] leading-[1.06] tracking-[-0.03em]">
+          <div className="lg:col-span-5 space-y-5">
+            <h2 className="text-[clamp(32px,4.4vw,54px)] leading-[1.06] tracking-[-0.03em]">
               <span className="font-display font-bold block">Что такое свет</span>
-              <span className="font-serif-editorial italic font-normal text-[#30302E] block mt-1">
+              <span className="font-serif-display italic font-normal text-[#30302E] block mt-1">
                 внутри черепа?
               </span>
             </h2>
 
-            <p className="text-[16.5px] leading-[1.66] text-[#282725]">
-              Вспомните глубокий сон без сновидений. Пока вы спали, мир никуда не исчез, сердце ровно билось, а мозг перекладывал дневные воспоминания —{' '}
-              <strong className="font-semibold text-[#141413]">но внутри было абсолютно темно</strong>. Там никого не было.
+            <p className="text-[16px] leading-[1.68] text-[#282725]">
+              {ruTypo(
+                'Вспомните глубокий сон без сновидений. Пока вы спали, мир никуда не исчез, сердце ровно билось, а мозг перекладывал дневные воспоминания — ',
+              )}
+              <strong className="font-semibold text-[#141413]">
+                но внутри было абсолютно темно
+              </strong>
+              . Там никого не было.
             </p>
 
-            <p className="text-[16px] leading-[1.66] text-[#454440]">
-              Утром звенит будильник — и в долю секунды «включается свет»: запах кофе, тяжесть одеяла, лёгкая досада. Философ Томас Нагель дал этому самое точное определение в науке:{' '}
-              <span className="font-serif-editorial italic text-[#141413] text-[17.5px]">
-                сознание — это сам факт, что внутри есть кто‑то, кому каково‑то быть.
-              </span>
+            <p className="text-[15.5px] leading-[1.68] text-[#454440]">
+              {ruTypo(
+                'Утром звенит будильник — и за долю секунды «включается свет»: запах кофе, тяжесть одеяла, лёгкая досада. Философ Томас Нагель дал этому самое точное определение в науке:',
+              )}
             </p>
+
+            <blockquote className="v9-hang-quote pl-4 border-l-2 border-[#FC4109] font-serif-editorial italic text-[18px] leading-[1.52] text-[#141413]">
+              {ruTypo(
+                '«Сознание — это сам факт, что внутри существа есть кто‑то, кому каково‑то быть этим существом».',
+              )}
+            </blockquote>
           </div>
 
-          {/* Right 6 cols: Interactive "3 Common Traps" Switcher */}
-          <div className="lg:col-span-6 rounded-2xl border border-[#141413]/14 bg-[#F3F1E9] p-5 md:p-6 space-y-5">
-            <div className="flex flex-wrap items-center justify-between gap-2 font-mono-tech text-[10.5px] uppercase tracking-[0.12em]">
-              <span className="text-[#FC4109] font-semibold">ПРОВЕРЬТЕ ИНТУИЦИЮ · 3 ЧАСТЫЕ ПУТАНИЦЫ</span>
-              <span className="text-[#5E5D59]">
-                ПРОСМОТРЕНО: {Object.keys(visitedTraps).length} / 3
-              </span>
-            </div>
+          {/* Right 7 cols: Active Guess-Check Concept Reducer (Noisefree Swiss Instrument!) */}
+          <div className="lg:col-span-7">
+            <NoesisInstrumentFrame
+              code="РЕДУКТОР ПОНЯТИЙ · 3 ПРОБЫ НА ИНТУИЦИЮ"
+              badge="self-test"
+              telemetry={`ПРОВЕРЕНО: ${answeredCount} / 3`}
+              surface="vellum"
+              footnote="Сначала зафиксируйте интуицию — потом сверьтесь с разбором"
+            >
+              {/* Crisp numbered selector strip */}
+              <div className="flex flex-wrap items-center gap-2 pb-4 border-b border-[#141413]/10">
+                {INTUITION_CASES.map((item, idx) => {
+                  const isCurrent = idx === activeIdx;
+                  const isDone = Boolean(answers[item.id]);
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setActiveIdx(idx)}
+                      className={`v6-pill px-3.5 py-2 rounded-full border font-mono-tech text-[11px] uppercase tracking-[0.08em] inline-flex items-center gap-2 cursor-pointer ${
+                        isCurrent
+                          ? 'bg-[#141413] text-[#FAF9F5] border-[#141413]'
+                          : 'bg-[#FAF9F5] hover:bg-[#ECE9DF] text-[#141413] border-[#141413]/14'
+                      }`}
+                    >
+                      <span>0{idx + 1}</span>
+                      <span>{item.label}</span>
+                      {isDone && (
+                        <span className="w-3.5 h-3.5 rounded-full bg-[#0D7A5F] text-[#FAF9F5] inline-flex items-center justify-center">
+                          <Check className="w-2.5 h-2.5" />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {THREE_TRAPS.map((trap) => {
-                const active = trap.id === activeTrap.id;
-                return (
-                  <button
-                    key={trap.id}
-                    type="button"
-                    onClick={() => handleSelectTrap(trap.id)}
-                    className={`v6-pill text-left flex flex-col justify-start px-3.5 py-2.5 rounded-xl border text-[12.5px] font-medium cursor-pointer transition-all ${
-                      active
-                        ? 'bg-[#141413] text-[#FAF9F5] border-[#141413]'
-                        : 'bg-[#FAF9F5] hover:bg-[#EAE7DD] text-[#141413] border-[#141413]/12'
-                    }`}
-                  >
-                    <div className={`font-mono-tech text-[9.5px] ${active ? 'text-[#FC4109]' : 'text-[#5E5D59]'}`}>
-                      {trap.badge}
+              {/* Active Claim Card */}
+              <div className="mt-5 space-y-5">
+                <div className="font-mono-tech text-[10px] uppercase tracking-[0.14em] text-[#5E5D59]">
+                  {current.code} · УТВЕРЖДЕНИЕ ДЛЯ ПРОВЕРКИ
+                </div>
+
+                <p className="font-serif-editorial text-[19px] sm:text-[21px] leading-[1.45] text-[#141413]">
+                  {ruTypo(current.claim)}
+                </p>
+
+                {/* Commit before reveal — STRICTLY NEUTRAL equal buttons (zero visual answer spoiler!) */}
+                {!userChoice ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => handleAnswer('yes')}
+                      className="v6-pill px-4 py-3.5 rounded-xl bg-[#FAF9F5] hover:bg-[#EAE7DC] border border-[#141413]/18 hover:border-[#141413]/45 text-left cursor-pointer"
+                    >
+                      <div className="font-mono-tech text-[10px] uppercase tracking-[0.12em] text-[#5E5D59]">
+                        ВЕРСИЯ A
+                      </div>
+                      <div className="font-display font-semibold text-[15px] text-[#141413] mt-0.5">
+                        {current.yesLabel}
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleAnswer('no')}
+                      className="v6-pill px-4 py-3.5 rounded-xl bg-[#FAF9F5] hover:bg-[#EAE7DC] border border-[#141413]/18 hover:border-[#141413]/45 text-left cursor-pointer"
+                    >
+                      <div className="font-mono-tech text-[10px] uppercase tracking-[0.12em] text-[#5E5D59]">
+                        ВЕРСИЯ B
+                      </div>
+                      <div className="font-display font-semibold text-[15px] text-[#141413] mt-0.5">
+                        {current.noLabel}
+                      </div>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="rounded-xl bg-[#FAF9F5] border border-[#141413]/14 p-5 space-y-3 animate-[beatRise_260ms_cubic-bezier(0.22,1,0.36,1)]">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-mono-tech text-[10px] uppercase tracking-[0.11em] font-semibold ${
+                          userChoice === current.answer
+                            ? 'bg-[#0D7A5F]/12 text-[#0D7A5F]'
+                            : 'bg-[#FC4109]/12 text-[#C83407]'
+                        }`}
+                      >
+                        {userChoice === current.answer ? (
+                          <>
+                            <Check className="w-3 h-3" />
+                            <span>ТОЧНО В ЦЕЛЬ</span>
+                          </>
+                        ) : (
+                          <>
+                            <X className="w-3 h-3" />
+                            <span>КЛАССИЧЕСКАЯ ЛОВУШКА</span>
+                          </>
+                        )}
+                      </span>
+
+                      <span className="font-mono-tech text-[10.5px] font-semibold text-[#141413]">
+                        {current.verdictTitle}
+                      </span>
                     </div>
-                    <div className="font-display font-semibold mt-0.5 leading-snug">
-                      {trap.title.includes(' ≠ ') ? (
-                        <>
-                          <span className="block">{trap.title.split(' ≠ ')[0]} ≠</span>
-                          <span className="block">{trap.title.split(' ≠ ')[1]}</span>
-                        </>
-                      ) : (
-                        trap.title
+
+                    <p className="text-[14.5px] leading-[1.64] text-[#282725]">
+                      {ruTypo(current.reality)}
+                    </p>
+
+                    <div className="pt-2.5 border-t border-[#141413]/10 flex flex-wrap items-center justify-between gap-3">
+                      <span className="font-mono-tech text-[10.5px] uppercase tracking-[0.09em] text-[#004EDF] font-semibold">
+                        {current.distinction}
+                      </span>
+
+                      {activeIdx < INTUITION_CASES.length - 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setActiveIdx((i) => Math.min(INTUITION_CASES.length - 1, i + 1))}
+                          className="font-mono-tech text-[10.5px] uppercase tracking-[0.11em] text-[#141413] hover:text-[#FC4109] inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>Следующая проба</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
                       )}
                     </div>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="rounded-xl bg-[#FAF9F5] border border-[#141413]/12 p-5 space-y-3">
-              <div className="font-serif-editorial italic text-[14.5px] text-[#5E5D59] line-through decoration-[#FC4109]/70">
-                {activeTrap.myth}
+                  </div>
+                )}
               </div>
-              <p className="text-[14.5px] leading-[1.62] text-[#1E1D1B]">{activeTrap.reality}</p>
-              <div className="pt-2 border-t border-[#141413]/10 flex items-center gap-2 font-mono-tech text-[10.5px] uppercase tracking-[0.1em] text-[#004EDF] font-semibold">
-                <Sparkles className="w-3.5 h-3.5 text-[#FC4109]" />
-                <span>{activeTrap.example}</span>
-              </div>
-            </div>
+            </NoesisInstrumentFrame>
           </div>
         </div>
 
-        {/* PART 0.2: WHY THIS MATTERS NOW (3 REAL-WORLD STAKES) */}
-        <div className="mt-14 pt-10 border-t border-[#141413]/12">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
+        {/* PART 0.2: ASYMMETRIC SWISS EDITORIAL LEDGER (Zero AI-slop 3-card icon shelves!) */}
+        <div className="mt-16 pt-10 border-t border-[#141413]/14">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-end">
+            <div className="lg:col-span-7">
               <div className="font-mono-tech text-[10.5px] uppercase tracking-[0.14em] text-[#FC4109]">
                 ПОЧЕМУ XXI ВЕК БОЛЬШЕ НЕ МОЖЕТ ОТКЛАДЫВАТЬ ОТВЕТ
               </div>
-              <h3 className="font-display font-bold text-[24px] md:text-[30px] mt-1.5 leading-tight">
-                Три живые ставки этой книги
+              <h3 className="font-serif-editorial text-[28px] md:text-[36px] mt-1.5 leading-[1.12] tracking-[-0.02em]">
+                {ruTypo('Три живые ставки этой книги')}
               </h3>
             </div>
-            <p className="font-serif-editorial italic text-[15px] text-[#5E5D59] max-w-md">
-              Мы расщепили атом и расшифровали ДНК, но всё ещё спорим о том, откуда берётся внутренний опыт. И сегодня от этого зависят судьбы.
+            <p className="lg:col-span-5 font-serif-editorial italic text-[15px] leading-[1.6] text-[#5E5D59]">
+              {ruTypo(
+                'Мы расщепили атом и расшифровали геном, но до сих пор спорим, откуда берётся субъективный опыт. Сегодня от этого зависят решения в больницах, лабораториях и дата-центрах.',
+              )}
             </p>
           </div>
 
-          <div className="mt-7 grid grid-cols-1 md:grid-cols-3 gap-5">
-            {THREE_STAKES.map((stake) => {
-              const Icon = stake.icon;
-              return (
-                <div
-                  key={stake.num}
-                  className="rounded-2xl border border-[#141413]/12 bg-[#F4F2EA] p-5 flex flex-col justify-between gap-4"
-                >
-                  <div>
-                    <div className="flex items-center justify-between font-mono-tech text-[10px] uppercase tracking-[0.12em]">
-                      <span className="text-[#FC4109] font-semibold">{stake.domain}</span>
-                      <span className="w-7 h-7 rounded-full bg-[#FAF9F5] border border-[#141413]/10 flex items-center justify-center text-[#141413]">
-                        <Icon className="w-3.5 h-3.5" />
-                      </span>
-                    </div>
-                    <h4 className="font-display font-bold text-[17px] leading-snug text-[#141413] mt-3">
-                      {stake.title}
-                    </h4>
-                    <p className="text-[14px] leading-[1.6] text-[#3F3E3A] mt-2">{stake.text}</p>
-                  </div>
+          <div className="mt-8 divide-y divide-[#141413]/12 border-t border-b border-[#141413]/14">
+            {EDITORIAL_STAKES.map((stake) => (
+              <div
+                key={stake.num}
+                className="py-6 md:py-7 grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8 items-baseline"
+              >
+                <div className="md:col-span-3 flex md:flex-col items-baseline justify-between gap-2">
+                  <span className="font-serif-display text-[32px] md:text-[40px] leading-none text-[#141413] font-normal tracking-[-0.03em]">
+                    {stake.metric}
+                  </span>
+                  <span className="font-mono-tech text-[10px] uppercase tracking-[0.1em] text-[#5E5D59] md:mt-1.5">
+                    {stake.metricCaption}
+                  </span>
                 </div>
-              );
-            })}
+
+                <div className="md:col-span-4">
+                  <div className="font-mono-tech text-[10px] uppercase tracking-[0.13em] text-[#FC4109] font-semibold">
+                    {stake.num} · {stake.domain}
+                  </div>
+                  <h4 className="font-display font-bold text-[18px] leading-[1.3] text-[#141413] mt-1.5">
+                    {ruTypo(stake.title)}
+                  </h4>
+                </div>
+
+                <p className="md:col-span-5 text-[14.5px] leading-[1.66] text-[#3B3A37]">
+                  {ruTypo(stake.text)}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* PART 0.3: CLEAN 3-ACT READING MAP */}
-        <div className="mt-12 rounded-2xl border border-[#141413]/14 bg-[#141413] text-[#FAF9F5] p-6 md:p-7 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 flex-1">
+        {/* PART 0.3: CLEAN 5-ACT ATLAS ROUTE (Single exit lives cleanly in ActBottomTurn below!) */}
+        <div className="mt-12 rounded-2xl border border-[#141413]/14 bg-[#141413] text-[#FAF9F5] p-6 md:p-8 space-y-6">
+          <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-[#FAF9F5]/12 pb-4">
             <div>
-              <div className="font-mono-tech text-[10px] uppercase tracking-[0.14em] text-[#FC4109]">
-                ЧАСТЬ I · ГЛ. I–III
+              <div className="font-mono-tech text-[10px] uppercase tracking-[0.16em] text-[#FC4109]">
+                МАРШРУТ АТЛАСА · 5 АКТОВ · КАЖДЫЙ ВЫТЕКАЕТ ИЗ ПАРАДОКСА ПРЕДЫДУЩЕГО
               </div>
-              <div className="font-display font-bold text-[16px] mt-1">Изнутри</div>
-              <p className="text-[13px] text-[#C8CDD6] mt-1 leading-relaxed">
-                Как мозг создаёт цвет, сочиняет «Я» и предсказывает реальность.
-              </p>
-            </div>
-            <div>
-              <div className="font-mono-tech text-[10px] uppercase tracking-[0.14em] text-[#FC4109]">
-                ЧАСТЬ II · ГЛ. IV–VI
+              <div className="font-serif-editorial text-[22px] mt-1">
+                От первого взгляда — к границам разума
               </div>
-              <div className="font-display font-bold text-[16px] mt-1">Под черепом</div>
-              <p className="text-[13px] text-[#C8CDD6] mt-1 leading-relaxed">
-                Где зажигается опыт: от спора 2025 года до одного нейрона и реанимации.
-              </p>
             </div>
-            <div>
-              <div className="font-mono-tech text-[10px] uppercase tracking-[0.14em] text-[#FC4109]">
-                ЧАСТЬ III · ГЛ. VII–VIII
-              </div>
-              <div className="font-display font-bold text-[16px] mt-1">Границы разума</div>
-              <p className="text-[13px] text-[#C8CDD6] mt-1 leading-relaxed">
-                Животные, Трибунал ИИ и ваш собственный форзац в финале.
-              </p>
-            </div>
+            <span className="font-mono-tech text-[10px] uppercase tracking-[0.12em] text-[#FAF9F5]/55">
+              ~25–30 МИН ЧТЕНИЯ · ПРОГРЕСС СОХРАНЯЕТСЯ
+            </span>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setPrologueExplored(true);
-              onContinueToPart1();
-            }}
-            className="v6-pill h-12 px-6 rounded-full bg-[#FC4109] hover:bg-[#E43806] text-[#FAF9F5] font-sans-ui text-[14px] font-medium inline-flex items-center gap-2 shrink-0 cursor-pointer"
-          >
-            <span>Войти в Часть I</span>
-            <ArrowDown className="w-4 h-4" />
-          </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {ACTS_META.map((act) => (
+              <div
+                key={act.id}
+                className={`p-3.5 rounded-xl border ${
+                  act.id === 'act-1'
+                    ? 'bg-[#FAF9F5]/8 border-[#FC4109]/55'
+                    : 'bg-[#FAF9F5]/[0.03] border-[#FAF9F5]/10'
+                }`}
+              >
+                <div className="flex items-center justify-between font-mono-tech text-[10px] uppercase tracking-[0.12em]">
+                  <span className="text-[#FC4109] font-semibold">АКТ {act.roman}</span>
+                  <span className="text-[#FAF9F5]/55">{act.durationLabel}</span>
+                </div>
+                <div className="font-display font-semibold text-[14.5px] mt-1.5 text-[#FAF9F5]">
+                  {act.title}
+                </div>
+                <p className="text-[12px] text-[#C2C7D0] mt-1 leading-[1.5]">
+                  {ruTypo(act.subtitle)}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>

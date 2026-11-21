@@ -1,7 +1,12 @@
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ArrowDown, Crosshair, Lock, Scissors, Sparkles } from 'lucide-react';
 import { useExplorer, type CogitateBet } from '../context/ExplorerContext';
 import { ScholarMarginNote } from './ScholarMarginalia';
+import { DossierTrigger } from '../../v9/components/NoesisDossierSheet';
+import { LabHonestyBadge } from '../../v9/components/NoesisInstrumentFrame';
+import { useViewportRaf } from '../../v9/hooks/useViewportRaf';
+import { assetUrl } from '../../v9/utils/assetUrl';
+import { ruTypo } from '../../v9/utils/ruTypo';
 
 interface Chapter4WagerAndDiopterProps {
   onNextChapter: () => void;
@@ -15,24 +20,102 @@ const DIOPTER_PRESETS = [
   { label: 'Лобная кора · GNWT', x: 29, y: 39 },
 ];
 
+function computeZoneLabel(x: number, y: number): string {
+  const dx = (x - 51) / 29;
+  const dy = (y - 48) / 29;
+  const insideBrain = dx * dx + dy * dy <= 1.05;
+  if (!insideBrain) return 'ПОЛЕ АТЛАСА · НАВЕДИТЕ ДИОПТР НА КОРУ МОЗГА';
+  if (y > 67 && x > 55) return 'МОЗЖЕЧОК · КООРДИНАЦИЯ (ПОЧТИ БЕЗ СОЗНАНИЯ)';
+  if (x < 40) return 'ЛОБНАЯ (ПРЕФРОНТАЛЬНАЯ) КОРА · ЗОНА GNWT';
+  if (x > 61) return 'ЗАДНЯЯ «ГОРЯЧАЯ ЗОНА» · ЗОНА IIT';
+  return 'ТАЛАМУС (ДИСПЕТЧЕР) И МОЗОЛИСТОЕ ТЕЛО · ГЛУБИННЫЙ СРЕЗ';
+}
+
 /**
- * CHAPTER IV: "Большое пари" (0% Pop Culture — Pure Museum Science!)
- * Upgraded v8:
- * 1. ZERO SPOILER before the bet (Milestones 03 & 04 stay sealed until user bets or unseals!)
- * 2. Two crisp human-language metaphor cards BEFORE the bet:
- *    - GNWT = "Сцена с мегафоном во лбу"
- *    - IIT = "Неделимая паутина в затылке (мера Φ)"
- * 3. Plain-Russian scanner explanation + 2 clear sentences explaining the Thalamus inside the diopter!
- * 4. 2D hit-tested diopter readout (checks BOTH x and y inside the brain silhouette!)
+ * ACT IV · CHAPTER IV: "Большое пари" (Bug #6 Fixes):
+ * 1. Synchronized wager seal: betting automatically unseals the ASSC 2023 perforation block (zero double spoiler!).
+ * 2. Zero-re-render Diopter: pointermove writes only to targetRef + sleeping lerp loop mutates clipPath/left/top DOM refs directly!
+ * 3. Level-2 Archival Dossier trigger ("cogitate-2025") + safe assetUrl() studio brain plates.
  */
 export function Chapter4WagerAndDiopter({ onNextChapter }: Chapter4WagerAndDiopterProps) {
   const { state, setWagerUnsealed, setCogitateBet } = useExplorer();
-  const [opticalMode, setOpticalMode] = useState<OpticalMode>('raw');
-  const [lensPos, setLensPos] = useState<{ x: number; y: number }>({ x: 50, y: 47 });
-  const [isDraggingLens, setIsDraggingLens] = useState(false);
+  const [opticalMode, setOpticalMode] = useState<OpticalMode>(
+    state.cogitateBet ? 'verdict' : 'raw',
+  );
+  const [zoneLabel, setZoneLabel] = useState<string>(() => computeZoneLabel(50, 47));
+  const [isEasing, setIsEasing] = useState(false);
+
   const plateRef = useRef<HTMLDivElement | null>(null);
+  const clipLayerRef = useRef<HTMLDivElement | null>(null);
+  const ringRef = useRef<HTMLDivElement | null>(null);
+  const coordsTextRef = useRef<HTMLSpanElement | null>(null);
+
+  const isDraggingRef = useRef(false);
+  const targetPosRef = useRef({ x: 50, y: 47 });
+  const currentPosRef = useRef({ x: 50, y: 47 });
+  const lastZoneRef = useRef(zoneLabel);
 
   const outcomeRevealed = Boolean(state.cogitateBet || state.wagerUnsealed || opticalMode === 'verdict');
+
+  // Zero-re-render Leica inertial lerp loop (sleeps immediately when lens reaches target!)
+  const stepDiopter = useCallback((_nowMs: number, dtMs: number) => {
+    const cur = currentPosRef.current;
+    const tgt = targetPosRef.current;
+    const k = Math.min(1, (dtMs / 16.67) * 0.24);
+    cur.x += (tgt.x - cur.x) * k;
+    cur.y += (tgt.y - cur.y) * k;
+
+    const done = Math.hypot(tgt.x - cur.x, tgt.y - cur.y) < 0.08;
+    if (done) {
+      cur.x = tgt.x;
+      cur.y = tgt.y;
+    }
+
+    if (clipLayerRef.current) {
+      clipLayerRef.current.style.clipPath = `circle(14.5% at ${cur.x.toFixed(2)}% ${cur.y.toFixed(2)}%)`;
+    }
+    if (ringRef.current) {
+      ringRef.current.style.left = `${cur.x.toFixed(2)}%`;
+      ringRef.current.style.top = `${cur.y.toFixed(2)}%`;
+    }
+    if (coordsTextRef.current) {
+      coordsTextRef.current.textContent = `X: ${Math.round(cur.x)}% · Y: ${Math.round(cur.y)}%`;
+    }
+
+    const nextZone = computeZoneLabel(cur.x, cur.y);
+    if (nextZone !== lastZoneRef.current) {
+      lastZoneRef.current = nextZone;
+      setZoneLabel(nextZone);
+    }
+
+    if (done) {
+      setIsEasing(false);
+    }
+  }, []);
+
+  useViewportRaf(plateRef, stepDiopter, { enabled: isEasing });
+
+  const setDiopterTarget = (xPct: number, yPct: number) => {
+    targetPosRef.current = {
+      x: Math.max(12, Math.min(88, xPct)),
+      y: Math.max(14, Math.min(86, yPct)),
+    };
+    setIsEasing(true);
+  };
+
+  const updateLensFromPointer = (clientX: number, clientY: number) => {
+    const el = plateRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const xPct = ((clientX - rect.left) / rect.width) * 100;
+    const yPct = ((clientY - rect.top) / rect.height) * 100;
+    setDiopterTarget(xPct, yPct);
+  };
+
+  const handleBet = (bet: Exclude<CogitateBet, null>) => {
+    setCogitateBet(bet);
+    setOpticalMode('verdict');
+  };
 
   const timelineMilestones = [
     {
@@ -69,63 +152,42 @@ export function Chapter4WagerAndDiopter({ onNextChapter }: Chapter4WagerAndDiopt
     },
   ];
 
-  const updateLensFromPointer = (clientX: number, clientY: number) => {
-    const el = plateRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const xPct = Math.max(12, Math.min(88, ((clientX - rect.left) / rect.width) * 100));
-    const yPct = Math.max(14, Math.min(86, ((clientY - rect.top) / rect.height) * 100));
-    setLensPos({ x: xPct, y: yPct });
-  };
-
-  const handleBet = (bet: Exclude<CogitateBet, null>) => {
-    setCogitateBet(bet);
-    setOpticalMode('verdict');
-  };
-
-  // Accurate 2D ellipse hit-test inside the studio brain silhouette (center ~51%, 47%, rx=28%, ry=27%)
-  const lensZoneLabel = (() => {
-    const dx = (lensPos.x - 51) / 29;
-    const dy = (lensPos.y - 48) / 29;
-    const insideBrain = dx * dx + dy * dy <= 1.05;
-    if (!insideBrain) return 'ПОЛЕ АТЛАСА · НАВЕДИТЕ ДИОПТР НА КОРУ МОЗГА';
-    if (lensPos.y > 67 && lensPos.x > 55) return 'МОЗЖЕЧОК · КООРДИНАЦИЯ (ПОЧТИ БЕЗ СОЗНАНИЯ)';
-    if (lensPos.x < 40) return 'ЛОБНАЯ (ПРЕФРОНТАЛЬНАЯ) КОРА · ЗОНА GNWT';
-    if (lensPos.x > 61) return 'ЗАДНЯЯ «ГОРЯЧАЯ ЗОНА» · ЗОНА IIT';
-    return 'ТАЛАМУС (ДИСПЕТЧЕР) И МОЗОЛИСТОЕ ТЕЛО · ГЛУБИННЫЙ СРЕЗ';
-  })();
+  const lateralSrc = assetUrl('/v7/brain-lateral.jpg');
+  const sagittalSrc = assetUrl('/v7/brain-sagittal.jpg');
 
   return (
     <section
       id="ch-4"
-      className="relative bg-[#FAF9F5] text-[#141413] pt-24 pb-20 md:pt-28 md:pb-28 border-b border-[#141413]/10"
+      className="relative bg-[#FAF9F5] text-[#141413] pt-14 pb-20 md:pt-18 md:pb-24 border-b border-[#141413]/10"
       aria-label="Глава IV — Большое пари и оптический диоптр COGITATE 2025"
     >
       <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20">
         {/* Folio Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#141413]/12 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
-          <span className="text-[#FC4109] font-semibold">ЧАСТЬ II · ПОД ЧЕРЕПОМ · ГЛАВА IV</span>
+          <span className="text-[#FC4109] font-semibold">АКТ IV · ПОД ЧЕРЕПОМ · ГЛАВА IV</span>
           <span>БОЛЬШОЕ ПАРИ · COGITATE 2025 · стр. 54</span>
         </div>
 
-        {/* PART 4.1: OPENING + TWO HUMAN-LANGUAGE THEORY METAPHOR CARDS (BEFORE THE BET!) */}
+        {/* Opening + 2 Human-Language Theory Cards */}
         <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
           <div className="lg:col-span-7">
             <h2 className="text-[clamp(32px,4.5vw,58px)] leading-[1.06] tracking-[-0.03em]">
               <span className="font-display font-bold block">25 лет спора</span>
-              <span className="font-serif-editorial italic font-normal text-[#30302E] block mt-1">
+              <span className="font-serif-display italic font-normal text-[#30302E] block mt-1">
                 и один ящик редкой мадеры.
               </span>
             </h2>
           </div>
           <div className="lg:col-span-5 text-[15.5px] leading-[1.62] text-[#353431]">
             <p>
-              Два главных лагеря нейронауки четверть века спорили о том, где именно в коре зажигается субъективный опыт. Прежде чем вскрыть итоги гигантского эксперимента 2025 года — познакомьтесь с обоими соперниками за 15 секунд.
+              {ruTypo(
+                'Два главных лагеря нейронауки четверть века спорили о том, где именно в коре зажигается субъективный опыт. Прежде чем вскрыть итоги гигантского эксперимента 2025 года — познакомьтесь с обоими соперниками за 15 секунд.',
+              )}
             </p>
           </div>
         </div>
 
-        {/* 2 Crystal-Clear Metaphor Cards explaining GNWT vs IIT (+ Φ!) without jargon */}
+        {/* 2 Metaphor Cards */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="rounded-2xl border border-[#FC4109]/25 bg-[#FC4109]/5 p-5 space-y-2">
             <div className="flex items-center justify-between font-mono-tech text-[10.5px] uppercase tracking-[0.12em]">
@@ -136,7 +198,10 @@ export function Chapter4WagerAndDiopter({ onNextChapter }: Chapter4WagerAndDiopt
               «Сцена с мегафоном во лбу»
             </div>
             <p className="text-[14px] leading-[1.58] text-[#353431]">
-              Большая часть работы мозга идёт в темноте на автомате. Информация становится осознанной только в тот миг, когда в <strong className="text-[#141413]">лобной коре</strong> вспыхивает глобальная рассылка («воспламенение») — и сигнал раздаётся сразу всем отделам мозга.
+              {ruTypo(
+                'Большая часть работы мозга идёт в темноте на автомате. Информация становится осознанной только в тот миг, когда в ',
+              )}
+              <strong className="text-[#141413]">лобной коре</strong> вспыхивает глобальная рассылка («воспламенение») — и сигнал раздаётся сразу всем отделам мозга.
             </p>
           </div>
 
@@ -149,12 +214,15 @@ export function Chapter4WagerAndDiopter({ onNextChapter }: Chapter4WagerAndDiopt
               «Неделимая паутина в затылке»
             </div>
             <p className="text-[14px] leading-[1.58] text-[#353431]">
-              Сознание — это не мегафон, а сама плотность сплетения связей в <strong className="text-[#141413]">задней «горячей зоне»</strong> (учёные обозначают её целостность греческой буквой <strong className="text-[#004EDF]">Φ</strong>). Лобная кора нужна лишь чтобы <em>рассказать</em> об опыте, а не <em>пережить</em> его.
+              {ruTypo(
+                'Сознание — это не мегафон, а сама плотность сплетения связей в ',
+              )}
+              <strong className="text-[#141413]">задней «горячей зоне»</strong> (учёные обозначают её целостность греческой буквой <strong className="text-[#004EDF]">Φ</strong>). Лобная кора нужна лишь чтобы <em>рассказать</em> об опыте, а не <em>пережить</em> его.
             </p>
           </div>
         </div>
 
-        {/* 4-Column Crisp Swiss Fact Ribbon (ZERO SPOILER until bet or unseal!) */}
+        {/* 4-Column Timeline */}
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border-t border-b border-[#141413]/14 divide-y sm:divide-y-0 sm:divide-x divide-[#141413]/12">
           {timelineMilestones.map((item, idx) => (
             <div
@@ -174,15 +242,14 @@ export function Chapter4WagerAndDiopter({ onNextChapter }: Chapter4WagerAndDiopt
               <h3 className="font-display font-bold text-[16.5px] leading-snug text-[#141413]">
                 {item.title}
               </h3>
-              <p className="text-[13.5px] leading-[1.56] text-[#4A4945]">{item.text}</p>
+              <p className="text-[13.5px] leading-[1.56] text-[#4A4945]">{ruTypo(item.text)}</p>
             </div>
           ))}
         </div>
 
-        {/* PART 4.2: STUDIO ANATOMICAL PLATE + SWISS OPTICAL DIOPTER (Streamlined 1 -> 2 -> 3 flow!) */}
+        {/* STUDIO ANATOMICAL PLATE + ZERO-RERENDER SWISS OPTICAL DIOPTER */}
         <div className="mt-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Left 4 cols: Guided Step 1 (Inspect forecasts) -> Step 2 (Bet to unlock Nature 2025!) */}
             <div className="lg:col-span-4 space-y-5">
               <div>
                 <div className="font-mono-tech text-[10.5px] uppercase tracking-[0.14em] text-[#FC4109]">
@@ -192,11 +259,12 @@ export function Chapter4WagerAndDiopter({ onNextChapter }: Chapter4WagerAndDiopt
                   Просветите мозг — и сделайте ставку
                 </h3>
                 <p className="text-[14px] leading-[1.6] text-[#4A4945] mt-2">
-                  Водите диоптром справа, чтобы заглянуть сквозь кору вглубь — к <strong className="text-[#141413]">таламусу</strong> (главному внутреннему диспетчеру, связывающему органы чувств с корой).
+                  {ruTypo(
+                    'Водите диоптром справа, чтобы заглянуть сквозь кору вглубь — к таламусу (главному внутреннему диспетчеру, связывающему органы чувств с корой).',
+                  )}
                 </p>
               </div>
 
-              {/* Step 1: Preview what each camp predicted BEFORE revealing */}
               <div className="space-y-2">
                 <div className="font-mono-tech text-[10.5px] uppercase tracking-[0.12em] text-[#5E5D59]">
                   ШАГ 1 · ПОСМОТРИТЕ ОЖИДАНИЯ НА МОЗГЕ:
@@ -225,7 +293,6 @@ export function Chapter4WagerAndDiopter({ onNextChapter }: Chapter4WagerAndDiopt
                 </div>
               </div>
 
-              {/* Step 2: Pre-Reveal Bet Buttons (unlocks Nature 2025!) */}
               <div className="space-y-2.5 pt-2 border-t border-[#141413]/10">
                 <div className="font-mono-tech text-[10.5px] uppercase tracking-[0.12em] text-[#FC4109] font-semibold">
                   {state.cogitateBet
@@ -282,7 +349,6 @@ export function Chapter4WagerAndDiopter({ onNextChapter }: Chapter4WagerAndDiopt
                 })}
               </div>
 
-              {/* Dynamic Empirical Readout */}
               <div
                 className={`rounded-xl border p-4 space-y-2 transition-colors ${
                   opticalMode === 'verdict'
@@ -308,59 +374,68 @@ export function Chapter4WagerAndDiopter({ onNextChapter }: Chapter4WagerAndDiopt
                   )}
                 </div>
                 <p className="text-[13.5px] leading-[1.58] text-[#2F2E2B]">
-                  {opticalMode === 'raw' &&
-                    'Сдвиньте линзу на центр мозга: внутри коры виден таламус — именно к этому глубинному диспетчеру всё чаще обращаются нейробиологи, когда чисто корковые модели дают сбой.'}
-                  {opticalMode === 'iit' &&
-                    'IIT предсказывала устойчивую синхронизацию в задней «горячей зоне» на всё время, пока человек видит картинку.'}
-                  {opticalMode === 'gnwt' &&
-                    'GNWT предсказывала яркую двойную вспышку в лобной коре — когда стимул появляется и когда он исчезает.'}
-                  {opticalMode === 'verdict' &&
-                    (state.cogitateBet === 'draw'
-                      ? 'В точку! Обе теории получили серьёзные пробоины: в задней коре нашли длительный след образа, но БЕЗ предсказанной IIT синхронизации; а во лбу не оказалось второй вспышки на смену стимула.'
-                      : 'Сюрприз апреля 2025-го: ни одна теория не взяла чистую победу! В задней коре не нашлось устойчивой синхронизации IIT, а во лбу — вспышки на исчезновение стимула (GNWT).')}
+                  {ruTypo(
+                    opticalMode === 'raw'
+                      ? 'Сдвиньте линзу на центр мозга: внутри коры виден таламус — в апреле 2025 года в Science показали, что именно этот глубинный диспетчер опережает лобную кору в ритме 2–8 Гц.'
+                      : opticalMode === 'iit'
+                        ? 'IIT предсказывала устойчивую синхронизацию в задней «горячей зоне» на всё время, пока человек видит картинку.'
+                        : opticalMode === 'gnwt'
+                          ? 'GNWT предсказывала яркую двойную вспышку в лобной коре — когда стимул появляется и когда он исчезает.'
+                          : state.cogitateBet === 'draw'
+                            ? 'В точку! Обе теории получили серьёзные пробоины: в задней коре нашли длительный след образа, но БЕЗ предсказанной IIT синхронизации; а во лбу не оказалось второй вспышки на смену стимула.'
+                            : 'Сюрприз апреля 2025-го: ни одна теория не взяла чистую победу! В задней коре не нашлось устойчивой синхронизации IIT, а во лбу — вспышки на исчезновение стимула (GNWT).',
+                  )}
                 </p>
               </div>
+
+              <DossierTrigger
+                dossier="cogitate-2025"
+                label="Протокол COGITATE (500/1000/1500 мс) + Таламус (Science, апр. 2025)"
+                meta="Архивное досье IV.1 · Уровень 2"
+                className="w-full"
+              />
             </div>
 
-            {/* Right 8 cols: Monumental Studio Brain Plate + Swiss Matte-Graphite Optical Diopter */}
+            {/* Right 8 cols: Monumental Studio Brain Plate + Zero-Re-Render Swiss Optical Diopter */}
             <div className="lg:col-span-8">
               <div className="rounded-2xl border border-[#141413]/14 bg-[#FAF9F5] p-4 md:p-6 shadow-[0_24px_60px_rgba(20,20,19,0.06)]">
-                {/* Top Instrument Telemetry */}
                 <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3 border-b border-[#141413]/10 font-mono-tech text-[10.5px] uppercase tracking-[0.11em] text-[#5E5D59]">
-                  <span className="flex items-center gap-2">
+                  <span className="flex flex-wrap items-center gap-2">
                     <Crosshair className="w-3.5 h-3.5 text-[#FC4109]" />
-                    <span>{lensZoneLabel}</span>
+                    <span>{zoneLabel}</span>
+                    <LabHonestyBadge badge="reconstruction" />
                   </span>
-                  <span>
-                    X: {Math.round(lensPos.x)}% · Y: {Math.round(lensPos.y)}%
+                  <span ref={coordsTextRef} className="whitespace-nowrap">
+                    X: 50% · Y: 47%
                   </span>
                 </div>
 
-                {/* INTERACTIVE OPTICAL DIOPTER VIEWPORT (16:10 aligned plates!) */}
                 <div
                   ref={plateRef}
                   onPointerMove={(e) => {
-                    if (e.pointerType === 'mouse' || isDraggingLens) {
+                    if (e.pointerType === 'mouse' || isDraggingRef.current) {
                       updateLensFromPointer(e.clientX, e.clientY);
                     }
                   }}
                   onPointerDown={(e) => {
-                    setIsDraggingLens(true);
+                    isDraggingRef.current = true;
                     updateLensFromPointer(e.clientX, e.clientY);
                   }}
-                  onPointerUp={() => setIsDraggingLens(false)}
-                  onPointerLeave={() => setIsDraggingLens(false)}
+                  onPointerUp={() => {
+                    isDraggingRef.current = false;
+                  }}
+                  onPointerLeave={() => {
+                    isDraggingRef.current = false;
+                  }}
                   className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-[#FAF9F5] select-none cursor-crosshair touch-none"
                 >
-                  {/* BASE LAYER: Photorealistic Sculptural Lateral Cortex */}
                   <img
-                    src="/v7/brain-lateral.jpg"
+                    src={lateralSrc}
                     alt="Студийная анатомическая пластина коры головного мозга"
                     className="absolute inset-0 w-full h-full object-cover pointer-events-none"
                     draggable={false}
                   />
 
-                  {/* OPTICAL FILTER HEATWAVES (IIT / GNWT / Nature 2025 Verdict) */}
                   <svg
                     viewBox="0 0 1600 1000"
                     className="absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-500"
@@ -480,27 +555,27 @@ export function Chapter4WagerAndDiopter({ onNextChapter }: Chapter4WagerAndDiopt
                     )}
                   </svg>
 
-                  {/* CLIPPED SAGITTAL THALAMUS LAYER REVEALED INSIDE THE SWISS OPTICAL DIOPTER */}
+                  {/* Clipped Sagittal Layer mutated directly via ref */}
                   <div
+                    ref={clipLayerRef}
                     className="absolute inset-0 pointer-events-none"
-                    style={{
-                      clipPath: `circle(14.5% at ${lensPos.x}% ${lensPos.y}%)`,
-                    }}
+                    style={{ clipPath: 'circle(14.5% at 50% 47%)' }}
                   >
                     <img
-                      src="/v7/brain-sagittal.jpg"
+                      src={sagittalSrc}
                       alt="Сагиттальный анатомический срез: мозолистое тело и таламус"
                       className="absolute inset-0 w-full h-full object-cover"
                       draggable={false}
                     />
                   </div>
 
-                  {/* SWISS LEICA / DIETER RAMS MATTE-GRAPHITE OPTICAL DIOPTER RING */}
+                  {/* Leica Optical Diopter Ring mutated directly via ref */}
                   <div
-                    className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center"
+                    ref={ringRef}
+                    className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center will-change-[left,top]"
                     style={{
-                      left: `${lensPos.x}%`,
-                      top: `${lensPos.y}%`,
+                      left: '50%',
+                      top: '47%',
                       width: '29%',
                       aspectRatio: '1 / 1',
                       border: '3px solid #1C1C1B',
@@ -517,7 +592,7 @@ export function Chapter4WagerAndDiopter({ onNextChapter }: Chapter4WagerAndDiopt
                   </div>
                 </div>
 
-                {/* Quick Focus Presets below plate */}
+                {/* Quick Focus Presets */}
                 <div className="mt-4 pt-3.5 border-t border-[#141413]/10 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-mono-tech text-[10.5px] uppercase tracking-[0.1em] text-[#5E5D59] mr-1">
@@ -527,7 +602,7 @@ export function Chapter4WagerAndDiopter({ onNextChapter }: Chapter4WagerAndDiopt
                       <button
                         key={preset.label}
                         type="button"
-                        onClick={() => setLensPos({ x: preset.x, y: preset.y })}
+                        onClick={() => setDiopterTarget(preset.x, preset.y)}
                         className="v6-pill px-3 py-1 rounded-full bg-[#F2F0E8] hover:bg-[#141413] hover:text-[#FAF9F5] border border-[#141413]/12 font-mono-tech text-[10.5px] cursor-pointer"
                       >
                         {preset.label}
@@ -544,15 +619,16 @@ export function Chapter4WagerAndDiopter({ onNextChapter }: Chapter4WagerAndDiopt
           </div>
         </div>
 
-        {/* MECHANIC 4.1: TACTILE #FC4109 PERFORATED TEAR-STRIP ("Вскрыть протокол пари" — placed AFTER bet so no early spoiler!) */}
+        {/* SYNCHRONIZED PERFORATION SEAL (Bug #6 Fix: automatically reveals once user bets, zero double spoiler!) */}
         <div className="mt-10">
-          {!state.wagerUnsealed ? (
+          {!outcomeRevealed ? (
             <button
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => {
                 window.getSelection()?.removeAllRanges();
                 setWagerUnsealed(true);
+                setOpticalMode('verdict');
               }}
               className="group select-none w-full relative overflow-hidden rounded-xl border-2 border-dashed border-[#FC4109]/70 bg-[#FC4109]/5 hover:bg-[#FC4109]/10 px-5 py-4 transition-all cursor-pointer flex flex-wrap items-center justify-between gap-4"
             >
@@ -565,7 +641,7 @@ export function Chapter4WagerAndDiopter({ onNextChapter }: Chapter4WagerAndDiopt
                     ОТРЫВНАЯ ПЕРФОРАЦИЯ · ПРОТОКОЛ ASSC 2023
                   </div>
                   <div className="font-display font-semibold text-[15.5px] text-[#141413]">
-                    Надорвать пломбу — узнать, кто проиграл ящик мадеры, и прочитать новое пари до 2048 года
+                    Или надорвите пломбу без ставки — узнать, кто проиграл ящик мадеры и какое пари заключили до 2048 года
                   </div>
                 </div>
               </div>
@@ -600,10 +676,12 @@ export function Chapter4WagerAndDiopter({ onNextChapter }: Chapter4WagerAndDiopt
           )}
         </div>
 
-        {/* Domino Bridge -> ScrollMicroZoom x1000 -> Chapter V */}
+        {/* Domino Bridge -> ScrollMicroZoom x1000 */}
         <div className="mt-12 pt-6 border-t border-[#141413]/12 flex flex-wrap items-center justify-between gap-4">
           <p className="font-serif-editorial italic text-[17px] text-[#2D2C2A] max-w-2xl">
-            На масштабе целых полушарий «кнопку сознания» найти не удалось. Значит, спускаемся в тысячу раз глубже — внутрь одной-единственной нервной клетки.
+            {ruTypo(
+              'На масштабе целых полушарий «кнопку сознания» найти не удалось. Значит, спускаемся в тысячу раз глубже — внутрь шести слоёв коры и одной-единственной нервной клетки.',
+            )}
           </p>
           <button
             type="button"

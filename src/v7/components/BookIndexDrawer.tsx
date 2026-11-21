@@ -1,37 +1,57 @@
-import { X, Check } from 'lucide-react';
-import { BOOK_CHAPTERS, BOOK_PARTS } from '../data/bookMeta';
+import { useEffect, useState } from 'react';
+import { X, Check, RotateCcw, BookMarked } from 'lucide-react';
+import { ACTS_META } from '../../v9/data/actsMeta';
+import type { ActId } from '../../v9/utils/hashRouter';
 import { useExplorer } from '../context/ExplorerContext';
 
 interface BookIndexDrawerProps {
   open: boolean;
   onClose: () => void;
+  activeAct: ActId;
   activeChapterId: string;
-  onNavigate: (chapterId: string) => void;
+  onNavigate: (actId: ActId, chapterId?: string) => void;
 }
 
 export function BookIndexDrawer({
   open,
   onClose,
+  activeAct,
   activeChapterId,
   onNavigate,
 }: BookIndexDrawerProps) {
-  const { completedChapters } = useExplorer();
+  const { completedChapters, completedCount, state, resetAllState } = useExplorer();
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setConfirmReset(false);
+      return;
+    }
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open, onClose]);
 
   if (!open) return null;
-
-  const openingSpreads = BOOK_CHAPTERS.filter((c) => c.partNum === 0);
 
   return (
     <div
       className="fixed inset-0 z-[80] flex justify-end"
       role="dialog"
       aria-modal="true"
-      aria-label="Оглавление книги NOESIS"
+      aria-label="Оглавление атласа NOESIS"
     >
       <button
         type="button"
         onClick={onClose}
-        className="absolute inset-0 bg-[#141413]/40 backdrop-blur-xs cursor-default"
+        className="absolute inset-0 bg-[#141413]/40 backdrop-blur-[2px] cursor-default"
         aria-label="Закрыть оглавление"
       />
 
@@ -44,11 +64,19 @@ export function BookIndexDrawer({
           <div className="flex items-start justify-between gap-4 pb-5 border-b border-[#141413]/12">
             <div>
               <div className="font-mono-tech text-[10.5px] uppercase tracking-[0.14em] text-[#FC4109]">
-                NOESIS · ИНТЕРАКТИВНАЯ МОНОГРАФИЯ · 2026
+                NOESIS v9 · ИНТЕРАКТИВНЫЙ АТЛАС · 2026
               </div>
               <h2 className="font-serif-editorial text-2xl md:text-[28px] mt-1.5 leading-tight">
-                Оглавление книги
+                Пять актов книги
               </h2>
+              <div className="mt-2 flex flex-wrap items-center gap-3 font-mono-tech text-[10.5px] text-[#5E5D59]">
+                <span>ОПЫТОВ ПРОЙДЕНО: {completedCount} / 8</span>
+                <span className="text-[#141413]/25">·</span>
+                <span className="inline-flex items-center gap-1 text-[#004EDF]">
+                  <BookMarked className="w-3 h-3" />
+                  ДОСЬЕ: {state.dossiersRead.length}
+                </span>
+              </div>
             </div>
             <button
               type="button"
@@ -60,75 +88,39 @@ export function BookIndexDrawer({
             </button>
           </div>
 
-          {/* Table 00 + Prologue */}
-          <div className="mt-5 pb-4 border-b border-[#141413]/10 space-y-2.5">
-            {openingSpreads.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => {
-                  onNavigate(item.id);
-                  onClose();
-                }}
-                className={`w-full text-left p-3.5 rounded-xl border transition-colors cursor-pointer flex items-start justify-between gap-3 ${
-                  activeChapterId === item.id
-                    ? 'bg-[#141413] text-[#FAF9F5] border-[#141413]'
-                    : 'bg-[#F3F1E9] hover:bg-[#ECE9DF] border-[#141413]/10 text-[#141413]'
-                }`}
-              >
-                <div>
-                  <div
-                    className={`font-mono-tech text-[10px] uppercase tracking-[0.12em] ${
-                      activeChapterId === item.id ? 'text-[#FC4109]' : 'text-[#5E5D59]'
-                    }`}
-                  >
-                    {item.code} · {item.folio}
-                  </div>
-                  <div className="font-display font-semibold text-[15px] mt-0.5">
-                    {item.fullTitle}
-                  </div>
-                  <div
-                    className={`text-[12px] mt-0.5 ${
-                      activeChapterId === item.id ? 'text-[#FAF9F5]/72' : 'text-[#5E5D59]'
-                    }`}
-                  >
-                    {item.mechanic}
-                  </div>
-                </div>
-                {completedChapters[item.id] && (
-                  <span className="mt-1 w-5 h-5 rounded-full bg-[#FC4109] text-[#FAF9F5] flex items-center justify-center shrink-0">
-                    <Check className="w-3 h-3" />
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* 3 Monumental Book Parts */}
+          {/* 5 Acts Accordion-Free Atlas Map */}
           <div className="mt-5 space-y-6">
-            {BOOK_PARTS.map((part) => {
-              const partChapters = BOOK_CHAPTERS.filter((c) => c.partNum === part.num);
+            {ACTS_META.map((act) => {
+              const isActCurrent = act.id === activeAct;
               return (
-                <div key={part.num}>
-                  <div className="flex items-baseline justify-between mb-2.5">
-                    <span className="font-mono-tech text-[10.5px] uppercase tracking-[0.14em] text-[#FC4109] font-semibold">
-                      {part.label}
+                <div key={act.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onNavigate(act.id);
+                      onClose();
+                    }}
+                    className="w-full text-left flex items-baseline justify-between gap-2 mb-2 group cursor-pointer"
+                  >
+                    <span className="font-mono-tech text-[10.5px] uppercase tracking-[0.14em] text-[#FC4109] font-semibold group-hover:underline">
+                      {act.code}
                     </span>
-                    <span className="font-serif-editorial italic text-[12px] text-[#5E5D59]">
-                      {part.subtitle}
+                    <span className="font-mono-tech text-[10px] text-[#5E5D59]">
+                      {isActCurrent ? '● СЕЙЧАС ЗДЕСЬ · ' : ''}
+                      {act.durationLabel}
                     </span>
-                  </div>
+                  </button>
 
                   <div className="divide-y divide-[#141413]/10 border-t border-b border-[#141413]/10">
-                    {partChapters.map((ch) => {
-                      const isActive = activeChapterId === ch.id;
-                      const done = Boolean(completedChapters[ch.id]);
+                    {act.chapters.map((ch) => {
+                      const isActive = isActCurrent && activeChapterId === ch.id;
+                      const done = ch.experimentKey ? Boolean(completedChapters[ch.experimentKey]) : false;
                       return (
                         <button
                           key={ch.id}
                           type="button"
                           onClick={() => {
-                            onNavigate(ch.id);
+                            onNavigate(act.id, ch.id);
                             onClose();
                           }}
                           className={`w-full text-left py-3 px-2.5 -mx-2.5 rounded-lg transition-colors cursor-pointer flex items-start justify-between gap-3 ${
@@ -150,29 +142,31 @@ export function BookIndexDrawer({
                               </span>
                             </div>
                             <div className="font-display font-semibold text-[14.5px] mt-0.5 leading-snug">
-                              {ch.fullTitle}
+                              {ch.title}
                             </div>
                             <div
                               className={`text-[12px] mt-0.5 ${
-                                isActive ? 'text-[#FAF9F5]/70' : 'text-[#5E5D59]'
+                                isActive ? 'text-[#FAF9F5]/72' : 'text-[#5E5D59]'
                               }`}
                             >
                               {ch.mechanic}
                             </div>
                           </div>
 
-                          <span
-                            className={`mt-1.5 w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
-                              done
-                                ? 'bg-[#0D7A5F] border-[#0D7A5F] text-[#FAF9F5]'
-                                : isActive
-                                  ? 'border-[#FAF9F5]/35'
-                                  : 'border-[#141413]/20'
-                            }`}
-                            title={done ? 'Опыт пройден' : 'Впереди'}
-                          >
-                            {done && <Check className="w-2.5 h-2.5" />}
-                          </span>
+                          {ch.experimentKey && (
+                            <span
+                              className={`mt-1.5 w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                                done
+                                  ? 'bg-[#0D7A5F] border-[#0D7A5F] text-[#FAF9F5]'
+                                  : isActive
+                                    ? 'border-[#FAF9F5]/35'
+                                    : 'border-[#141413]/20'
+                              }`}
+                              title={done ? 'Опыт пройден' : 'Впереди'}
+                            >
+                              {done && <Check className="w-2.5 h-2.5" />}
+                            </span>
+                          )}
                         </button>
                       );
                     })}
@@ -183,10 +177,42 @@ export function BookIndexDrawer({
           </div>
         </div>
 
-        {/* Colophon Footnote */}
-        <div className="mt-8 pt-4 border-t border-[#141413]/10 flex items-center justify-between font-mono-tech text-[10.5px] text-[#5E5D59]">
-          <span>ПРОЛОГ · 8 ГЛАВ · 11 МЕХАНИЗМОВ</span>
-          <span>18–22 МИН ЧТЕНИЯ</span>
+        {/* Colophon Footnote + Safe Two-Step Protocol Reset */}
+        <div className="mt-8 pt-4 border-t border-[#141413]/12 flex flex-wrap items-center justify-between gap-3">
+          <div className="font-mono-tech text-[10px] uppercase tracking-[0.1em] text-[#5E5D59]">
+            ПРОГРЕСС СОХРАНЯЕТСЯ В БРАУЗЕРЕ
+          </div>
+
+          {!confirmReset ? (
+            <button
+              type="button"
+              onClick={() => setConfirmReset(true)}
+              className="v6-pill inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F3F1E9] hover:bg-[#E7E3D7] border border-[#141413]/14 font-mono-tech text-[10px] uppercase tracking-[0.09em] text-[#5E5D59] cursor-pointer"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Сбросить протокол</span>
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  resetAllState();
+                  setConfirmReset(false);
+                }}
+                className="v6-pill px-3 py-1.5 rounded-full bg-[#C92A2A] text-[#FAF9F5] font-mono-tech text-[10px] uppercase tracking-[0.09em] cursor-pointer"
+              >
+                Да, очистить
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmReset(false)}
+                className="v6-pill px-2.5 py-1.5 rounded-full bg-[#ECEAE2] text-[#141413] font-mono-tech text-[10px] uppercase cursor-pointer"
+              >
+                Отмена
+              </button>
+            </div>
+          )}
         </div>
       </aside>
     </div>

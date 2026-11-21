@@ -1,9 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { ArrowDown, ArrowUpRight, X } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import { useExplorer } from '../context/ExplorerContext';
 import { ScholarMarginDuel } from './ScholarMarginalia';
+import { NoesisInstrumentFrame } from '../../v9/components/NoesisInstrumentFrame';
+import { useDossier } from '../../v9/components/DossierContext';
+import { DossierTrigger } from '../../v9/components/NoesisDossierSheet';
+import { assetUrl } from '../../v9/utils/assetUrl';
+import { ruTypo } from '../../v9/utils/ruTypo';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -41,28 +46,7 @@ const MARY_BEATS = [
   },
 ];
 
-const SCHOOLS = [
-  {
-    name: 'Аргумент знания (Антифизикализм)',
-    author: 'Фрэнк Джексон, 1982',
-    stance: 'Если Мэри узнаёт о мире нечто новое, увидев алую розу, — значит, физическое описание Вселенной принципиально неполно.',
-  },
-  {
-    name: 'Трудная проблема сознания',
-    author: 'Дэвид Чалмерс, 1995',
-    stance: 'Объяснить, как мозг различает длины волн, — «лёгкая» инженерная задача. Объяснить, почему это вообще переживается изнутри, — «трудная» проблема.',
-  },
-  {
-    name: 'Иллюзионизм (Ничего не случилось)',
-    author: 'Дэниел Деннет, 1991–2024',
-    stance: 'Мы просто недооцениваем слово «знала ВСЁ». Если бы Мэри правда знала всю нейродинамику до атома, цветная роза её бы не удивила — её обмануть было бы невозможно.',
-  },
-  {
-    name: 'Гипотеза способностей',
-    author: 'Дэвид Льюис, 1988',
-    stance: 'Мэри не узнала новый факт о Вселенной — она просто приобрела новый практический навык: узнавать и воображать красный цвет, как учатся ездить на велосипеде.',
-  },
-];
+type SpectrometerMode = 'single' | 'metamer' | 'magenta';
 
 function wavelengthToHex(nm: number) {
   const rawL = Math.exp(-Math.pow((nm - 595) / 58, 2));
@@ -87,9 +71,10 @@ export function Chapter1MaryRoom({
   onHudThemeChange,
   onActiveChange,
   onCanvasInHudChange,
-  onNextChapter,
+  onNextChapter: _onNextChapter,
 }: Chapter1MaryRoomProps) {
   const { state, setMaryBet } = useExplorer();
+  const { openDossier } = useDossier();
 
   const sectionRef = useRef<HTMLElement | null>(null);
   const runwayRef = useRef<HTMLDivElement | null>(null);
@@ -106,8 +91,8 @@ export function Chapter1MaryRoom({
 
   const [activeBeat, setActiveBeat] = useState(0);
   const [isColoredPhase, setIsColoredPhase] = useState(false);
-  const [dossierOpen, setDossierOpen] = useState(false);
   const [wavelength, setWavelength] = useState(650);
+  const [specMode, setSpecMode] = useState<SpectrometerMode>('single');
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -150,9 +135,6 @@ export function Chapter1MaryRoom({
       },
       onUpdate: (self) => {
         const p = self.progress;
-
-        // Beat 3 ("МОМЕНТ ПОРОГА") spans the entire mid-bloom (0.52..0.79) cleanly in dark ink;
-        // Beat 4 ("РОЖДЕНИЕ КВАЛИА") begins synchronously as deep Klein Cobalt blankets the left column!
         const nextBeat = p < 0.25 ? 0 : p < 0.52 ? 1 : p < 0.79 ? 2 : 3;
         setActiveBeat((prev) => (prev === nextBeat ? prev : nextBeat));
 
@@ -169,7 +151,6 @@ export function Chapter1MaryRoom({
           spikePathRef.current.style.strokeDashoffset = `${len * (1 - spikeT)}`;
         }
 
-        // Signature Monochrome -> Soft Optical Radial Crimson + Klein Cobalt Wave centered on the rose!
         const colorT = Math.max(0, Math.min(1, (p - 0.54) / 0.38));
         const easedColor = colorT * colorT * (3 - 2 * colorT);
         const feather = Math.min(4.5, easedColor * 18);
@@ -223,7 +204,6 @@ export function Chapter1MaryRoom({
           }
         }
 
-        // Wait until deep Klein Cobalt actually blankets the left headline & top HUD (>= 0.74) before flipping ink to white!
         const shouldBeColored = easedColor >= 0.74;
         if (stageRootRef.current) {
           stageRootRef.current.dataset.colored = shouldBeColored ? 'true' : 'false';
@@ -241,12 +221,60 @@ export function Chapter1MaryRoom({
       canvasHudTrigger.kill();
       trigger.kill();
       onCanvasInHudChange?.(false);
+      onHudThemeChange('light');
     };
   }, [onHudThemeChange, onActiveChange, onCanvasInHudChange]);
 
   const beat = MARY_BEATS[activeBeat] ?? MARY_BEATS[0];
-  const spec = wavelengthToHex(wavelength);
+  const baseSpec = wavelengthToHex(wavelength);
   const frequencyThz = Math.round(299792 / wavelength);
+
+  // Active eyepiece reading (Single wavelength vs Metamerism vs Non-spectral Magenta!)
+  const eyepiece = (() => {
+    if (specMode === 'metamer') {
+      return {
+        hex: '#D4A017',
+        title: 'Метамеризм: два разных света = один жёлтый',
+        waveLabel: '580 нм (1 луч)  ≡  530 + 640 нм (смесь)',
+        freqLabel: 'Две разные физики',
+        lCone: 92,
+        mCone: 81,
+        sCone: 2,
+        explain:
+          'Ваш экран не умеет излучать настоящий жёлтый 580 нм — он смешивает зелёный и красный пиксели. Но тройка чисел (L=92, M=81, S=2) совпадает, и кора рисует неотличимый жёлтый.',
+      };
+    }
+    if (specMode === 'magenta') {
+      return {
+        hex: '#C0267D',
+        title: 'Пурпур (маджента) — цвет без длины волны',
+        waveLabel: '440 + 650 нм · вне радуги',
+        freqLabel: 'Несуществующая волна',
+        lCone: 88,
+        mCone: 4,
+        sCone: 94,
+        explain:
+          'В солнечном спектре нет «пурпурного» фотона! Когда срабатывают крайние синие (S) и красные (L) колбочки, а зелёные (M) молчат, мозг сам достраивает цвет, замыкая спектр в кольцо.',
+      };
+    }
+    return {
+      hex: baseSpec.hex,
+      title: baseSpec.name,
+      waveLabel: `${wavelength} нм`,
+      freqLabel: `${frequencyThz} ТГц`,
+      lCone: baseSpec.lCone,
+      mCone: baseSpec.mCone,
+      sCone: baseSpec.sCone,
+      explain:
+        state.maryBet === 'learns_new'
+          ? 'Вы поставили на Чалмерса: даже зная точные проценты L, M и S выше, Мэри никогда не могла вывести из них сам свет внутри этого окуляра.'
+          : state.maryBet === 'knows_all'
+            ? 'Вы поставили на Деннета: если бы Мэри знала всю физику активации L, M и S в своей коре, этот оттенок не стал бы для неё новостью.'
+            : 'Подвигайте длину волны или переключитесь на «Пурпур» — вы увидите, что цвет рождается не в фотоне, а в вычислении трёх типов колбочек.',
+    };
+  })();
+
+  const maryStillLifeSrc = assetUrl('/v6/mary-still-life.jpg');
 
   return (
     <section
@@ -255,31 +283,32 @@ export function Chapter1MaryRoom({
       className="relative bg-[#FAF9F5] text-[#141413]"
       aria-label="Глава I — Загадка цвета и Комната Мэри"
     >
-      {/* PRE-EXIT BET SPREAD: Reader takes a philosophical stand BEFORE opening Mary's door! */}
-      <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20 py-20 md:py-28">
+      {/* PRE-EXIT BET SPREAD */}
+      <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20 py-14 md:py-20">
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#141413]/12 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
-          <span className="text-[#FC4109] font-semibold">ЧАСТЬ I · ИЗНУТРИ · ГЛАВА I</span>
+          <span className="text-[#FC4109] font-semibold">АКТ II · ОПТИКА · ГЛАВА I</span>
           <span>ЗАГАДКА ЦВЕТА · стр. 10</span>
         </div>
 
         <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
-          {/* Left: Crisp Editorial Setup + Pre-Exit Bet */}
           <div className="lg:col-span-7 space-y-6">
             <h2 className="text-[clamp(32px,4.4vw,56px)] leading-[1.06] tracking-[-0.03em]">
               <span className="font-display font-bold block">Ставка перед дверью:</span>
-              <span className="font-serif-editorial italic font-normal text-[#30302E] block mt-1">
+              <span className="font-serif-display italic font-normal text-[#30302E] block mt-1">
                 узнает ли Мэри что{'\u2011'}то новое?
               </span>
             </h2>
 
             <p className="text-[16px] md:text-[17px] leading-[1.65] text-[#30302E]">
-              Представьте учёную, которая всю жизнь провела в безупречно чёрно-белой комнате. Она выучила всю физику света и анатомию глаза — знает даже точные цифры, отличающие белую бумагу{' '}
+              {ruTypo(
+                'Представьте учёную, которая всю жизнь провела в безупречно чёрно-белой комнате. Она выучила всю физику света и анатомию глаза — знает даже точные цифры, отличающие белую бумагу ',
+              )}
               <span className="font-serif-editorial italic text-[#141413]">«слоновая кость» (Bone)</span> от{' '}
               <span className="font-serif-editorial italic text-[#141413]">«яичной скорлупы» (Eggshell)</span>.
               Сегодня дверь впервые откроется, и перед ней окажется алая роза.
             </p>
 
-            {/* Two Sharp Pre-Exit Bet Cards — crystal clear who each philosopher represents */}
+            {/* Pre-Exit Bet Cards */}
             <div className="pt-2 space-y-3">
               <div className="font-mono-tech text-[11px] uppercase tracking-[0.12em] text-[#5E5D59]">
                 Шаг 1 · Сделайте ставку, прежде чем медленно прокрутить вниз и открыть дверь:
@@ -347,7 +376,7 @@ export function Chapter1MaryRoom({
             </div>
           </div>
 
-          {/* Right Margin: Reactive New Yorker Pencil Duel (ZERO premature 'квалиа' jargon!) */}
+          {/* Right Margin: Reactive New Yorker Pencil Duel */}
           <div className="lg:col-span-5 lg:pt-8">
             <ScholarMarginDuel
               first={{
@@ -364,7 +393,7 @@ export function Chapter1MaryRoom({
                 gesture: 'slash',
                 quote:
                   state.maryBet === 'learns_new'
-                    ? 'Классическая ловушка воображения! Вы записали ставку в пользу магии — я запомню это и проверю вас в Главе VII, когда перед вами окажется ИИ.'
+                    ? 'Классическая ловушка воображения! Вы записали ставку в пользу магии — я запомню это и проверю вас в Акте V, когда перед вами окажется ИИ.'
                     : 'Браво! Почти все попадаются на этот трюк, потому что не умеют по-настоящему представить «знать ВСЮ физику мозга». Мэри бы даже не моргнула.',
               }}
             />
@@ -381,24 +410,22 @@ export function Chapter1MaryRoom({
         </div>
       </div>
 
-      {/* PINNED 340vh SCROLL METAMORPHOSIS: Monochrome -> Radial Crimson Rose + Klein Cobalt Flood! */}
+      {/* PINNED 340vh SCROLL METAMORPHOSIS (CSS position:sticky — 0 GSAP pin:true!) */}
       <div id="ch-1-runway" ref={runwayRef} className="relative h-[340vh] bg-[#ECEAE4]">
         <div
           ref={stageRootRef}
           data-colored={isColoredPhase ? 'true' : 'false'}
           className="sticky top-0 h-[100svh] w-full overflow-hidden group/mary"
         >
-          {/* LAYER A: Stark 100% Monochrome Studio Photograph */}
           <div className="absolute inset-0">
             <img
-              src="/v6/mary-still-life.jpg"
+              src={maryStillLifeSrc}
               alt=""
               className="w-full h-full object-cover object-bottom select-none"
               style={{ filter: 'grayscale(1) contrast(1.06) brightness(0.98)' }}
             />
           </div>
 
-          {/* LAYER B: Full Vivid Color Photograph revealed with a soft feathered radial wave from the Crimson Rose */}
           <div
             ref={colorLayerRef}
             className="absolute inset-0 will-change-[mask-image]"
@@ -408,14 +435,13 @@ export function Chapter1MaryRoom({
             }}
           >
             <img
-              src="/v6/mary-still-life.jpg"
+              src={maryStillLifeSrc}
               alt="Хрустальная призма, алая роза и оптическая линза"
               className="w-full h-full object-cover object-bottom select-none"
               style={{ filter: 'saturate(1.16) contrast(1.03)' }}
             />
           </div>
 
-          {/* LAYER C: Klein Cobalt (#004EDF) Upper Wall Wash */}
           <div
             ref={cobaltWashRef}
             className="absolute inset-0 pointer-events-none will-change-[mask-image,opacity]"
@@ -429,7 +455,6 @@ export function Chapter1MaryRoom({
             }}
           />
 
-          {/* LAYER D: Optical Vector Overlay (650nm Sine Wave -> Prism -> Cortical Spikes) */}
           <svg
             viewBox="0 0 1440 900"
             preserveAspectRatio="xMidYMax slice"
@@ -465,7 +490,6 @@ export function Chapter1MaryRoom({
             </g>
           </svg>
 
-          {/* LAYER E: Delicate Optical Reticle */}
           <div
             ref={kineticDotRef}
             className="absolute z-20 pointer-events-none will-change-transform flex items-center justify-center"
@@ -498,7 +522,6 @@ export function Chapter1MaryRoom({
             }}
           />
 
-          {/* LAYER F: Editorial Typography — permanently opacity-100 (zero blank-wall opacity:0 frames during scroll!) */}
           <div className="relative z-30 max-w-[1360px] mx-auto px-5 md:px-12 lg:px-20 pt-20 md:pt-24">
             <div className="max-w-2xl lg:max-w-[740px]">
               <div className="font-mono-tech text-[11px] md:text-[12px] tracking-[0.06em] uppercase transition-colors duration-200 text-[#5E5D59] group-data-[colored=true]/mary:text-[#FAF9F5]/85">
@@ -518,7 +541,6 @@ export function Chapter1MaryRoom({
             </div>
           </div>
 
-          {/* LAYER G: Bottom Telemetry & Slide-Over Research Dossier */}
           <div className="absolute bottom-5 md:bottom-7 inset-x-0 z-30">
             <div className="max-w-[1360px] mx-auto px-5 md:px-12 lg:px-20 flex flex-wrap items-end justify-between gap-4">
               <div className="inline-flex flex-wrap items-center gap-4 md:gap-6 px-4 py-2.5 rounded-2xl bg-[#FAF9F5]/92 backdrop-blur-md border border-[#141413]/12 text-[#141413] shadow-[0_8px_28px_rgba(20,20,19,0.08)]">
@@ -562,11 +584,11 @@ export function Chapter1MaryRoom({
 
                 <button
                   type="button"
-                  onClick={() => setDossierOpen(true)}
+                  onClick={() => openDossier('qualia-metamerism')}
                   className="v6-pill h-10 px-4 rounded-full bg-[#FAF9F5]/94 hover:bg-[#FAF9F5] text-[#141413] border border-[#141413]/15 shadow-[0_8px_24px_rgba(20,20,19,0.10)] backdrop-blur-md inline-flex items-center gap-2 text-[13px] font-medium cursor-pointer"
                 >
-                  <span>Справочник и спектр</span>
-                  <ArrowUpRight className="w-3.5 h-3.5 text-[#FC4109]" />
+                  <span>Досье: почему цвета нет в свете</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 text-[#004EDF]" />
                 </button>
               </div>
             </div>
@@ -574,188 +596,159 @@ export function Chapter1MaryRoom({
         </div>
       </div>
 
-      {/* INLINE HANDS-ON SPECTRUM EXPLORER + EASY vs HARD PROBLEM SUMMARY (Brought out of hidden drawer!) */}
+      {/* BUG #3 FIX: Single Darkroom Optical Eyepiece Spectrometer (Zero duplicate drawer slider!) */}
       <div className="bg-[#FAF9F5] border-b border-[#141413]/10">
-        <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20 py-14 space-y-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-5 space-y-3">
+        <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20 py-16 space-y-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div className="lg:col-span-5 space-y-4">
               <div className="font-mono-tech text-[10.5px] uppercase tracking-[0.14em] text-[#FC4109]">
-                ОПЫТ РУКАМИ · КАК ЧИСЛО СТАНОВИТСЯ ЦВЕТОМ
+                ОПЫТ РУКАМИ · ПОЧЕМУ ЦВЕТ ЖИВЁТ НЕ В СВЕТЕ
               </div>
-              <h3 className="font-display font-bold text-[24px] leading-tight text-[#141413]">
-                Подвигайте длину волны — в природе нет красок
+              <h3 className="font-serif-editorial text-[28px] md:text-[32px] leading-[1.14] text-[#141413]">
+                {ruTypo('Окуляр спектрометра: число, метамеризм и несуществующий пурпур')}
               </h3>
-              <p className="text-[14.5px] leading-[1.62] text-[#454440]">
-                В глазу живут три типа микро-датчиков — <strong className="text-[#141413]">колбочки L, M и S</strong>. Они лишь считают энергию бесцветных волн. «Лёгкая» задача науки — измерить эти проценты. «Трудная» проблема Чалмерса — объяснить, почему эта арифметика вдруг <em className="font-serif-editorial text-[#141413]">сияет алым</em>.
+              <p className="text-[14.5px] leading-[1.64] text-[#454440]">
+                {ruTypo(
+                  'В сетчатке живут всего три типа датчиков — колбочки L, M и S. Они переводят бесцветную физику волн в три процента. Покрутите ползунок и нажмите «Пурпур» — вы увидите цвет, которого не существует ни в одном луче радуги.',
+                )}
               </p>
+
+              <DossierTrigger
+                dossier="qualia-metamerism"
+                label="Почему Деннет не верит в парадокс Мэри + метамеризм 580 нм"
+                meta="Архивное досье II.1 · Уровень 2"
+                className="w-full"
+              />
             </div>
 
-            <div className="lg:col-span-7 rounded-2xl bg-[#F3F1E9] border border-[#141413]/12 p-5 md:p-6 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <span className="font-mono-tech text-[10.5px] uppercase tracking-[0.12em] text-[#5E5D59]">
-                  ПОЛЗУНОК СПЕКТРА · 420–690 НМ
-                </span>
-                <span className="inline-flex items-center gap-2 font-mono-tech text-[12.5px] font-semibold">
-                  <span
-                    className="w-4 h-4 rounded-full border border-[#141413]/20 shadow-xs"
-                    style={{ backgroundColor: spec.hex }}
+            <div className="lg:col-span-7">
+              <NoesisInstrumentFrame
+                code="ПРИБОР II.1 · ОКУЛЯР L / M / S"
+                badge="self-test"
+                telemetry={eyepiece.waveLabel}
+                surface="darkroom"
+                footnote="Колбочки S (442 нм) · M (538 нм) · L (595 нм) · Пурпур замыкает спектр в круг"
+              >
+                {/* Mode selector tabs */}
+                <div className="flex flex-wrap gap-2 pb-5 border-b border-[#FAF9F5]/10">
+                  {[
+                    { id: 'single' as const, label: 'Один луч (420–690 нм)' },
+                    { id: 'metamer' as const, label: 'Метамеризм (жёлтый обман)' },
+                    { id: 'magenta' as const, label: 'Пурпур (нет в радуге!)' },
+                  ].map((tab) => {
+                    const active = specMode === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setSpecMode(tab.id)}
+                        className={`v6-pill px-3.5 py-1.5 rounded-full text-[12px] font-medium border cursor-pointer ${
+                          active
+                            ? 'bg-[#FAF9F5] text-[#141413] border-[#FAF9F5]'
+                            : 'bg-[#191E28] text-[#FAF9F5]/78 border-[#FAF9F5]/14 hover:bg-[#222936]'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Big 96px Leica Optical Eyepiece + Live Cone Bars */}
+                <div className="mt-5 grid grid-cols-1 sm:grid-cols-12 gap-6 items-center">
+                  <div className="sm:col-span-4 flex flex-col items-center justify-center">
+                    <div className="relative w-28 h-28 rounded-full border border-[#FAF9F5]/22 p-2 bg-[#090B0E] flex items-center justify-center">
+                      <div
+                        className="w-full h-full rounded-full transition-colors duration-200 border border-[#FAF9F5]/15"
+                        style={{ backgroundColor: eyepiece.hex }}
+                      />
+                      {/* Optical crosshair lines */}
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-x-4 top-1/2 h-[1px] bg-[#FAF9F5]/22"
+                      />
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-y-4 left-1/2 w-[1px] bg-[#FAF9F5]/22"
+                      />
+                    </div>
+                    <div className="mt-2.5 text-center font-mono-tech text-[10.5px] uppercase tracking-[0.1em] text-[#FAF9F5]/72">
+                      {eyepiece.freqLabel}
+                    </div>
+                  </div>
+
+                  <div className="sm:col-span-8 space-y-3.5">
+                    <div>
+                      <div className="font-display font-bold text-[17px] text-[#FAF9F5]">
+                        {eyepiece.title}
+                      </div>
+                      <p className="text-[13px] leading-[1.58] text-[#C5CBD6] mt-1">
+                        {ruTypo(eyepiece.explain)}
+                      </p>
+                    </div>
+
+                    {/* Crisp L / M / S bar meters */}
+                    <div className="grid grid-cols-3 gap-2.5 font-mono-tech text-[11px]">
+                      {[
+                        { label: 'L (длин.)', val: eyepiece.lCone, color: '#FC4109' },
+                        { label: 'M (сред.)', val: eyepiece.mCone, color: '#10B981' },
+                        { label: 'S (корот.)', val: eyepiece.sCone, color: '#60A5FA' },
+                      ].map((cone) => (
+                        <div
+                          key={cone.label}
+                          className="p-2.5 rounded-xl bg-[#181D27] border border-[#FAF9F5]/10"
+                        >
+                          <div className="flex items-center justify-between text-[10px] text-[#9AA3B2]">
+                            <span>{cone.label}</span>
+                            <span className="text-[#FAF9F5] font-semibold">{cone.val}%</span>
+                          </div>
+                          <div className="mt-2 h-1.5 rounded-full bg-[#FAF9F5]/10 overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-200"
+                              style={{ width: `${cone.val}%`, backgroundColor: cone.color }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Wavelength Slider (active in single mode; moving it switches smoothly to single mode) */}
+                <div className="mt-6 pt-4 border-t border-[#FAF9F5]/10 space-y-2">
+                  <div className="flex items-center justify-between font-mono-tech text-[10.5px] text-[#9AA3B2]">
+                    <span>ДЛИНА ВОЛНЫ · 420–690 НМ</span>
+                    <span className="text-[#FAF9F5]">
+                      {specMode === 'single' ? `${wavelength} нм` : 'Потяните для ручной настройки'}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={420}
+                    max={690}
+                    value={wavelength}
+                    onChange={(e) => {
+                      setSpecMode('single');
+                      setWavelength(Number(e.target.value));
+                    }}
+                    className="v6-wavelength-slider w-full cursor-pointer"
+                    aria-label="Длина волны фотона от 420 до 690 нанометров"
                   />
-                  <span>
-                    {wavelength} нм · {spec.name}
-                  </span>
-                </span>
-              </div>
-
-              <input
-                type="range"
-                min={420}
-                max={690}
-                value={wavelength}
-                onChange={(e) => setWavelength(Number(e.target.value))}
-                className="v6-wavelength-slider w-full cursor-pointer"
-                aria-label="Длина волны фотона от 420 до 690 нанометров"
-              />
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 font-mono-tech text-[11px]">
-                <div className="p-2.5 rounded-xl bg-[#FAF9F5] border border-[#141413]/10">
-                  <div className="text-[#5E5D59]">Частота</div>
-                  <div className="font-semibold text-sm mt-0.5">{frequencyThz} ТГц</div>
                 </div>
-                <div className="p-2.5 rounded-xl bg-[#FAF9F5] border border-[#141413]/10">
-                  <div className="text-[#5E5D59]">L-колб. (длин.)</div>
-                  <div className="font-semibold text-sm mt-0.5">{spec.lCone}%</div>
-                </div>
-                <div className="p-2.5 rounded-xl bg-[#FAF9F5] border border-[#141413]/10">
-                  <div className="text-[#5E5D59]">M-колб. (сред.)</div>
-                  <div className="font-semibold text-sm mt-0.5">{spec.mCone}%</div>
-                </div>
-                <div className="p-2.5 rounded-xl bg-[#FAF9F5] border border-[#141413]/10">
-                  <div className="text-[#5E5D59]">S-колб. (корот.)</div>
-                  <div className="font-semibold text-sm mt-0.5">{spec.sCone}%</div>
-                </div>
-              </div>
+              </NoesisInstrumentFrame>
             </div>
           </div>
 
-          {/* Domino Bridge Strip -> Chapter II */}
-          <div className="pt-6 border-t border-[#141413]/10 flex flex-wrap items-center justify-between gap-4">
-            <p className="font-serif-editorial italic text-[16px] text-[#353431] max-w-2xl">
-              Если мир внутри головы не равен физике снаружи — кто вообще сидит внутри и смотрит это кино? Есть ли там единый «директор»?
+          {/* Quiet Poetic Domino Reflection (Single page-turn CTA lives cleanly in ActBottomTurn below!) */}
+          <div className="pt-6 border-t border-[#141413]/10">
+            <p className="font-serif-editorial italic text-[16.5px] leading-[1.6] text-[#353431] max-w-2xl">
+              {ruTypo(
+                'Если цвет рождается внутри нас, а не в луче света — как мозг достраивает целый трёхмерный мир и кто держит штурвал нашего «Я»?',
+              )}
             </p>
-            <button
-              type="button"
-              onClick={onNextChapter}
-              className="font-mono-tech text-[11px] uppercase tracking-[0.12em] text-[#141413] hover:text-[#FC4109] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-            >
-              <span>К Главе II · Расколотый штурвал</span>
-              <ArrowDown className="w-3.5 h-3.5" />
-            </button>
           </div>
         </div>
       </div>
-
-      {/* Slide-Over Research Dossier */}
-      {dossierOpen && (
-        <div
-          className="fixed inset-0 z-[75] flex justify-end"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Справочник к Главе I — Комната Мэри"
-        >
-          <button
-            type="button"
-            onClick={() => setDossierOpen(false)}
-            className="absolute inset-0 bg-[#141413]/38 backdrop-blur-xs cursor-default"
-            aria-label="Закрыть справочник"
-          />
-
-          <aside
-            data-lenis-prevent
-            className="relative z-10 w-full max-w-xl h-full overflow-y-auto bg-[#FAF9F5] text-[#141413] border-l border-[#141413]/12 shadow-2xl p-6 md:p-10 space-y-8"
-          >
-            <div className="flex items-start justify-between gap-4 pb-5 border-b border-[#141413]/10">
-              <div>
-                <div className="font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#FC4109]">
-                  ПРИМЕЧАНИЯ К ГЛАВЕ I · СПЕКТР И ШКОЛЫ
-                </div>
-                <h3 className="font-serif-editorial text-2xl md:text-3xl mt-2 leading-snug">
-                  Почему философы спорят о Мэри уже 44 года
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setDossierOpen(false)}
-                className="v6-pill w-9 h-9 rounded-full bg-[#E8E6DC] hover:bg-[#DFDCD0] flex items-center justify-center shrink-0 cursor-pointer"
-                aria-label="Закрыть"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Interactive Wavelength Explorer */}
-            <div className="rounded-2xl bg-[#F0EEE6] border border-[#141413]/10 p-5 space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <span className="font-mono-tech text-[11px] uppercase tracking-[0.12em] text-[#5E5D59]">
-                  Длина волны фотона
-                </span>
-                <span className="inline-flex items-center gap-2 font-mono-tech text-xs font-semibold">
-                  <span
-                    className="w-3.5 h-3.5 rounded-full border border-[#141413]/20"
-                    style={{ backgroundColor: spec.hex }}
-                  />
-                  <span>
-                    {wavelength} нм · {spec.name}
-                  </span>
-                </span>
-              </div>
-
-              <input
-                type="range"
-                min={420}
-                max={690}
-                value={wavelength}
-                onChange={(e) => setWavelength(Number(e.target.value))}
-                className="v6-wavelength-slider w-full cursor-pointer"
-              />
-
-              <div className="grid grid-cols-4 gap-2 pt-1 font-mono-tech text-[11px]">
-                <div className="p-2.5 rounded-xl bg-[#FAF9F5] border border-[#141413]/8">
-                  <div className="text-[#5E5D59]">Частота</div>
-                  <div className="font-semibold text-sm mt-0.5">{frequencyThz} ТГц</div>
-                </div>
-                <div className="p-2.5 rounded-xl bg-[#FAF9F5] border border-[#141413]/8">
-                  <div className="text-[#5E5D59]">L-колб.</div>
-                  <div className="font-semibold text-sm mt-0.5">{spec.lCone}%</div>
-                </div>
-                <div className="p-2.5 rounded-xl bg-[#FAF9F5] border border-[#141413]/8">
-                  <div className="text-[#5E5D59]">M-колб.</div>
-                  <div className="font-semibold text-sm mt-0.5">{spec.mCone}%</div>
-                </div>
-                <div className="p-2.5 rounded-xl bg-[#FAF9F5] border border-[#141413]/8">
-                  <div className="text-[#5E5D59]">S-колб.</div>
-                  <div className="font-semibold text-sm mt-0.5">{spec.sCone}%</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="divide-y divide-[#141413]/10 border-t border-b border-[#141413]/10">
-              {SCHOOLS.map((school) => (
-                <div key={school.author} className="py-4 space-y-1.5">
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <h4 className="font-display font-semibold text-[15px] text-[#141413]">
-                      {school.name}
-                    </h4>
-                    <span className="font-mono-tech text-[11px] text-[#5E5D59]">
-                      {school.author}
-                    </span>
-                  </div>
-                  <p className="text-[14px] leading-[1.6] text-[#4B4A46]">{school.stance}</p>
-                </div>
-              ))}
-            </div>
-          </aside>
-        </div>
-      )}
     </section>
   );
 }

@@ -1,154 +1,433 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ComponentType,
+} from 'react';
 import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
-import { ExplorerProvider } from './v7/context/ExplorerContext';
-import { BOOK_CHAPTERS } from './v7/data/bookMeta';
+import { ExplorerProvider, useExplorer } from './v7/context/ExplorerContext';
 import { BookHud } from './v7/components/BookHud';
 import { BookIndexDrawer } from './v7/components/BookIndexDrawer';
-import { BookInterlude } from './v7/components/BookInterlude';
-import { Plate00Mooney } from './v7/components/Plate00Mooney';
-import { PrologueConsciousness } from './v7/components/PrologueConsciousness';
-import { Chapter1MaryRoom } from './v7/components/Chapter1MaryRoom';
-import { Chapter2SplitSpine } from './v7/components/Chapter2SplitSpine';
-import { Chapter3VellumError } from './v7/components/Chapter3VellumError';
-import { Chapter4WagerAndDiopter } from './v7/components/Chapter4WagerAndDiopter';
-import { ScrollMicroZoom } from './v7/components/ScrollMicroZoom';
-import { Chapter5CajalTurntable } from './v7/components/Chapter5CajalTurntable';
-import { Chapter6IcuJournal } from './v7/components/Chapter6IcuJournal';
-import { Chapter7OtherMinds } from './v7/components/Chapter7OtherMinds';
-import { Chapter8BoneEndpaper } from './v7/components/Chapter8BoneEndpaper';
+import { DossierProvider } from './v9/components/DossierContext';
+import { NoesisDossierSheet } from './v9/components/NoesisDossierSheet';
+import { ACTS_META, getActMeta } from './v9/data/actsMeta';
+import {
+  buildHashUrl,
+  getNextAct,
+  parseHashRoute,
+  type ActId,
+} from './v9/utils/hashRouter';
+import type { ActViewProps } from './v9/acts/Act1View';
 
 gsap.registerPlugin(ScrollTrigger);
 
+// Dynamic chunk loaders — allow both React.lazy rendering AND idle prefetch at 70% scroll!
+const ACT_LOADERS: Record<ActId, () => Promise<{ default: ComponentType<ActViewProps> }>> = {
+  'act-1': () => import('./v9/acts/Act1View'),
+  'act-2': () => import('./v9/acts/Act2View'),
+  'act-3': () => import('./v9/acts/Act3View'),
+  'act-4': () => import('./v9/acts/Act4View'),
+  'act-5': () => import('./v9/acts/Act5View'),
+};
+
+const ACT_COMPONENTS: Record<ActId, ComponentType<ActViewProps>> = {
+  'act-1': lazy(ACT_LOADERS['act-1']),
+  'act-2': lazy(ACT_LOADERS['act-2']),
+  'act-3': lazy(ACT_LOADERS['act-3']),
+  'act-4': lazy(ACT_LOADERS['act-4']),
+  'act-5': lazy(ACT_LOADERS['act-5']),
+};
+
+function ActLoadingPaper() {
+  return (
+    <div className="min-h-screen bg-[#FAF9F5] text-[#141413] flex items-center justify-center px-6">
+      <div className="text-center">
+        <div className="inline-flex items-center gap-2 font-mono-tech text-[10.5px] uppercase tracking-[0.16em] text-[#5E5D59]">
+          <span className="w-2 h-2 rounded-full bg-[#FC4109] animate-pulse" />
+          <span>ПЕРЕЛИСТЫВАНИЕ АКТА…</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ActMountSignal({
+  actId,
+  onReady,
+}: {
+  actId: ActId;
+  onReady: (actId: ActId) => (() => void) | void;
+}) {
+  useLayoutEffect(() => onReady(actId), [actId, onReady]);
+  return null;
+}
+
 function NoesisBookShell() {
+  const { state, markActVisited, markDossierRead } = useExplorer();
+
+  const initialRoute = parseHashRoute(typeof window !== 'undefined' ? window.location.hash : '');
+  const [activeAct, setActiveAct] = useState<ActId>(initialRoute.act);
+  const [activeChapterId, setActiveChapterId] = useState<string>(
+    initialRoute.section ?? getActMeta(initialRoute.act).chapters[0].id,
+  );
   const [indexOpen, setIndexOpen] = useState(false);
-  const [activeChapterId, setActiveChapterId] = useState<string>('plate-00');
-  const [ch1DarkHud, setCh1DarkHud] = useState(false);
-  const [ch1CanvasInHud, setCh1CanvasInHud] = useState(false);
-  const [ch6DarkHud, setCh6DarkHud] = useState(false);
-  const [halDarkHud, setHalDarkHud] = useState(false);
-  const [footerDarkHud, setFooterDarkHud] = useState(false);
+  const [dossierOpen, setDossierOpen] = useState(false);
+  const [isCurtainVisible, setIsCurtainVisible] = useState(false);
+
+  const [hudTheme, setHudTheme] = useState<'light' | 'dark'>('light');
+  const [immersiveCanvas, setImmersiveCanvas] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
 
   const lenisRef = useRef<Lenis | null>(null);
+  const mainRef = useRef<HTMLElement | null>(null);
+  const ch1DarkRef = useRef(false);
+  const pendingSectionRef = useRef<string | null>(initialRoute.section);
+  const activeActRef = useRef<ActId>(activeAct);
+  activeActRef.current = activeAct;
+  const prefetchedActsRef = useRef<Record<string, boolean>>({});
+  const transitionTimerRef = useRef<number | null>(null);
+  const isTransitioningRef = useRef(false);
+  const lastMetricsRef = useRef<{ y: number; h: number }>({ y: -1, h: -1 });
 
-  // Unified Lenis + GSAP ScrollTrigger clock + 100% deterministic per-frame viewport HUD sync
+  // Zero-Reflow HUD sync: only measures DOM rects when scrollY or documentHeight actually changed (or forced!)
+  const syncHudFromViewport = useCallback((force = false) => {
+    const scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+    const docHeight = document.documentElement.scrollHeight;
+    if (
+      !force &&
+      Math.abs(scrollY - lastMetricsRef.current.y) < 0.5 &&
+      docHeight === lastMetricsRef.current.h
+    ) {
+      return;
+    }
+    lastMetricsRef.current = { y: scrollY, h: docHeight };
+
+    const maxScroll = Math.max(1, docHeight - window.innerHeight);
+    const nextProgress = Math.max(0, Math.min(1, scrollY / maxScroll));
+
+    setIsScrolled((prev) => {
+      const next = scrollY > 44;
+      return prev === next ? prev : next;
+    });
+    setScrollProgress((prev) => (Math.abs(prev - nextProgress) < 0.001 ? prev : nextProgress));
+
+    // Idle prefetch of the next Act once reader crosses 68% of current Act
+    if (nextProgress > 0.68) {
+      const nextAct = getNextAct(activeActRef.current);
+      if (nextAct && !prefetchedActsRef.current[nextAct]) {
+        prefetchedActsRef.current[nextAct] = true;
+        ACT_LOADERS[nextAct]().catch(() => {
+          prefetchedActsRef.current[nextAct] = false;
+        });
+      }
+    }
+
+    // Active chapter within current Act
+    const actChapters = getActMeta(activeActRef.current).chapters;
+    const anchorY = Math.max(88, window.innerHeight * 0.28);
+    let current = actChapters[0].id;
+    for (const ch of actChapters) {
+      const el = document.getElementById(ch.id);
+      if (!el) continue;
+      if (el.getBoundingClientRect().top <= anchorY) {
+        current = ch.id;
+      }
+    }
+    setActiveChapterId((prev) => (prev === current ? prev : current));
+
+    // Declarative HUD Theme & Immersive Canvas probing right behind top 60px bar (probeY = 32px)
+    const probeY = 32;
+
+    const runwayEl = document.getElementById('ch-1-runway');
+    const inCh1Canvas = runwayEl
+      ? runwayEl.getBoundingClientRect().top <= probeY &&
+        runwayEl.getBoundingClientRect().bottom >= window.innerHeight - 16
+      : false;
+
+    const halEl = document.getElementById('hal-monolith-runway');
+    const inHalMonolith = halEl
+      ? halEl.getBoundingClientRect().top <= probeY && halEl.getBoundingClientRect().bottom > probeY
+      : false;
+
+    const ch6El = document.getElementById('ch-6');
+    const inCh6Dark = ch6El
+      ? ch6El.getBoundingClientRect().top <= probeY && ch6El.getBoundingClientRect().bottom > probeY
+      : false;
+
+    const footerEl = document.getElementById('book-colophon-footer');
+    const inFooterDark = footerEl
+      ? footerEl.getBoundingClientRect().top <= probeY &&
+        footerEl.getBoundingClientRect().bottom > probeY
+      : false;
+
+    // Also scan declarative [data-hud-theme="dark"] wrappers (e.g., Act IV dark bottom bridge)
+    let inDeclarativeDark = false;
+    const darkNodes = document.querySelectorAll<HTMLElement>('[data-hud-theme="dark"]');
+    for (let i = 0; i < darkNodes.length; i += 1) {
+      const rect = darkNodes[i].getBoundingClientRect();
+      if (rect.top <= probeY && rect.bottom > probeY) {
+        inDeclarativeDark = true;
+        break;
+      }
+    }
+
+    const nextImmersive = inCh1Canvas || inHalMonolith;
+    setImmersiveCanvas((prev) => (prev === nextImmersive ? prev : nextImmersive));
+
+    const nextTheme: 'light' | 'dark' =
+      inCh6Dark || inHalMonolith || inFooterDark || inDeclarativeDark || (inCh1Canvas && ch1DarkRef.current)
+        ? 'dark'
+        : 'light';
+    setHudTheme((prev) => (prev === nextTheme ? prev : nextTheme));
+  }, []);
+
+  // Configure manual scroll restoration + unified Lenis/GSAP clock
   useEffect(() => {
     document.documentElement.lang = 'ru';
-    document.title = 'NOESIS — Интерактивная книга о сознании';
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
 
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const lenis = new Lenis({
-      duration: prefersReduced ? 0.01 : 1.02,
+      duration: prefersReduced ? 0.01 : 0.96,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: !prefersReduced,
-      touchMultiplier: 1.4,
+      touchMultiplier: 1.35,
     });
     lenisRef.current = lenis;
 
-    const chapterIds = BOOK_CHAPTERS.map((c) => c.id);
-
-    // Single deterministic source of truth directly from live DOM geometry (0 lag, 0 stale IntersectionObserver!)
-    const syncHudFromViewport = () => {
-      const scrollY = window.scrollY || document.documentElement.scrollTop || 0;
-      const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-      const nextProgress = Math.max(0, Math.min(1, scrollY / maxScroll));
-
-      setIsScrolled((prev) => {
-        const next = scrollY > 48;
-        return prev === next ? prev : next;
-      });
-      setScrollProgress((prev) => (Math.abs(prev - nextProgress) < 0.0005 ? prev : nextProgress));
-
-      // Active chapter: last section whose top crossed the upper 28% reading line
-      const anchorY = Math.max(84, window.innerHeight * 0.28);
-      let current = chapterIds[0];
-      for (const id of chapterIds) {
-        const el = document.getElementById(id);
-        if (!el) continue;
-        if (el.getBoundingClientRect().top <= anchorY) {
-          current = id;
-        }
-      }
-      setActiveChapterId((prev) => (prev === current ? prev : current));
-
-      // Per-spread exact header probe right behind the 60px top HUD bar (y = 32px)
-      const probeY = 32;
-
-      const runwayEl = document.getElementById('ch-1-runway');
-      // Hide solid header backdrop ONLY while the full-bleed Mary's Room canvas is pinned;
-      // as soon as it unsticks and scrolls upward, turn the solid frosted Swiss header ON so prism rays/brass never pass behind HUD pills!
-      const nextCh1Canvas = runwayEl
-        ? runwayEl.getBoundingClientRect().top <= probeY &&
-          runwayEl.getBoundingClientRect().bottom >= window.innerHeight - 16
-        : false;
-      setCh1CanvasInHud((prev) => (prev === nextCh1Canvas ? prev : nextCh1Canvas));
-
-      const ch6El = document.getElementById('ch-6');
-      const nextCh6Dark = ch6El
-        ? ch6El.getBoundingClientRect().top <= probeY && ch6El.getBoundingClientRect().bottom > probeY
-        : false;
-      setCh6DarkHud((prev) => (prev === nextCh6Dark ? prev : nextCh6Dark));
-
-      const halEl = document.getElementById('hal-monolith-runway');
-      const nextHalDark = halEl
-        ? halEl.getBoundingClientRect().top <= probeY && halEl.getBoundingClientRect().bottom > probeY
-        : false;
-      setHalDarkHud((prev) => (prev === nextHalDark ? prev : nextHalDark));
-
-      const footerEl = document.getElementById('book-colophon-footer');
-      const nextFooterDark = footerEl
-        ? footerEl.getBoundingClientRect().top <= probeY && footerEl.getBoundingClientRect().bottom > probeY
-        : false;
-      setFooterDarkHud((prev) => (prev === nextFooterDark ? prev : nextFooterDark));
-    };
-
-    const onLenisScroll = () => {
+    const onScroll = () => {
       ScrollTrigger.update();
-      syncHudFromViewport();
+      syncHudFromViewport(false);
     };
-    lenis.on('scroll', onLenisScroll);
+    lenis.on('scroll', onScroll);
 
     const onNativeScroll = () => {
       ScrollTrigger.update();
-      syncHudFromViewport();
+      syncHudFromViewport(false);
     };
+    const onResize = () => {
+      ScrollTrigger.refresh();
+      syncHudFromViewport(true);
+    };
+
     window.addEventListener('scroll', onNativeScroll, { passive: true });
-    window.addEventListener('resize', syncHudFromViewport, { passive: true });
+    window.addEventListener('resize', onResize, { passive: true });
 
     const tick = (time: number) => {
       lenis.raf(time * 1000);
-      // Cheap <0.05ms deterministic check ensures programmatic jumps/scrollIntoView sync on the very next frame!
-      syncHudFromViewport();
+      syncHudFromViewport(false);
     };
     gsap.ticker.add(tick);
     gsap.ticker.lagSmoothing(0);
 
-    syncHudFromViewport();
-    const refreshTimer = window.setTimeout(() => {
-      ScrollTrigger.refresh();
-      syncHudFromViewport();
-    }, 320);
+    syncHudFromViewport(true);
 
     return () => {
-      window.clearTimeout(refreshTimer);
       window.removeEventListener('scroll', onNativeScroll);
-      window.removeEventListener('resize', syncHudFromViewport);
-      lenis.off('scroll', onLenisScroll);
+      window.removeEventListener('resize', onResize);
+      lenis.off('scroll', onScroll);
       gsap.ticker.remove(tick);
       lenis.destroy();
       lenisRef.current = null;
     };
-  }, []);
+  }, [syncHudFromViewport]);
 
-  const handleNavigate = useCallback((targetId: string) => {
+  // Pause Lenis while either the Index Drawer or the Level-2 Dossier Sheet is open
+  useEffect(() => {
+    const lenis = lenisRef.current;
+    if (!lenis) return;
+    if (indexOpen || dossierOpen) {
+      lenis.stop();
+    } else if (!isTransitioningRef.current) {
+      lenis.start();
+    }
+  }, [indexOpen, dossierOpen]);
+
+  // Global debounced ResizeObserver on <main> so any dynamic layout change keeps ScrollTrigger accurate
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    let timer: number | null = null;
+    const ro = new ResizeObserver(() => {
+      if (timer !== null) window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        ScrollTrigger.refresh();
+        syncHudFromViewport(true);
+      }, 130);
+    });
+    ro.observe(el);
+    return () => {
+      if (timer !== null) window.clearTimeout(timer);
+      ro.disconnect();
+    };
+  }, [syncHudFromViewport]);
+
+  // Update page title & mark visited Act
+  useEffect(() => {
+    const meta = getActMeta(activeAct);
+    document.title = `NOESIS · Акт ${meta.roman}: ${meta.title}`;
+    markActVisited(activeAct);
+  }, [activeAct, markActVisited]);
+
+  // 4-Phase Safe Act Transition (Lock & Curtain -> Unmount & Purge -> Hard Scroll & HUD Reset -> Lazy Mount, 2x rAF & Reveal)
+  const switchAct = useCallback(
+    (targetAct: ActId, targetSection?: string, updateHash = true) => {
+      // Same-act local section jump
+      if (targetAct === activeActRef.current) {
+        if (updateHash) {
+          const desiredHash = buildHashUrl(targetAct, targetSection ?? null);
+          if (window.location.hash !== desiredHash) {
+            window.history.replaceState(null, '', desiredHash);
+          }
+        }
+        if (targetSection) {
+          const el = document.getElementById(targetSection);
+          if (el) {
+            if (lenisRef.current) {
+              lenisRef.current.scrollTo(el, { offset: 0, duration: 0.95 });
+            } else {
+              el.scrollIntoView({ behavior: 'smooth' });
+            }
+          }
+        } else if (lenisRef.current) {
+          lenisRef.current.scrollTo(0, { duration: 0.85 });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        return;
+      }
+
+      if (transitionTimerRef.current !== null) {
+        window.clearTimeout(transitionTimerRef.current);
+      }
+
+      // Phase 1: Lock & Curtain
+      isTransitioningRef.current = true;
+      setIsCurtainVisible(true);
+      setIndexOpen(false);
+      setDossierOpen(false);
+      lenisRef.current?.stop();
+
+      if (updateHash) {
+        const nextHash = buildHashUrl(targetAct, targetSection ?? null);
+        if (window.location.hash !== nextHash) {
+          window.history.pushState(null, '', nextHash);
+        }
+      }
+
+      transitionTimerRef.current = window.setTimeout(() => {
+        // Phase 2: Unmount & Purge GSAP ScrollTriggers cleanly BEFORE switching React tree
+        ScrollTrigger.getAll().forEach((st) => st.kill(true));
+        ch1DarkRef.current = false;
+
+        // Phase 3: Hard Scroll & HUD Reset
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        if (lenisRef.current) {
+          lenisRef.current.scrollTo(0, { immediate: true, force: true });
+        }
+        lastMetricsRef.current = { y: -1, h: -1 };
+        setHudTheme('light');
+        setImmersiveCanvas(false);
+        setIsScrolled(false);
+        setScrollProgress(0);
+
+        pendingSectionRef.current = targetSection ?? null;
+        setActiveChapterId(targetSection ?? getActMeta(targetAct).chapters[0].id);
+        setActiveAct(targetAct);
+      }, 130);
+    },
+    [],
+  );
+
+  const indexOpenRef = useRef(indexOpen);
+  indexOpenRef.current = indexOpen;
+  const dossierOpenRef = useRef(dossierOpen);
+  dossierOpenRef.current = dossierOpen;
+
+  // Phase 4: Called deterministically AFTER lazy Act component finishes mounting inside Suspense!
+  const handleActMounted = useCallback(
+    (_mountedAct: ActId) => {
+      let raf1 = 0;
+      let raf2 = 0;
+      let revealTimer = 0;
+
+      raf1 = requestAnimationFrame(() => {
+        raf2 = requestAnimationFrame(() => {
+          const pendingSec = pendingSectionRef.current;
+          if (pendingSec) {
+            const targetEl = document.getElementById(pendingSec);
+            if (targetEl) {
+              const top = targetEl.getBoundingClientRect().top + window.scrollY;
+              window.scrollTo(0, Math.max(0, top));
+              if (lenisRef.current) {
+                lenisRef.current.scrollTo(Math.max(0, top), { immediate: true, force: true });
+              }
+            }
+            pendingSectionRef.current = null;
+          } else {
+            window.scrollTo(0, 0);
+            if (lenisRef.current) {
+              lenisRef.current.scrollTo(0, { immediate: true, force: true });
+            }
+          }
+
+          ScrollTrigger.refresh(true);
+          syncHudFromViewport(true);
+
+          revealTimer = window.setTimeout(() => {
+            isTransitioningRef.current = false;
+            setIsCurtainVisible(false);
+            if (!indexOpenRef.current && !dossierOpenRef.current) {
+              lenisRef.current?.start();
+            }
+            ScrollTrigger.refresh();
+            syncHudFromViewport(true);
+          }, 70);
+        });
+      });
+
+      return () => {
+        cancelAnimationFrame(raf1);
+        cancelAnimationFrame(raf2);
+        window.clearTimeout(revealTimer);
+      };
+    },
+    [syncHudFromViewport],
+  );
+
+  // Listen to browser Back/Forward hashchange
+  useEffect(() => {
+    const onHashChange = () => {
+      const parsed = parseHashRoute(window.location.hash);
+      switchAct(parsed.act, parsed.section ?? undefined, false);
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, [switchAct]);
+
+  // Ensure initial URL always has canonical hash if blank
+  useEffect(() => {
+    if (!window.location.hash) {
+      window.history.replaceState(null, '', buildHashUrl(activeAct, null));
+    }
+  }, [activeAct]);
+
+  const handleNavigateLocal = useCallback((targetId: string) => {
     const target = document.getElementById(targetId);
     if (!target) return;
     if (lenisRef.current) {
-      lenisRef.current.scrollTo(target, { offset: 0, duration: 1.15 });
+      lenisRef.current.scrollTo(target, { offset: 0, duration: 1.0 });
     } else {
       target.scrollIntoView({ behavior: 'smooth' });
     }
@@ -156,122 +435,77 @@ function NoesisBookShell() {
 
   const handleScrollTop = useCallback(() => {
     if (lenisRef.current) {
-      lenisRef.current.scrollTo(0, { duration: 1.15 });
+      lenisRef.current.scrollTo(0, { duration: 0.9 });
     } else {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, []);
 
-  const handleCh1HudTheme = useCallback((theme: 'light' | 'dark') => {
-    setCh1DarkHud(theme === 'dark');
-  }, []);
+  const handleCh1HudTheme = useCallback(
+    (theme: 'light' | 'dark') => {
+      ch1DarkRef.current = theme === 'dark';
+      syncHudFromViewport(true);
+    },
+    [syncHudFromViewport],
+  );
 
-  const noopBool = useCallback(() => undefined, []);
-
-  // 100% deterministic contrast strictly matching what is physically under the top 60px HUD bar!
-  const hudTheme: 'light' | 'dark' = (() => {
-    if (ch6DarkHud || halDarkHud || footerDarkHud) return 'dark';
-    if (ch1CanvasInHud && ch1DarkHud) return 'dark';
-    return 'light';
-  })();
+  const ActiveActComponent = ACT_COMPONENTS[activeAct];
 
   return (
-    <div className="relative min-h-screen bg-[#FAF9F5] text-[#141413]">
-      {/* Subtle analog paper texture overlay (0 GPU cost) */}
-      <div className="v6-grain" aria-hidden="true" />
+    <DossierProvider onDossierRead={markDossierRead}>
+      <div className="relative min-h-screen bg-[#FAF9F5] text-[#141413]">
+        {/* Analog film grain overlay (0 GPU cost) */}
+        <div className="v6-grain" aria-hidden="true" />
 
-      {/* Swiss Book Running Header & Reading Ribbon */}
-      <BookHud
-        activeChapterId={activeChapterId}
-        hudTheme={hudTheme}
-        isScrolled={isScrolled}
-        immersiveCanvas={ch1CanvasInHud || halDarkHud}
-        scrollProgress={scrollProgress}
-        onOpenIndex={() => setIndexOpen(true)}
-        onScrollTop={handleScrollTop}
-      />
-
-      <main>
-        {/* TABLE 00: Cold Human Threshold — Mooney Contact-Sheet Exposure (0 jargon!) */}
-        <Plate00Mooney onContinueToCh1={() => handleNavigate('prologue')} />
-
-        {/* PROLOGUE: Human Definition of Consciousness, 3 Common Traps & 3 21st-Century Stakes */}
-        <PrologueConsciousness onContinueToPart1={() => handleNavigate('interlude-part-1')} />
-
-        {/* QUIET HALF-TITLE INTERLUDE 0: Part I Symmetry! */}
-        <BookInterlude
-          id="interlude-part-1"
-          partCode="ЧАСТЬ I · ИЗНУТРИ"
-          title="Мир глазами субъекта"
-          statement="Прежде чем вскрывать череп, посмотрим на сознание из единственной точки, откуда оно реально существует — изнутри первого лица."
-          footnote="Главы I–III · Загадка цвета, расщеплённое «Я» и управляемая галлюцинация"
+        {/* Atomic Vellum Page-Turn Curtain (hides ScrollTrigger teardown/mount flicker) */}
+        <div
+          aria-hidden="true"
+          className={`fixed inset-0 z-[70] pointer-events-none bg-[#FAF9F5] transition-opacity duration-150 ${
+            isCurtainVisible ? 'opacity-100' : 'opacity-0'
+          }`}
         />
 
-        {/* PART I · CHAPTER I: Qualia & Mary's Room (Scroll Setpiece #1 + Inline Wavelength Explorer!) */}
-        <Chapter1MaryRoom
-          onHudThemeChange={handleCh1HudTheme}
-          onActiveChange={noopBool}
-          onNextChapter={() => handleNavigate('ch-2')}
-        />
-
-        {/* PART I · CHAPTER II: Split-Spine Book (Optic Chiasm Primer + Whole->Cut Snapping Fibers + Mr. Robot) */}
-        <Chapter2SplitSpine onNextChapter={() => handleNavigate('ch-3')} />
-
-        {/* PART I · CHAPTER III: Controlled Hallucination (35mm Leica Monochrom Noir POV + Live Bayesian Prior!) */}
-        <Chapter3VellumError onNextChapter={() => handleNavigate('interlude-part-2')} />
-
-        {/* QUIET HALF-TITLE INTERLUDE I (80% calm air, 0 buttons) */}
-        <BookInterlude
-          id="interlude-part-2"
-          partCode="ЧАСТЬ II · ВСКРЫТИЕ"
-          title="Под черепом"
-          statement="До этой страницы мы говорили только о том, как сознание ощущается изнутри. Но всё это происходит в полутора килограммах мокрой, тёплой, беззвучной ткани. Пора заглянуть под череп."
-          footnote="Главы IV–VI · Биология, химия и клинический порог"
-        />
-
-        {/* PART II · CHAPTER IV: The 25-Year Wager (Zero Spoiler + GNWT/IIT Metaphors + Optical Diopter) */}
-        <Chapter4WagerAndDiopter onNextChapter={() => handleNavigate('micro-zoom')} />
-
-        {/* SCROLL SETPIECE #2 (~210vh): Macro-to-Micro x1000 Optical Dive (10 см -> 2 мм -> 200 мкм Cajal Neuron!) */}
-        <ScrollMicroZoom />
-
-        {/* PART II · CHAPTER V: Cajal Layer-5 Neuron × Dieter Rams Turntable (2.2s Sopranos Propofol Cutoff + Smooth Lights-Out Bridge!) */}
-        <Chapter5CajalTurntable onNextChapter={() => handleNavigate('ch-6')} />
-
-        {/* PART II · CHAPTER VI: Single Deliberate Dark Clinical Spread — 3-Pole PCI* Prelude + Honest 3-Patient ICU Shift */}
-        <Chapter6IcuJournal
-          onDarkInView={noopBool}
-          onNextChapter={() => handleNavigate('interlude-part-3')}
-        />
-
-        {/* QUIET HALF-TITLE INTERLUDE II (Decompresses dark ICU back to morning #FAF9F5 paper!) */}
-        <BookInterlude
-          id="interlude-part-3"
-          partCode="ЧАСТЬ III · ЗА ПРЕДЕЛАМИ ЧЕЛОВЕКА"
-          title="Границы разума"
-          statement="Только что вы искали разум в тишине человеческого тела. Но человек — лишь одна случайная ветка эволюции. И, возможно, уже не последняя."
-          footnote="Главы VII–VIII · Животные, ИИ и ваш форзац"
-          fromDark
-        />
-
-        {/* PART III · CHAPTER VII: Crimson Bookmark + Engraved Sea-Sponge Stamp + Scroll Setpiece #3 (HAL 9000 Monolith) + AI Tribunal */}
-        <Chapter7OtherMinds onNextChapter={() => handleNavigate('ch-8')} />
-
-        {/* PART III · CHAPTER VIII: 5-Takeaway Synthesis + 3D-Flippable Cotton Bone Card + Bibliography & Colophon */}
-        <Chapter8BoneEndpaper
-          onFooterInView={noopBool}
+        {/* Dieter Rams 3-Node v9 HUD */}
+        <BookHud
+          activeAct={activeAct}
+          activeChapterId={activeChapterId}
+          visitedActs={state.visitedActs}
+          hudTheme={hudTheme}
+          isScrolled={isScrolled}
+          immersiveCanvas={immersiveCanvas}
+          scrollProgress={scrollProgress}
+          onSelectAct={(actId) => switchAct(actId)}
+          onOpenIndex={() => setIndexOpen(true)}
           onScrollTop={handleScrollTop}
         />
-      </main>
 
-      {/* Swiss Book Contents Drawer */}
-      <BookIndexDrawer
-        open={indexOpen}
-        onClose={() => setIndexOpen(false)}
-        activeChapterId={activeChapterId}
-        onNavigate={handleNavigate}
-      />
-    </div>
+        <main ref={mainRef}>
+          <Suspense fallback={<ActLoadingPaper />}>
+            <ActiveActComponent
+              key={activeAct}
+              onNavigateLocal={handleNavigateLocal}
+              onSwitchAct={(actId, secId) => switchAct(actId, secId)}
+              onCh1HudTheme={handleCh1HudTheme}
+              onScrollTop={handleScrollTop}
+              visitedActs={state.visitedActs}
+            />
+            <ActMountSignal key={`sig-${activeAct}`} actId={activeAct} onReady={handleActMounted} />
+          </Suspense>
+        </main>
+
+        {/* 5-Act Atlas Index Drawer */}
+        <BookIndexDrawer
+          open={indexOpen}
+          onClose={() => setIndexOpen(false)}
+          activeAct={activeAct}
+          activeChapterId={activeChapterId}
+          onNavigate={(actId, chapterId) => switchAct(actId, chapterId)}
+        />
+
+        {/* Global Level-2 Archival Dossier Sheet */}
+        <NoesisDossierSheet onOpenStateChange={setDossierOpen} />
+      </div>
+    </DossierProvider>
   );
 }
 
@@ -282,3 +516,6 @@ export default function App() {
     </ExplorerProvider>
   );
 }
+
+// Keep ACTS_META referenced so Vite never drops metadata tree unexpectedly
+void ACTS_META;

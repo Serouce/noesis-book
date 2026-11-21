@@ -1,7 +1,11 @@
-import { useEffect, useState } from 'react';
-import { ArrowDown, Eye, Scissors, Undo2 } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Eye, Scissors, Undo2 } from 'lucide-react';
 import { useExplorer, type SplitBrainCard } from '../context/ExplorerContext';
 import { ScholarMarginNote } from './ScholarMarginalia';
+import { DossierTrigger } from '../../v9/components/NoesisDossierSheet';
+import { LabHonestyBadge } from '../../v9/components/NoesisInstrumentFrame';
+import { useViewportRaf } from '../../v9/hooks/useViewportRaf';
+import { ruTypo } from '../../v9/utils/ruTypo';
 
 interface Chapter2SplitSpineProps {
   onNextChapter: () => void;
@@ -10,6 +14,7 @@ interface Chapter2SplitSpineProps {
 interface ExperimentCard {
   id: Exclude<SplitBrainCard, null>;
   label: string;
+  leftFieldShort: string;
   rightPrompt: string;
   leftHandAction: string;
   leftVisibleCard: string;
@@ -22,7 +27,8 @@ const CARDS: ExperimentCard[] = [
   {
     id: 'snow',
     label: 'Снежная буря',
-    rightPrompt: 'В левом поле зрения (→ правое полушарие) мелькнул зимний пейзаж со снегом.',
+    leftFieldShort: 'СНЕГ',
+    rightPrompt: 'В левом поле зрения (→ правое полушарие) на 150 мс мелькнул зимний пейзаж со снегом.',
     leftHandAction: 'Левая рука молча выбирает ЛОПАТУ для уборки снега.',
     leftVisibleCard: 'Куриная лапка',
     wholeBrainAnswer:
@@ -35,6 +41,7 @@ const CARDS: ExperimentCard[] = [
   {
     id: 'clock',
     label: 'Команда «Пройдись»',
+    leftFieldShort: 'ПРОЙДИСЬ',
     rightPrompt: 'В левом поле зрения на 150 мс мигнула табличка с приказом «ВСТАНЬ И ПРОЙДИСЬ».',
     leftHandAction: 'Тело молча встаёт со стула и идёт к выходу из комнаты.',
     leftVisibleCard: 'Пустой экран',
@@ -48,7 +55,8 @@ const CARDS: ExperimentCard[] = [
   {
     id: 'music',
     label: 'Смешная карикатура',
-    rightPrompt: 'В левом поле зрения показали нелепую смешную карикатуру на профессора.',
+    leftFieldShort: 'КАРИКАТУРА',
+    rightPrompt: 'В левом поле зрения на 150 мс показали нелепую смешную карикатуру на профессора.',
     leftHandAction: 'Лицо пациента внезапно расплывается в искреннем смехе.',
     leftVisibleCard: 'Геометрический круг',
     wholeBrainAnswer:
@@ -60,28 +68,31 @@ const CARDS: ExperimentCard[] = [
   },
 ];
 
-// 14 horizontal callosal fiber lines visually stretching and snapping when the book spine is cut!
 const CALLOSAL_FIBERS = Array.from({ length: 14 }, (_, i) => i);
 
 /**
- * CHAPTER II: "Расколотый штурвал"
- * Upgraded v8:
- * 1. Accurate optic-chiasm visual diagram ("правое/левое поле зрения", zero "правый глаз" bug!)
- * 2. Subtle New Yorker engraved hoodie silhouette split cleanly along the book spine (Mr. Robot nod!)
- * 3. Crystal-clear 1 -> 2 -> 3 workflow: FIRST see Whole Brain honest answer -> THEN cut the 200M snapping fibers -> watch alibi fabricated live + automatic X-ray truth!
- * 4. 100% contrast-safe in BOTH whole & cut states!
+ * ACT III · CHAPTER III: "Расколотый штурвал" (Bug #4 Fixes):
+ * 1. Real Optic Chiasm diagram with BOTH eyes + crossing visual field rays + 150ms < 200ms saccade rule!
+ * 2. Damped Hooke's Law spring recoil animation on all 14 snapped callosal fibers (useViewportRaf, 0% idle CPU!).
+ * 3. Level-2 Archival Dossier trigger ("split-brain-chiasm").
+ * 4. Updated chapter number (ГЛ. III, стр. 38) and bridge to Act IV ("Под черепом").
  */
-export function Chapter2SplitSpine({ onNextChapter }: Chapter2SplitSpineProps) {
+export function Chapter2SplitSpine({ onNextChapter: _onNextChapter }: Chapter2SplitSpineProps) {
   const { state, setSplitBrainCut, setSplitBrainCard } = useExplorer();
   const [typedLength, setTypedLength] = useState(0);
-  const [justSnapped, setJustSnapped] = useState(false);
+  const [recoiling, setRecoiling] = useState(false);
+
+  const spreadRef = useRef<HTMLDivElement | null>(null);
+  const leftFiberRefs = useRef<Array<SVGPathElement | null>>([]);
+  const rightFiberRefs = useRef<Array<SVGPathElement | null>>([]);
+  const recoilStartMsRef = useRef<number>(0);
 
   const selectedCard = CARDS.find((c) => c.id === state.splitBrainCard) ?? CARDS[0];
   const activeStatement = state.splitBrainCut
     ? selectedCard.confabulation
     : selectedCard.wholeBrainAnswer;
 
-  // Typewriter ink animation whenever card or cut state changes
+  // Typewriter ink animation
   useEffect(() => {
     setTypedLength(0);
     const full = activeStatement;
@@ -94,12 +105,49 @@ export function Chapter2SplitSpine({ onNextChapter }: Chapter2SplitSpineProps) {
     return () => window.clearInterval(timer);
   }, [activeStatement]);
 
+  // Damped Hooke's-law spring whip animation for the 14 snapped fibers (~780ms active window, 0% idle CPU!)
+  const animateRecoil = useCallback((nowMs: number) => {
+    const elapsed = (nowMs - recoilStartMsRef.current) / 1000;
+    if (elapsed > 0.85) {
+      setRecoiling(false);
+      return;
+    }
+    const damping = Math.exp(-5.4 * elapsed);
+    const osc = Math.cos(24 * elapsed);
+
+    CALLOSAL_FIBERS.forEach((idx) => {
+      const y = 32 + idx * 23;
+      if (Math.abs(y - 180) <= 46) return;
+      const sign = idx % 2 === 0 ? 1 : -1;
+      const amp = (5.5 + 14 * damping * osc) * sign;
+      const tipShift = 3 * damping * Math.sin(18 * elapsed);
+      const lEl = leftFiberRefs.current[idx];
+      const rEl = rightFiberRefs.current[idx];
+      if (lEl) {
+        lEl.setAttribute(
+          'd',
+          `M 10 ${y} Q ${(17 + tipShift * 0.4).toFixed(1)} ${(y + amp * 0.72).toFixed(1)} ${(23 + tipShift).toFixed(1)} ${(y + amp).toFixed(1)}`,
+        );
+      }
+      if (rEl) {
+        rEl.setAttribute(
+          'd',
+          `M 54 ${y} Q ${(47 - tipShift * 0.4).toFixed(1)} ${(y - amp * 0.72).toFixed(1)} ${(41 - tipShift).toFixed(1)} ${(y - amp).toFixed(1)}`,
+        );
+      }
+    });
+  }, []);
+
+  useViewportRaf(spreadRef, animateRecoil, { enabled: recoiling && state.splitBrainCut });
+
   const handleToggleCut = () => {
     const next = !state.splitBrainCut;
     setSplitBrainCut(next);
     if (next) {
-      setJustSnapped(true);
-      window.setTimeout(() => setJustSnapped(false), 650);
+      recoilStartMsRef.current = performance.now();
+      setRecoiling(true);
+    } else {
+      setRecoiling(false);
     }
   };
 
@@ -112,29 +160,31 @@ export function Chapter2SplitSpine({ onNextChapter }: Chapter2SplitSpineProps) {
   return (
     <section
       id="ch-2"
-      className="relative bg-[#FAF9F5] text-[#141413] pt-24 pb-20 md:pt-28 md:pb-28 border-b border-[#141413]/10"
-      aria-label="Глава II — Расколотый штурвал"
+      className="relative bg-[#FAF9F5] text-[#141413] pt-20 pb-20 md:pt-24 md:pb-24 border-b border-[#141413]/10"
+      aria-label="Глава III — Расколотый штурвал"
     >
       <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20">
         {/* Folio Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#141413]/12 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
-          <span className="text-[#FC4109] font-semibold">ЧАСТЬ I · ИЗНУТРИ · ГЛАВА II</span>
-          <span>РАСКОЛОТЫЙ ШТУРВАЛ · стр. 24</span>
+          <span className="text-[#FC4109] font-semibold">АКТ III · КОНСТРУКТОР «Я» · ГЛАВА III</span>
+          <span>РАСКОЛОТЫЙ ШТУРВАЛ · стр. 38</span>
         </div>
 
-        {/* Editorial Opening + Subtle New Yorker Engraved Split Silhouette (Mr. Robot!) */}
+        {/* Editorial Opening */}
         <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
           <div className="lg:col-span-7">
             <h2 className="text-[clamp(32px,4.5vw,58px)] leading-[1.06] tracking-[-0.03em]">
               <span className="font-display font-bold block">Кто на самом деле</span>
-              <span className="font-serif-editorial italic font-normal text-[#30302E] block mt-1">
+              <span className="font-serif-display italic font-normal text-[#30302E] block mt-1">
                 держит штурвал?
               </span>
             </h2>
           </div>
           <div className="lg:col-span-5 space-y-3 text-[15.5px] leading-[1.62] text-[#353431]">
             <p>
-              В 1960–70-х врачи спасали пациентов с тяжелейшей эпилепсией, рассекая{' '}
+              {ruTypo(
+                'В 1960–70-х врачи спасали пациентов с тяжелейшей эпилепсией, рассекая ',
+              )}
               <strong className="font-semibold text-[#141413]">мозолистое тело</strong> — кабель из 200 миллионов волокон между полушариями. В быту эти люди казались абсолютно обычными — пока учёные не заглянули в оба полушария по отдельности.
             </p>
             <p className="text-[#4F4E4A]">
@@ -146,23 +196,28 @@ export function Chapter2SplitSpine({ onNextChapter }: Chapter2SplitSpineProps) {
           </div>
         </div>
 
-        {/* 15-SECOND VISUAL OPTIC-CHIASM & CROSS-WIRING PRIMER (Solves beginner confusion BEFORE touching controls!) */}
+        {/* BUG #4 FIX: TRUE OPTIC CHIASM DIAGRAM WITH BOTH EYES + CROSSING RAYS + 150ms < 200ms SACCADE RULE! */}
         <div className="mt-9 rounded-2xl border border-[#141413]/12 bg-[#F3F1E9] p-5 md:p-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-            <div className="lg:col-span-7 space-y-2.5">
-              <div className="font-mono-tech text-[10.5px] uppercase tracking-[0.14em] text-[#FC4109] font-semibold">
-                КАК УСТРОЕН ОПЫТ · ПЕРЕКРЁСТ ПОЛЕЙ ЗРЕНИЯ (15 СЕК)
+            <div className="lg:col-span-6 space-y-3">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="font-mono-tech text-[10.5px] uppercase tracking-[0.14em] text-[#FC4109] font-semibold">
+                  КАК УСТРОЕН ОПЫТ · ЗРИТЕЛЬНАЯ ХИАЗМА И ОКНО 150 МС
+                </span>
+                <LabHonestyBadge badge="reconstruction" />
               </div>
-              <p className="text-[14px] leading-[1.6] text-[#2F2E2B]">
-                У человека пути зрения и рук перекрещены: всё, что мелькает в{' '}
-                <strong className="text-[#141413]">левом поле зрения обоих глаз</strong>, попадает в{' '}
-                <strong className="text-[#141413]">правое полушарие</strong> (оно почти не умеет говорить, но управляет левой рукой). А{' '}
-                <strong className="text-[#141413]">правое поле зрения</strong> идёт в говорящее{' '}
-                <strong className="text-[#141413]">левое полушарие</strong>.
+              <p className="text-[14px] leading-[1.62] text-[#2F2E2B]">
+                {ruTypo(
+                  'Каждый глаз разделён пополам, а нервы перекрещиваются в зрительной хиазме. Всё, что мелькает в ',
+                )}
+                <strong className="text-[#FC4109]">левом поле зрения обоих глаз</strong>, идёт в{' '}
+                <strong className="text-[#141413]">правое полушарие</strong> (оно молчит, но управляет левой рукой). Картинку вспыхивают ровно на{' '}
+                <strong className="text-[#141413]">150 мс</strong> — это быстрее любого перевода взгляда (саккада занимает ~200 мс), поэтому говорящее полушарие физически не успевает подсмотреть!
               </p>
-              <div className="flex flex-wrap items-center gap-2 pt-1 font-mono-tech text-[10.5px]">
+
+              <div className="flex flex-wrap items-center gap-2 pt-1 font-mono-tech text-[10px]">
                 <span className="px-2.5 py-1 rounded-lg bg-[#FAF9F5] border border-[#141413]/10 text-[#141413]">
-                  1. Сначала посмотрите ответ ЦЕЛОГО мозга
+                  1. Посмотрите ответ ЦЕЛОГО мозга
                 </span>
                 <span className="text-[#FC4109]">→</span>
                 <span className="px-2.5 py-1 rounded-lg bg-[#FAF9F5] border border-[#141413]/10 text-[#141413]">
@@ -170,109 +225,120 @@ export function Chapter2SplitSpine({ onNextChapter }: Chapter2SplitSpineProps) {
                 </span>
                 <span className="text-[#FC4109]">→</span>
                 <span className="px-2.5 py-1 rounded-lg bg-[#FAF9F5] border border-[#141413]/10 text-[#141413]">
-                  3. Поймайте левое полушарие на лжи
+                  3. Поймайте алиби
                 </span>
               </div>
             </div>
 
-            {/* Crisp New Yorker Engraved Hooded Split Silhouette + Optic Wiring Mini-Plate */}
-            <div className="lg:col-span-5 flex items-center justify-center">
+            {/* Dynamic Anatomical Optic Chiasm SVG — reacts to selectedCard + larger crisp readability! */}
+            <div className="lg:col-span-6 flex items-center justify-center">
               <svg
-                viewBox="0 0 360 118"
-                className="w-full max-w-[360px] h-auto block"
-                aria-label="Схема перекрёста полей зрения и силуэт расколотого сознания"
+                viewBox="0 0 440 194"
+                className="w-full max-w-[465px] h-auto block"
+                aria-label="Схема зрительной хиазмы: лучи из левого и правого полей зрения попадают в оба глаза и перекрещиваются в противоположные полушария"
               >
-                {/* Left side: Speaking Left Hemisphere (Blue) */}
-                <rect x="4" y="10" width="128" height="98" rx="12" fill="#FAF9F5" stroke="#141413" strokeOpacity="0.16" />
-                <text x="16" y="30" fill="#004EDF" fontSize="9" fontWeight="700" fontFamily="JetBrains Mono Variable, monospace">
+                {/* Top: Dynamic Visual Fields (150ms Tachistoscope Flash) */}
+                <rect x="8" y="4" width="194" height="25" rx="6" fill="rgba(252,65,9,0.10)" stroke="#FC4109" strokeOpacity="0.45" />
+                <text x="105" y="20" textAnchor="middle" fill="#C83407" fontSize="9.5" fontWeight="700" fontFamily="JetBrains Mono Variable, monospace">
+                  ЛЕВ. ПОЛЕ · 150 МС ({selectedCard.leftFieldShort})
+                </text>
+                <circle cx="220" cy="16.5" r="3.2" fill="#141413" />
+                <rect x="238" y="4" width="194" height="25" rx="6" fill="rgba(0,78,223,0.10)" stroke="#004EDF" strokeOpacity="0.45" />
+                <text x="335" y="20" textAnchor="middle" fill="#004EDF" fontSize="9.5" fontWeight="700" fontFamily="JetBrains Mono Variable, monospace">
+                  ПРАВ. ПОЛЕ ({selectedCard.leftVisibleCard.toUpperCase()})
+                </text>
+
+                {/* Two Anatomical Eyes */}
+                <g>
+                  <circle cx="164" cy="56" r="14" fill="#FAF9F5" stroke="#141413" strokeWidth="1.5" />
+                  <circle cx="164" cy="49" r="4.8" fill="#141413" />
+                  <circle cx="276" cy="56" r="14" fill="#FAF9F5" stroke="#141413" strokeWidth="1.5" />
+                  <circle cx="276" cy="49" r="4.8" fill="#141413" />
+                  <text x="142" y="60" textAnchor="end" fill="#5E5D59" fontSize="9" fontWeight="600" fontFamily="JetBrains Mono Variable, monospace">
+                    ЛЕВ. ГЛАЗ
+                  </text>
+                  <text x="298" y="60" textAnchor="start" fill="#5E5D59" fontSize="9" fontWeight="600" fontFamily="JetBrains Mono Variable, monospace">
+                    ПРАВ. ГЛАЗ
+                  </text>
+                </g>
+
+                {/* Crossing Light Rays into Both Eyes */}
+                <path d="M 98 29 L 159 48" stroke="#FC4109" strokeWidth="1.5" strokeDasharray="3 2" opacity="0.72" />
+                <path d="M 114 29 L 269 49" stroke="#FC4109" strokeWidth="1.5" strokeDasharray="3 2" opacity="0.72" />
+                <path d="M 342 29 L 281 48" stroke="#004EDF" strokeWidth="1.5" strokeDasharray="3 2" opacity="0.72" />
+                <path d="M 326 29 L 171 49" stroke="#004EDF" strokeWidth="1.5" strokeDasharray="3 2" opacity="0.72" />
+
+                {/* Optic Chiasm (Generous clean X-crossing below eyes!) */}
+                <path d="M 171 69 C 182 94, 252 98, 286 118" fill="none" stroke="#FC4109" strokeWidth="2.2" />
+                <path d="M 282 69 C 292 88, 298 102, 300 118" fill="none" stroke="#FC4109" strokeWidth="2.2" />
+                <path d="M 269 69 C 258 94, 188 98, 154 118" fill="none" stroke="#004EDF" strokeWidth="2.2" />
+                <path d="M 158 69 C 148 88, 142 102, 140 118" fill="none" stroke="#004EDF" strokeWidth="2.2" />
+
+                {/* Spacious Chiasm Callout Pill */}
+                <rect x="176" y="83" width="88" height="19" rx="9.5" fill="#FAF9F5" stroke="#141413" strokeOpacity="0.24" />
+                <text x="220" y="96" textAnchor="middle" fill="#141413" fontSize="8.5" fontWeight="700" fontFamily="JetBrains Mono Variable, monospace">
+                  ХИАЗМА (X)
+                </text>
+
+                {/* Bottom Left: Speaking Left Hemisphere */}
+                <rect x="8" y="118" width="156" height="70" rx="10" fill="#FAF9F5" stroke="#004EDF" strokeOpacity="0.34" />
+                <text x="20" y="137" fill="#004EDF" fontSize="9.5" fontWeight="700" fontFamily="JetBrains Mono Variable, monospace">
                   ЛЕВОЕ ПОЛУШАРИЕ
                 </text>
-                <text x="16" y="46" fill="#141413" fontSize="10" fontFamily="Inter Variable, sans-serif">
-                  Видит: правое поле
+                <text x="20" y="155" fill="#141413" fontSize="10.5" fontFamily="Inter Variable, sans-serif">
+                  Речь и «алиби»
                 </text>
-                <text x="16" y="62" fill="#5E5D59" fontSize="9.5" fontFamily="Inter Variable, sans-serif">
-                  Умеет: говорить,
-                </text>
-                <text x="16" y="75" fill="#5E5D59" fontSize="9.5" fontFamily="Inter Variable, sans-serif">
-                  сочинять объяснения
-                </text>
-                <text x="16" y="96" fill="#004EDF" fontSize="8.5" fontFamily="JetBrains Mono Variable, monospace">
+                <text x="20" y="173" fill="#5E5D59" fontSize="9" fontFamily="JetBrains Mono Variable, monospace">
                   → ПРАВАЯ РУКА
                 </text>
 
-                {/* Center: Crisp New Yorker Engraved Split Hoodie Portrait (Elliot / Mr. Robot subtle nod!) */}
-                <g transform="translate(142, 10)">
-                  {/* Left half: sloped shoulder + hood silhouette (light paper ink) */}
+                {/* Center Split Hoodie Silhouette */}
+                <g transform="translate(182, 116)">
                   <path
-                    d="M 36 10 C 20 10, 14 23, 14 39 C 14 49, 17 56, 21 60 C 12 64, 4 72, 2 88 L 36 88 Z"
+                    d="M 36 6 C 21 6, 15 17, 15 31 C 15 40, 18 46, 22 49 C 14 53, 8 59, 6 70 L 36 70 Z"
                     fill="#FAF9F5"
                     stroke="#141413"
-                    strokeWidth="1.45"
+                    strokeWidth="1.35"
                     strokeLinejoin="round"
                   />
-                  {/* Right half: sloped shoulder + hood silhouette (deep obsidian ink when split!) */}
                   <path
-                    d="M 40 10 C 56 10, 62 23, 62 39 C 62 49, 59 56, 55 60 C 64 64, 72 72, 74 88 L 40 88 Z"
+                    d="M 40 6 C 55 6, 61 17, 61 31 C 61 40, 58 46, 54 49 C 62 53, 68 59, 70 70 L 40 70 Z"
                     fill={state.splitBrainCut ? '#17181B' : '#E8E5DA'}
                     stroke="#141413"
-                    strokeWidth="1.45"
+                    strokeWidth="1.35"
                     strokeLinejoin="round"
                   />
-                  {/* Inner hood aperture & chin contour */}
-                  <path
-                    d="M 36 20 C 26 20, 22 29, 23 41 C 24 49, 29 55, 36 56"
-                    fill="none"
-                    stroke="#141413"
-                    strokeWidth="1.2"
-                  />
-                  <path
-                    d="M 40 20 C 50 20, 54 29, 53 41 C 52 49, 47 55, 40 56"
-                    fill="none"
-                    stroke={state.splitBrainCut ? '#FAF9F5' : '#141413'}
-                    strokeWidth="1.2"
-                  />
-                  {/* Calm left eye vs silent right eye */}
-                  <ellipse cx="29.5" cy="37" rx="2.1" ry="1.35" fill="#141413" />
-                  <ellipse cx="46.5" cy="37" rx="2.1" ry="1.35" fill={state.splitBrainCut ? '#FC4109' : '#141413'} />
-                  {/* Hoodie collar drawstrings */}
-                  <path d="M 31 59 L 30 78" stroke="#141413" strokeWidth="1.15" strokeLinecap="round" />
-                  <path d="M 45 59 L 46 78" stroke={state.splitBrainCut ? '#FAF9F5' : '#141413'} strokeWidth="1.15" strokeLinecap="round" />
-                  {/* Vertical surgical split axis */}
+                  <ellipse cx="29.5" cy="29" rx="2" ry="1.3" fill="#141413" />
+                  <ellipse cx="46.5" cy="29" rx="2" ry="1.3" fill={state.splitBrainCut ? '#FC4109' : '#141413'} />
                   <line
                     x1="38"
-                    y1="2"
+                    y1="0"
                     x2="38"
-                    y2="94"
+                    y2="72"
                     stroke={state.splitBrainCut ? '#FC4109' : '#004EDF'}
                     strokeWidth="1.6"
                     strokeDasharray={state.splitBrainCut ? '3 3' : undefined}
                   />
                 </g>
 
-                {/* Right side: Silent Right Hemisphere (Dark/Crimson) */}
+                {/* Bottom Right: Silent Right Hemisphere */}
                 <rect
-                  x="228"
-                  y="10"
-                  width="128"
-                  height="98"
-                  rx="12"
+                  x="276"
+                  y="118"
+                  width="156"
+                  height="70"
+                  rx="10"
                   fill={state.splitBrainCut ? '#17181B' : '#FAF9F5'}
-                  stroke="#141413"
-                  strokeOpacity={state.splitBrainCut ? '0.9' : '0.16'}
+                  stroke="#FC4109"
+                  strokeOpacity={state.splitBrainCut ? '0.72' : '0.34'}
                 />
-                <text x="240" y="30" fill="#FC4109" fontSize="9" fontWeight="700" fontFamily="JetBrains Mono Variable, monospace">
+                <text x="288" y="137" fill="#FC4109" fontSize="9.5" fontWeight="700" fontFamily="JetBrains Mono Variable, monospace">
                   ПРАВОЕ ПОЛУШАРИЕ
                 </text>
-                <text x="240" y="46" fill={state.splitBrainCut ? '#FAF9F5' : '#141413'} fontSize="10" fontFamily="Inter Variable, sans-serif">
-                  Видит: левое поле
+                <text x="288" y="155" fill={state.splitBrainCut ? '#FAF9F5' : '#141413'} fontSize="10.5" fontFamily="Inter Variable, sans-serif">
+                  Молчит, но действует
                 </text>
-                <text x="240" y="62" fill={state.splitBrainCut ? '#B7BECC' : '#5E5D59'} fontSize="9.5" fontFamily="Inter Variable, sans-serif">
-                  Молчит, но понимает
-                </text>
-                <text x="240" y="75" fill={state.splitBrainCut ? '#B7BECC' : '#5E5D59'} fontSize="9.5" fontFamily="Inter Variable, sans-serif">
-                  образы и действует
-                </text>
-                <text x="240" y="96" fill="#FC4109" fontSize="8.5" fontFamily="JetBrains Mono Variable, monospace">
+                <text x="288" y="173" fill={state.splitBrainCut ? '#FF9B7D' : '#FC4109'} fontSize="9" fontFamily="JetBrains Mono Variable, monospace">
                   → ЛЕВАЯ РУКА
                 </text>
               </svg>
@@ -282,7 +348,6 @@ export function Chapter2SplitSpine({ onNextChapter }: Chapter2SplitSpineProps) {
 
         {/* GUIDED 1 -> 2 CONTROL RIBBON */}
         <div className="mt-8 flex flex-wrap items-center justify-between gap-4 pb-5">
-          {/* Step 1: Choose Experiment Card */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-mono-tech text-[10.5px] uppercase tracking-[0.11em] text-[#5E5D59] mr-1">
               Шаг 1 · Сцена:
@@ -306,7 +371,6 @@ export function Chapter2SplitSpine({ onNextChapter }: Chapter2SplitSpineProps) {
             })}
           </div>
 
-          {/* Step 2: Cut / Stitch the Book Spine (Corpus Callosum!) */}
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
@@ -332,23 +396,23 @@ export function Chapter2SplitSpine({ onNextChapter }: Chapter2SplitSpineProps) {
           </div>
         </div>
 
-        {/* THE PHYSICAL SPLIT-SPINE BOOK SPREAD WITH SNAPPING CALLOSAL FIBERS */}
+        {/* THE PHYSICAL SPLIT-SPINE BOOK SPREAD WITH SPRING-RECOILING CALLOSAL FIBERS */}
         <div
+          ref={spreadRef}
           className="relative grid grid-cols-1 md:grid-cols-2 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
           style={{
             gap: state.splitBrainCut ? '48px' : '0px',
           }}
         >
-          {/* Central Surgical Spine Seam + 14 Snapping Callosal Fibers (desktop) */}
+          {/* Central Surgical Spine Seam + 14 Spring-Recoiling Callosal Fibers */}
           <div
             aria-hidden="true"
             className="hidden md:flex flex-col items-center justify-center pointer-events-none absolute top-0 bottom-0 left-1/2 -translate-x-1/2 z-20 w-16"
           >
-            {/* Animated Callosal White-Matter Fiber Strands bridging the two halves */}
             <svg viewBox="0 0 64 360" preserveAspectRatio="none" className="absolute inset-0 w-full h-full overflow-visible">
               {CALLOSAL_FIBERS.map((idx) => {
                 const y = 32 + idx * 23;
-                const curve = (idx % 2 === 0 ? 1 : -1) * (justSnapped ? 11 : 5);
+                const restCurve = (idx % 2 === 0 ? 1 : -1) * 5.5;
                 if (!state.splitBrainCut) {
                   return (
                     <line
@@ -358,30 +422,35 @@ export function Chapter2SplitSpine({ onNextChapter }: Chapter2SplitSpineProps) {
                       x2="50"
                       y2={y}
                       stroke="#004EDF"
-                      strokeOpacity="0.24"
+                      strokeOpacity="0.26"
                       strokeWidth="1.35"
                     />
                   );
                 }
                 return (
                   <g key={idx}>
-                    {/* Snapped left recoil fiber (neatly recessed clear of card edge & center pill!) */}
                     {Math.abs(y - 180) > 46 && (
                       <>
                         <path
-                          d={`M 10 ${y} Q 17 ${y + curve * 0.7} 23 ${y + curve}`}
+                          ref={(el) => {
+                            leftFiberRefs.current[idx] = el;
+                          }}
+                          d={`M 10 ${y} Q 17 ${y + restCurve * 0.72} 23 ${y + restCurve}`}
                           fill="none"
                           stroke="#FC4109"
-                          strokeOpacity="0.46"
-                          strokeWidth="1.35"
+                          strokeOpacity="0.54"
+                          strokeWidth="1.45"
                           strokeLinecap="round"
                         />
                         <path
-                          d={`M 54 ${y} Q 47 ${y - curve * 0.7} 41 ${y - curve}`}
+                          ref={(el) => {
+                            rightFiberRefs.current[idx] = el;
+                          }}
+                          d={`M 54 ${y} Q 47 ${y - restCurve * 0.72} 41 ${y - restCurve}`}
                           fill="none"
                           stroke="#FC4109"
-                          strokeOpacity="0.46"
-                          strokeWidth="1.35"
+                          strokeOpacity="0.54"
+                          strokeWidth="1.45"
                           strokeLinecap="round"
                         />
                       </>
@@ -409,7 +478,7 @@ export function Chapter2SplitSpine({ onNextChapter }: Chapter2SplitSpineProps) {
             </span>
           </div>
 
-          {/* LEFT PAGE: Talking Left Hemisphere (Honest when whole -> Fabricates alibi when cut!) */}
+          {/* LEFT PAGE: Talking Left Hemisphere */}
           <div
             className={`relative rounded-2xl border p-6 md:p-9 min-h-[390px] flex flex-col justify-between transition-all duration-700 ${
               state.splitBrainCut
@@ -441,7 +510,6 @@ export function Chapter2SplitSpine({ onNextChapter }: Chapter2SplitSpineProps) {
                 </div>
               </div>
 
-              {/* Live Transcript — Honest Whole-Brain Response vs Split-Brain Confabulation! */}
               <div className="mt-6">
                 <div
                   className={`font-mono-tech text-[10px] uppercase tracking-[0.1em] font-semibold ${
@@ -462,7 +530,6 @@ export function Chapter2SplitSpine({ onNextChapter }: Chapter2SplitSpineProps) {
               </div>
             </div>
 
-            {/* Automatic X-Ray Truth Footnote (NO hidden link needed!) */}
             <div className="mt-5 pt-4 border-t border-[#141413]/10 space-y-3">
               {state.splitBrainCut ? (
                 <div className="p-3.5 rounded-xl bg-[#FC4109]/8 border border-[#FC4109]/25 text-[13.5px] leading-[1.56] text-[#2A2927] animate-[beatRise_300ms_ease]">
@@ -472,7 +539,7 @@ export function Chapter2SplitSpine({ onNextChapter }: Chapter2SplitSpineProps) {
                       <span>РЕНТГЕН ПРАВДЫ · УВЕРЕННОСТЬ ПАЦИЕНТА 100%</span>
                     </span>
                   </div>
-                  <p>{selectedCard.clinicalFact}</p>
+                  <p>{ruTypo(selectedCard.clinicalFact)}</p>
                 </div>
               ) : (
                 <div className="flex flex-wrap items-center justify-between gap-2 font-mono-tech text-[11px] text-[#5E5D59]">
@@ -489,7 +556,7 @@ export function Chapter2SplitSpine({ onNextChapter }: Chapter2SplitSpineProps) {
             </div>
           </div>
 
-          {/* RIGHT PAGE: Silent Right Hemisphere (100% contrast-safe in BOTH light/whole and dark/cut states!) */}
+          {/* RIGHT PAGE: Silent Right Hemisphere */}
           <div
             className={`relative rounded-2xl border p-6 md:p-9 min-h-[390px] flex flex-col justify-between transition-all duration-700 ${
               state.splitBrainCut
@@ -509,7 +576,6 @@ export function Chapter2SplitSpine({ onNextChapter }: Chapter2SplitSpineProps) {
                 <span className="text-[#FC4109] font-semibold whitespace-nowrap">ОБРАЗЫ И ЛЕВАЯ РУКА</span>
               </div>
 
-              {/* Graphic Signal Plate — dynamically themed so text is ALWAYS crisp high-contrast! */}
               <div className="mt-6 space-y-4">
                 <div
                   className={`p-5 rounded-xl border flex items-center gap-5 transition-colors ${
@@ -518,7 +584,6 @@ export function Chapter2SplitSpine({ onNextChapter }: Chapter2SplitSpineProps) {
                       : 'border-[#141413]/12 bg-[#FAF9F5]'
                   }`}
                 >
-                  {/* Crisp Swiss vector pictogram */}
                   <svg width="62" height="62" viewBox="0 0 64 64" fill="none" className="shrink-0">
                     <rect x="2" y="2" width="60" height="60" rx="12" stroke="#FC4109" strokeWidth="1.5" />
                     {selectedCard.id === 'snow' && (
@@ -561,7 +626,7 @@ export function Chapter2SplitSpine({ onNextChapter }: Chapter2SplitSpineProps) {
                         state.splitBrainCut ? 'text-[#C8CDD6]' : 'text-[#4B4A46]'
                       }`}
                     >
-                      {selectedCard.rightPrompt}
+                      {ruTypo(selectedCard.rightPrompt)}
                     </p>
                   </div>
                 </div>
@@ -594,9 +659,11 @@ export function Chapter2SplitSpine({ onNextChapter }: Chapter2SplitSpineProps) {
                     state.splitBrainCut ? 'text-[#9AA2B1]' : 'text-[#5E5D59]'
                   }`}
                 >
-                  {state.splitBrainCut
-                    ? 'Справа всё поняли и выполнили действие молча — но из-за разрыва правое полушарие не может шепнуть левому, зачем именно тело так поступило.'
-                    : 'Сейчас мост цел: правое полушарие мгновенно передало образ налево, поэтому человек спокойно называет настоящую причину своего поступка.'}
+                  {ruTypo(
+                    state.splitBrainCut
+                      ? 'Справа всё поняли и выполнили действие молча — но из-за разрыва правое полушарие не может шепнуть левому, зачем именно тело так поступило.'
+                      : 'Сейчас мост цел: правое полушарие мгновенно передало образ налево, поэтому человек спокойно называет настоящую причину своего поступка.',
+                  )}
                 </p>
               </div>
             </div>
@@ -614,30 +681,30 @@ export function Chapter2SplitSpine({ onNextChapter }: Chapter2SplitSpineProps) {
           </div>
         </div>
 
-        {/* Margin Commentary + Tight Domino Bridge to Chapter III */}
-        <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          <div className="lg:col-span-6">
+        {/* Margin Commentary + Level-2 Dossier + Bridge to Act IV */}
+        <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="lg:col-span-6 space-y-4">
             <ScholarMarginNote
               scholar="dennett"
               tag="МИФ О «ДИРЕКТОРЕ В ГОЛОВЕ»"
               quote="Внутри черепа нет никакой маленькой кабины пилота, где сидит ваш «главный директор». Наше «Я» — это история, которую говорящая часть мозга сочиняет на лету, чтобы склеить действия тела воедино."
             />
+            <DossierTrigger
+              dossier="split-brain-chiasm"
+              label="Зрительная хиазма, окно 150 мс и уточнение Пинто (Brain, 2017)"
+              meta="Архивное досье III.1 · Уровень 2"
+              className="w-full"
+            />
           </div>
-          <div className="lg:col-span-6 space-y-4">
+          <div className="lg:col-span-6 space-y-3 lg:pt-2">
             <div className="font-mono-tech text-[10.5px] uppercase tracking-[0.13em] text-[#FC4109]">
-              ВЫВОД И ПЕРЕХОД К ГЛАВЕ III
+              ВЫВОД АКТА III · КОНСТРУКТОР «Я»
             </div>
             <p className="font-serif-editorial italic text-[18px] leading-[1.52] text-[#282725]">
-              Мозг не ждёт фактов: сначала он придумывает правдоподобную версию, а потом подгоняет под неё реальность. В этой главе он сочинил алиби для руки — а на следующей странице вы увидите, что ровно так же он собирает весь видимый мир.
+              {ruTypo(
+                'Мы увидели, ЧТО делает сознание изнутри: предсказывает мир и сочиняет историю нашего «Я». Теперь главный вопрос нейробиологии: ГДЕ именно в полутора килограммах живой ткани зажигается этот свет?',
+              )}
             </p>
-            <button
-              type="button"
-              onClick={onNextChapter}
-              className="font-mono-tech text-[11px] uppercase tracking-[0.12em] text-[#141413] hover:text-[#FC4109] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-            >
-              <span>К Главе III · Управляемая галлюцинация</span>
-              <ArrowDown className="w-3.5 h-3.5" />
-            </button>
           </div>
         </div>
       </div>

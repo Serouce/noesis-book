@@ -1,6 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowDown, Volume2, VolumeX } from 'lucide-react';
 import { useExplorer, type TurntableMode } from '../context/ExplorerContext';
+import { DossierTrigger } from '../../v9/components/NoesisDossierSheet';
+import { LabHonestyBadge } from '../../v9/components/NoesisInstrumentFrame';
+import { useViewportRaf } from '../../v9/hooks/useViewportRaf';
+import { ruTypo } from '../../v9/utils/ruTypo';
 
 interface Chapter5CajalTurntableProps {
   onNextChapter: () => void;
@@ -24,78 +28,94 @@ const MODES: ModeSpec[] = [
   {
     id: 'wake',
     label: 'Бодрствование',
-    shortExplain: 'Обычный ясный день · оба канала открыты',
+    shortExplain: 'Ясный день · оба канала открыты',
     badge: 'БАЛАНС',
     complexityLabel: 'ВЫСОКАЯ СЛОЖНОСТЬ',
     needleDown: true,
     shaftIntact: true,
     headline: 'Обе антенны замкнуты в одну живую вспышку',
     description:
-      'Нижние ветви (дендриты) клетки принимают сырой сигнал мира, верхние — внутренние прогнозы мозга из Главы III. Когда оба потока встречаются в стволе, клетка запускает сложную живую волну — и вы осознаёте мир.',
+      'Нижние ветви клетки принимают сырой сигнал мира, верхние — внутренние прогнозы мозга из Акта III. Когда оба потока встречаются в стволе, клетка запускает сложную живую волну — и вы осознаёте мир.',
     accent: '#004EDF',
+  },
+  {
+    id: 'nrem',
+    label: 'Глубокий сон (NREM)',
+    shortExplain: 'Медленные дельта-волны · без снов',
+    badge: 'ДЕЛЬТА · 1 ГЦ',
+    complexityLabel: 'ХОРОМ В УНИСОН',
+    needleDown: false,
+    shaftIntact: true,
+    headline: 'Мозг не выключен — он бьёт как медленный колокол',
+    description:
+      'В глубоком сне без сновидений (NREM) нейроны живы и активны, но начинают вспыхивать и замолкать хором, в один монотонный ритм (0.5–2 Гц). Сложный диалог распадается в однообразный гул — внутри темно.',
+    accent: '#5E5D59',
   },
   {
     id: 'rem',
     label: 'REM-сон / Кетамин',
-    shortExplain: 'Яркие сны или диссоциатив · тело отрезано от мира',
+    shortExplain: 'Яркие сны · тело отрезано от мира',
     badge: 'CLUB SILENCIO',
     complexityLabel: 'ВЫСОКАЯ СЛОЖНОСТЬ',
     needleDown: false,
     shaftIntact: true,
     headline: 'Игла поднята с диска — но музыка продолжает играть',
     description:
-      'В фазе быстрых снов (REM) или под кетамином вход от органов чувств отрезан: игла физически отрывается от пластинки. Но верхняя петля коры сама раскачивает нейрон, поэтому внутри неподвижного тела полыхают ярчайшие сны.',
+      'В фазе быстрых снов (REM) или под кетамином вход от органов чувств отрезан: игла физически отрывается от пластинки. Но верхняя петля коры сама раскачивает нейрон — внутри неподвижного тела полыхают ярчайшие сны.',
     cinemaWhisper: '«No hay banda» — оркестра нет, внешнего входа нет, а мелодия опыта звучит.',
     accent: '#0D7A5F',
   },
   {
     id: 'psilocybin',
     label: 'Псилоцибин',
-    shortExplain: 'Психоделик · бьёт по рецепторам 5-HT2A на верхушке клетки',
+    shortExplain: 'Рецепторы 5-HT2A на верхушке клетки',
     badge: 'ГИПЕРСВЯЗНОСТЬ',
     complexityLabel: 'СВЕРХВЫСОКАЯ СЛОЖНОСТЬ',
     needleDown: true,
     shaftIntact: true,
-    headline: 'Верхние фильтры ослабевают — мозг сбрасывает привычные шаблоны',
+    headline: 'Верхние фильтры ослабевают — мозг сбрасывает шаблоны',
     description:
-      'Молекула псилоцибина связывается с рецепторами 5-HT2A прямо на верхней «антенне» этого нейрона. Привычные прогнозы (приоры из Главы III) слабеют, и отдалённые зоны коры начинают перекликаться напрямую — волна становится ещё богаче (Ort et al., 2023; Siegel et al., Nature 2024).',
+      'Молекула псилоцибина связывается с рецепторами 5-HT2A прямо на верхней антенне этого нейрона. Привычные прогнозы (приоры) слабеют, и далёкие зоны коры начинают перекликаться напрямую (Ort et al., 2023; Siegel et al., Nature 2024).',
     accent: '#C84319',
   },
   {
     id: 'propofol',
     label: 'Пропофол (Наркоз)',
-    shortExplain: 'Главный препарат общего хирургического наркоза',
+    shortExplain: 'Общий хирургический наркоз',
     badge: 'ОБРЫВ КАНАЛА',
     complexityLabel: 'ТИШИНА · НЕТ СВЯЗНОСТИ',
     needleDown: false,
     shaftIntact: false,
-    headline: 'Ствол нейрона рвётся пополам — и плёнка обрывается посреди такта',
+    headline: 'Ствол нейрона рвётся пополам — плёнка обрывается посреди такта',
     description:
-      'Пропофол не «усыпляет» органы чувств — сигналы по-прежнему приходят в кору. Но препарат через тормозные ГАМК-рецепторы электрически перерезает середину ствола пирамидальной клетки (Suzuki & Larkum, Cell 2020): мир не «темнеет» — он мгновенно прекращается.',
+      'Пропофол не «усыпляет» органы чувств — сигналы по-прежнему приходят в кору. Но препарат через тормозные ГАМК-А рецепторы электрически перерезает середину ствола пирамидальной клетки (Suzuki & Larkum, Cell 2020): мир не «темнеет» — он мгновенно прекращается.',
     cinemaWhisper: 'Считайте вслух: 10… 9… 8… — и резкий обрыв в тишину прямо посреди ноты.',
     accent: '#FC4109',
   },
 ];
 
 /**
- * CHAPTER V: "Клеточный транзистор и тишина"
- * Upgraded v8:
- * 1. ZERO premature PCI* = 0.31 jargon (saved for Chapter VI reveal!)
- * 2. Plain-Russian 1-line substance passports + explicit Needle=World / Music=Experience bridge
- * 3. Direct click-to-audio engagement (clicking any mode activates Web Audio with prominent Mute toggle!)
- * 4. USER'S SIGNATURE IDEA: 2.2-second Sopranos Propofol Infusion ("10… 9… 8…" + live chord playing while GABA-A wave races down trunk -> 0.25s visible trunk rupture flash -> ABRUPT mid-note audio cut -> 1.55s Cut-to-Black!)
- * 5. Distinct Psilocybin cross-cortical hyperconnectivity arcs on the Cajal neuron!
- * 6. Smooth "Lights-Out" gradient bridge flowing directly into Dark Chapter VI!
+ * ACT IV · CHAPTER V: "Клеточный транзистор и тишина" (Bug #8 Fixes!):
+ * 1. ZERO background React re-renders! Removed `setPhaseTick` rAF loop completely —
+ *    all platter/spark/oscilloscope animation runs inside `useViewportRaf` mutating SVG refs directly (0% offscreen CPU!).
+ * 2. Added 5th crucial state: Deep Sleep (NREM) — bridges the gap between Wake, REM, and Propofol!
+ * 3. Muted-First Propofol drama works at 100% impact even with sound muted + crisp 6ms Web Audio cut when opt-in audio is ON.
+ * 4. Level-2 Archival Dossier trigger ("larkum-dendrites").
  */
 export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntableProps) {
   const { state, setTurntableMode } = useExplorer();
   const [soundEnabled, setSoundEnabled] = useState(false);
-  // Propofol 2.2s delayed infusion choreography: idle -> infusing (0..2.0s) -> snapping (2.0..2.25s) -> blackout -> settled
   const [infusionStage, setInfusionStage] = useState<'idle' | 'infusing' | 'snapping' | 'settled'>('idle');
   const [infusionCountdown, setInfusionCountdown] = useState<string>('10');
   const [infusionProgress, setInfusionProgress] = useState(0);
   const [cutBlackPhase, setCutBlackPhase] = useState<'none' | 'pure' | 'pulse'>('none');
-  const [phaseTick, setPhaseTick] = useState(0);
+
+  const stageSectionRef = useRef<HTMLElement | null>(null);
+  const platterRef = useRef<SVGGElement | null>(null);
+  const wavePathRef = useRef<SVGPathElement | null>(null);
+  const tuftPulseRef = useRef<SVGCircleElement | null>(null);
+  const psiloHaloRef = useRef<SVGCircleElement | null>(null);
+  const sparkRefs = useRef<Array<SVGCircleElement | null>>([]);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const oscNodesRef = useRef<{ oscs: OscillatorNode[]; gain: GainNode } | null>(null);
@@ -104,12 +124,98 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
 
   const mode = MODES.find((m) => m.id === state.turntableMode) ?? MODES[0];
 
-  // Visual state during Propofol 2.2s infusion: trunk stays INTACT & music PLAYS until t=2.0s, then SNAPS!
   const isPropofolInfusing = mode.id === 'propofol' && infusionStage === 'infusing';
   const isPropofolSnapping = mode.id === 'propofol' && infusionStage === 'snapping';
   const effectiveShaftIntact = mode.id === 'propofol' ? isPropofolInfusing : mode.shaftIntact;
   const effectiveNeedleDown = mode.id === 'propofol' ? isPropofolInfusing : mode.needleDown;
   const effectivePlatterSpinning = mode.id !== 'propofol' || isPropofolInfusing;
+
+  const animStateRef = useRef({
+    modeId: mode.id,
+    isPropofolInfusing,
+    effectiveShaftIntact,
+    effectivePlatterSpinning,
+  });
+  animStateRef.current = {
+    modeId: mode.id,
+    isPropofolInfusing,
+    effectiveShaftIntact,
+    effectivePlatterSpinning,
+  };
+
+  // Zero-Re-Render Sleeping Animation Loop (ONLY active while Chapter V is in viewport!)
+  const tickInstrument = useCallback((nowMs: number) => {
+    const { modeId, isPropofolInfusing: infusing, effectivePlatterSpinning: spinning } =
+      animStateRef.current;
+    const phase = nowMs * 0.0022;
+
+    // 1. Platter rotation (slows dramatically in NREM delta, freezes on Propofol)
+    if (platterRef.current) {
+      if (!spinning) {
+        platterRef.current.style.transform = 'rotate(0deg)';
+      } else {
+        const speed = modeId === 'nrem' ? 10 : modeId === 'psilocybin' ? 46 : 36;
+        platterRef.current.style.transform = `rotate(${((phase * speed) % 360).toFixed(1)}deg)`;
+      }
+    }
+
+    // 2. Action-potential sparks along Cajal apical trunk
+    const sparkSpeed = modeId === 'nrem' ? 0.16 : modeId === 'psilocybin' ? 0.65 : 0.45;
+    sparkRefs.current.forEach((dot, idx) => {
+      if (!dot) return;
+      const offset = idx * 0.34;
+      const cy = 110 + ((phase * sparkSpeed + offset) % 1) * 118;
+      dot.setAttribute('cy', cy.toFixed(1));
+    });
+
+    // 3. Apical tuft pulse & psilocybin halo
+    if (tuftPulseRef.current) {
+      const r = 22 + Math.sin(phase * (modeId === 'nrem' ? 1.2 : 3)) * 4;
+      tuftPulseRef.current.setAttribute('r', r.toFixed(1));
+    }
+    if (psiloHaloRef.current) {
+      const r = 34 + Math.sin(phase * 4) * 6;
+      psiloHaloRef.current.setAttribute('r', r.toFixed(1));
+    }
+
+    // 4. Live SVG Oscilloscope waveform (80 points, 0 React re-renders!)
+    if (wavePathRef.current) {
+      const pts: string[] = [];
+      const w = 320;
+      const mid = 34;
+      for (let i = 0; i <= 80; i += 1) {
+        const x = (i / 80) * w;
+        let y = mid;
+        if (modeId === 'propofol' && !infusing) {
+          y = mid + Math.sin(i * 0.14 + phase * 0.7) * 2.6;
+        } else if (modeId === 'nrem') {
+          // Huge slow stereotyped delta wave (~1 Hz unison bell!)
+          y = mid + Math.sin(i * 0.16 + phase * 1.1) * 20;
+        } else if (modeId === 'wake' || infusing) {
+          y =
+            mid +
+            Math.sin(i * 0.35 + phase * 3.2) * 14 +
+            Math.cos(i * 0.78 - phase * 2.1) * 7;
+        } else if (modeId === 'rem') {
+          y =
+            mid +
+            Math.sin(i * 0.42 + phase * 3.8) * 16 +
+            Math.sin(i * 1.05 + phase * 1.9) * 8;
+        } else {
+          // Psilocybin hyper-coherent multi-harmonic interference
+          y =
+            mid +
+            Math.sin(i * 0.5 + phase * 4.4) * 15 +
+            Math.cos(i * 1.25 - phase * 3.5) * 10 +
+            Math.sin(i * 2.1 + phase * 2.2) * 5;
+        }
+        pts.push(`${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`);
+      }
+      wavePathRef.current.setAttribute('d', pts.join(' '));
+    }
+  }, []);
+
+  useViewportRaf(stageSectionRef, tickInstrument, { enabled: true });
 
   const clearScheduledPropofol = () => {
     timersRef.current.forEach((id) => window.clearTimeout(id));
@@ -120,18 +226,7 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
     }
   };
 
-  // Smooth oscilloscope & neural spark loop
-  useEffect(() => {
-    let raf = 0;
-    const loop = (t: number) => {
-      setPhaseTick(t * 0.0022);
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
-  }, []);
-
-  // Clean up audio & timers on unmount
+  // Clean up audio & timers on unmount (including Act switch!)
   useEffect(() => {
     return () => {
       clearScheduledPropofol();
@@ -143,15 +238,16 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
             // ignore
           }
         });
+        oscNodesRef.current = null;
       }
       if (audioCtxRef.current) {
         audioCtxRef.current.close().catch(() => undefined);
+        audioCtxRef.current = null;
       }
     };
   }, []);
 
-  // Pure Web Audio API chord engine:
-  // Plays live harmonic chord on Wake / REM / Psilocybin AND during the 2.2s Propofol infusion countdown — then cuts DEAD mid-note (5ms anti-click) at rupture!
+  // Pure Web Audio API chord engine (strictly opt-in, 6ms anti-click Sopranos cutoff!)
   useEffect(() => {
     const hardCutAudio = () => {
       if (oscNodesRef.current) {
@@ -160,7 +256,7 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
         try {
           gain.gain.cancelScheduledValues(now);
           gain.gain.setValueAtTime(gain.gain.value, now);
-          gain.gain.linearRampToValueAtTime(0.0001, now + 0.006); // Razor-sharp 6ms Sopranos mid-beat cut!
+          gain.gain.linearRampToValueAtTime(0.0001, now + 0.006);
         } catch {
           // ignore
         }
@@ -195,17 +291,15 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
       }
     };
 
-    // Silence after Propofol snaps!
     if (!soundEnabled || (mode.id === 'propofol' && !isPropofolInfusing)) {
-      if (mode.id === 'propofol') {
-        hardCutAudio();
-      } else {
-        softStopAudio();
-      }
+      if (mode.id === 'propofol') hardCutAudio();
+      else softStopAudio();
       return;
     }
 
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const AudioCtx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!AudioCtx) return;
 
     if (!audioCtxRef.current) {
@@ -218,20 +312,21 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
     softStopAudio();
 
     const gain = ctx.createGain();
-    gain.gain.value = 0.032;
+    gain.gain.value = mode.id === 'nrem' ? 0.025 : 0.032;
     gain.connect(ctx.destination);
 
-    // Rich recognizable harmonic profiles per state (Propofol infusion starts on warm live waking chord before sudden cutoff!)
     const freqs =
       mode.id === 'wake' || isPropofolInfusing
-        ? [220, 277.18, 329.63] // Warm A-major live chord
-        : mode.id === 'rem'
-          ? [246.94, 369.99, 493.88] // Dreamy open fifth shimmer even with tonearm lifted!
-          : [220, 277.18, 329.63, 415.3, 493.88]; // Rich hyper-connected psilocybin maj9 chord
+        ? [220, 277.18, 329.63]
+        : mode.id === 'nrem'
+          ? [110, 110.6] // Deep slow unison hum
+          : mode.id === 'rem'
+            ? [246.94, 369.99, 493.88]
+            : [220, 277.18, 329.63, 415.3, 493.88];
 
     const oscs = freqs.map((f, idx) => {
       const osc = ctx.createOscillator();
-      osc.type = mode.id === 'rem' ? 'sine' : idx % 2 === 0 ? 'sine' : 'triangle';
+      osc.type = mode.id === 'rem' || mode.id === 'nrem' ? 'sine' : idx % 2 === 0 ? 'sine' : 'triangle';
       osc.frequency.value = f;
       osc.connect(gain);
       osc.start();
@@ -246,12 +341,9 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
     clearScheduledPropofol();
     setCutBlackPhase('none');
     setInfusionProgress(0);
-
-    // Strictly opt-in audio per GEMINI.md guardrail #3 (silent by default until user clicks "♪ Включить звук")
     setTurntableMode(nextMode);
 
     if (nextMode === 'propofol') {
-      // USER'S SIGNATURE IDEA: 2.0s live sound & GABA-A countdown ("10... 9... 8...") -> 0.25s visible rupture flash -> abrupt Sopranos Cut-to-Black!
       setInfusionStage('infusing');
       setInfusionCountdown('10');
 
@@ -271,12 +363,10 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
       };
       infusionRafRef.current = requestAnimationFrame(animateInfusion);
 
-      // t = 2.00s: Visible crimson rupture flash snaps the Cajal shaft & cuts sound DEAD mid-note!
       const tSnap = window.setTimeout(() => {
         setInfusionStage('snapping');
       }, 2000);
 
-      // t = 2.26s: Hard Sopranos Cut-to-Black (1.55s total, telemetry pulse at 0.55s so user knows it's deliberate art!)
       const tBlack = window.setTimeout(() => {
         setCutBlackPhase('pure');
       }, 2260);
@@ -294,53 +384,17 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
     }
   };
 
-  const handleToggleSound = () => {
-    setSoundEnabled((prev) => !prev);
-  };
-
-  // Generate live SVG oscilloscope waveform path
-  const wavePath = (() => {
-    const pts: string[] = [];
-    const w = 320;
-    const mid = 34;
-    for (let i = 0; i <= 80; i += 1) {
-      const x = (i / 80) * w;
-      let y = mid;
-      if (mode.id === 'propofol' && !isPropofolInfusing) {
-        y = mid + Math.sin(i * 0.14 + phaseTick * 0.8) * 3.2; // Flat stereotyped slow wave
-      } else if (mode.id === 'wake' || isPropofolInfusing) {
-        y =
-          mid +
-          Math.sin(i * 0.35 + phaseTick * 3.2) * 14 +
-          Math.cos(i * 0.78 - phaseTick * 2.1) * 7;
-      } else if (mode.id === 'rem') {
-        y =
-          mid +
-          Math.sin(i * 0.42 + phaseTick * 3.8) * 16 +
-          Math.sin(i * 1.05 + phaseTick * 1.9) * 8;
-      } else {
-        // Psilocybin hyper-coherent multi-harmonic interference
-        y =
-          mid +
-          Math.sin(i * 0.5 + phaseTick * 4.4) * 15 +
-          Math.cos(i * 1.25 - phaseTick * 3.5) * 10 +
-          Math.sin(i * 2.1 + phaseTick * 2.2) * 5;
-      }
-      pts.push(`${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`);
-    }
-    return pts.join(' ');
-  })();
-
   const tonearmRotation = effectiveNeedleDown ? 17 : -9;
   const activeAccent = isPropofolInfusing ? '#004EDF' : mode.accent;
 
   return (
     <section
       id="ch-5"
+      ref={stageSectionRef}
       className="relative bg-[#FAF9F5] text-[#141413] pt-24 pb-0 md:pt-28"
       aria-label="Глава V — Клеточный транзистор и тишина"
     >
-      {/* FULL-SCREEN HARD CUT-TO-BLACK (SOPRANOS PROPOFOL EFFECT + 0.55s ANTI-CRASH TELEMETRY PULSE!) */}
+      {/* FULL-SCREEN HARD CUT-TO-BLACK (Muted-First dramatic choreography!) */}
       {cutBlackPhase !== 'none' && (
         <div
           className="fixed inset-0 z-[100] bg-[#060709] flex items-end justify-end p-8 pointer-events-auto"
@@ -358,7 +412,7 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
       <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20">
         {/* Folio Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#141413]/12 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
-          <span className="text-[#FC4109] font-semibold">ЧАСТЬ II · ПОД ЧЕРЕПОМ · ГЛАВА V</span>
+          <span className="text-[#FC4109] font-semibold">АКТ IV · ПОД ЧЕРЕПОМ · ГЛАВА V</span>
           <span>КЛЕТОЧНЫЙ ТРАНЗИСТОР · ×1000 · стр. 70</span>
         </div>
 
@@ -367,33 +421,36 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
           <div className="lg:col-span-7">
             <h2 className="text-[clamp(32px,4.5vw,58px)] leading-[1.06] tracking-[-0.03em]">
               <span className="font-display font-bold block">Выключатель сознания</span>
-              <span className="font-serif-editorial italic font-normal text-[#30302E] block mt-1">
+              <span className="font-serif-display italic font-normal text-[#30302E] block mt-1">
                 внутри одной-единственной клетки.
               </span>
             </h2>
           </div>
           <div className="lg:col-span-5 text-[15.5px] leading-[1.62] text-[#353431]">
             <p>
-              Нейробиолог Мэтью Ларкум открыл поразительный клеточный переключатель: у{' '}
+              {ruTypo(
+                'Нейробиолог Мэтью Ларкум открыл поразительный клеточный переключатель: у ',
+              )}
               <strong className="font-semibold text-[#141413]">пирамидального нейрона 5-го слоя</strong> две антенны. Нижняя слушает сырой мир, а верхняя — те самые{' '}
-              <em>внутренние прогнозы из Главы III</em>. Пока ствол между ними цел — сознание горит.
+              <em>внутренние прогнозы из Акта III</em>. Пока ствол между ними цел — сознание горит.
             </p>
           </div>
         </div>
 
-        {/* EXPLICIT 1-LINE KEY CONNECTING LEFT (NEURON) & RIGHT (TURNTABLE) + UNAMBIGUOUS OPT-IN AUDIO BUTTON */}
+        {/* Explicit 1-Line Key + Strictly Opt-In Audio Button */}
         <div className="mt-8 rounded-xl bg-[#F3F1E9] border border-[#141413]/12 px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="text-[13.5px] text-[#2F2E2B] flex-1 min-w-0">
-            <strong className="text-[#141413]">Как читать прибор:</strong>{' '}
+          <div className="text-[13.5px] text-[#2F2E2B] flex-1 min-w-0 flex flex-wrap items-center gap-2">
+            <LabHonestyBadge badge="reconstruction" />
             <span>
-              <strong className="text-[#004EDF]">игла на диске</strong> = нижняя антенна (вход внешнего мира), а{' '}
-              <strong className="text-[#FC4109]">мелодия и волна</strong> = само внутреннее переживание. Чтобы услышать обрыв наркоза ушами, включите синтезатор справа (по умолчанию без звука).
+              <strong className="text-[#141413]">Как читать прибор:</strong>{' '}
+              <strong className="text-[#004EDF]">игла на диске</strong> = нижняя антенна (вход мира), а{' '}
+              <strong className="text-[#FC4109]">волна на осциллографе</strong> = внутренний опыт. Всё наглядно работает и без звука; при желании включите синтезатор справа.
             </span>
           </div>
 
           <button
             type="button"
-            onClick={handleToggleSound}
+            onClick={() => setSoundEnabled((prev) => !prev)}
             className={`v6-pill h-9 px-4 rounded-full border font-mono-tech text-[10.5px] uppercase tracking-[0.08em] inline-flex items-center gap-2 shrink-0 cursor-pointer ${
               soundEnabled
                 ? 'bg-[#141413] text-[#FAF9F5] border-[#141413]'
@@ -405,8 +462,8 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
           </button>
         </div>
 
-        {/* 4 CLEAR MODE CARDS WITH HUMAN-READABLE 1-LINE PASSPORTS (ZERO premature PCI* numbers!) */}
-        <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+        {/* 5 CLEAR MODE CARDS (Now includes Deep Sleep NREM!) */}
+        <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
           {MODES.map((m) => {
             const active = m.id === mode.id;
             return (
@@ -414,7 +471,7 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
                 key={m.id}
                 type="button"
                 onClick={() => handleSelectMode(m.id)}
-                className={`v6-pill text-left px-4 py-3 rounded-xl border cursor-pointer transition-all ${
+                className={`v6-pill text-left px-3.5 py-3 rounded-xl border cursor-pointer transition-all ${
                   active
                     ? m.id === 'propofol'
                       ? 'bg-[#FC4109] text-[#FAF9F5] border-[#FC4109] shadow-[0_10px_28px_rgba(252,65,9,0.28)]'
@@ -422,18 +479,18 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
                     : 'bg-[#F3F1E9] hover:bg-[#E9E6DC] text-[#141413] border-[#141413]/14'
                 }`}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-display font-bold text-[14px]">{m.label}</span>
-                  <span
-                    className={`font-mono-tech text-[9.5px] uppercase tracking-wider ${
-                      active ? 'opacity-90' : 'text-[#5E5D59]'
-                    }`}
-                  >
-                    {m.badge}
-                  </span>
+                <div className="flex items-center justify-between gap-1.5">
+                  <span className="font-display font-bold text-[13.5px] leading-tight">{m.label}</span>
                 </div>
                 <div
-                  className={`text-[12px] leading-snug mt-1 ${
+                  className={`font-mono-tech text-[9px] uppercase tracking-wider mt-1 ${
+                    active ? 'opacity-90' : 'text-[#FC4109]'
+                  }`}
+                >
+                  {m.badge}
+                </div>
+                <div
+                  className={`text-[11.5px] leading-snug mt-1 ${
                     active ? 'text-[#FAF9F5]/82' : 'text-[#5E5D59]'
                   }`}
                 >
@@ -444,7 +501,7 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
           })}
         </div>
 
-        {/* LIVE PROPOFOL 2.2s INFUSION COUNTDOWN BANNER ("10... 9... 8...") */}
+        {/* LIVE PROPOFOL 2.2s INFUSION COUNTDOWN BANNER (Muted-First Drama!) */}
         {(isPropofolInfusing || isPropofolSnapping) && (
           <div className="mt-4 rounded-xl bg-[#141413] text-[#FAF9F5] border border-[#FC4109]/50 px-5 py-3 flex flex-wrap items-center justify-between gap-4 animate-[fadeScaleIn_180ms_ease]">
             <div className="flex items-center gap-3 font-mono-tech text-[11.5px] uppercase tracking-[0.12em]">
@@ -464,24 +521,29 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
           </div>
         )}
 
-        {/* UNIFIED 2-FOCUS SWISS INSTRUMENT SPREAD: LEFT = CAJAL NEURON · RIGHT = DIETER RAMS TURNTABLE */}
+        {/* UNIFIED 2-FOCUS SWISS INSTRUMENT SPREAD */}
         <div className="mt-5 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-          {/* LEFT PAGE (6 cols): Santiago Ramon y Cajal Vector-Ink Layer-5 Pyramidal Neuron */}
+          {/* LEFT PAGE: Cajal Pyramidal Neuron */}
           <div className="lg:col-span-6 rounded-2xl border border-[#141413]/14 bg-[#F5F3EC] p-6 flex flex-col justify-between">
-            <div className="flex items-center justify-between font-mono-tech text-[10.5px] uppercase tracking-[0.12em] text-[#5E5D59]">
-              <span>РИС. V.1 · ПИРАМИДАЛЬНЫЙ НЕЙРОН (СЛОЙ V)</span>
-              <span className={effectiveShaftIntact ? 'text-[#0D7A5F] font-semibold' : 'text-[#FC4109] font-semibold'}>
+            <div className="flex items-center justify-between gap-2 font-mono-tech text-[10px] uppercase tracking-[0.11em] text-[#5E5D59]">
+              <span className="whitespace-nowrap">РИС. V.1 · НЕЙРОН СЛОЯ V</span>
+              <span
+                className={`whitespace-nowrap ${
+                  effectiveShaftIntact ? 'text-[#0D7A5F] font-semibold' : 'text-[#FC4109] font-semibold'
+                }`}
+              >
                 {isPropofolInfusing
-                  ? '● АНЕСТЕТИК ИДЁТ К СТВОЛУ…'
-                  : effectiveShaftIntact
-                    ? '● СТВОЛ СВЯЗАН'
-                    : '✕ СТВОЛ РАЗОРВАН'}
+                  ? '● АНЕСТЕТИК ИДЁТ…'
+                  : mode.id === 'nrem'
+                    ? '● УНИСОН 1 ГЦ'
+                    : effectiveShaftIntact
+                      ? '● СТВОЛ СВЯЗАН'
+                      : '✕ РАЗРЫВ СТВОЛА'}
               </span>
             </div>
 
             <div className="my-4 relative">
               <svg viewBox="0 0 420 350" className="w-full h-[300px] md:h-[325px] block">
-                {/* Cortical layer hairlines (Layers I - V) */}
                 <line x1="12" y1="96" x2="408" y2="96" stroke="rgba(20,20,19,0.10)" strokeDasharray="3 4" />
                 <line x1="12" y1="226" x2="408" y2="226" stroke="rgba(20,20,19,0.10)" strokeDasharray="3 4" />
 
@@ -489,7 +551,7 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
                   СЛОЙ I · ВЕРХНЯЯ АНТЕННА
                 </text>
                 <text x="14" y="52" fill="#004EDF" fontSize="11.5" fontWeight="600" fontFamily="JetBrains Mono Variable, monospace">
-                  ПРОГНОЗЫ МОЗГА (ГЛ. III)
+                  ПРОГНОЗЫ МОЗГА (АКТ III)
                 </text>
 
                 <text x="14" y="286" fill="#5E5D59" fontSize="11" fontFamily="JetBrains Mono Variable, monospace">
@@ -506,17 +568,15 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
                   {effectiveNeedleDown ? 'СЫРОЙ СИГНАЛ МИРА (ВКЛ)' : 'ВНЕШНИЙ МИР ОТКЛЮЧЁН'}
                 </text>
 
-                {/* Psilocybin 5-HT2A Cross-Cortical Hyperconnectivity Arcs (visually distinct from Wake!) */}
                 {mode.id === 'psilocybin' && (
                   <g fill="none" stroke="#C84319" strokeDasharray="4 4" opacity="0.62">
                     <path d="M 212 24 C 248 2, 336 2, 372 22" strokeWidth="1.4" />
                     <path d="M 206 54 C 244 82, 326 82, 366 56" strokeWidth="1.3" />
                     <path d="M 234 123 C 266 104, 310 104, 342 139" strokeWidth="1.15" />
-                    <circle cx="284" cy="52" r={34 + Math.sin(phaseTick * 4) * 6} strokeWidth="1.2" opacity="0.45" />
+                    <circle ref={psiloHaloRef} cx="284" cy="52" r="34" strokeWidth="1.2" opacity="0.45" />
                   </g>
                 )}
 
-                {/* Expressive Cajal Botanical-Ink Apical Tuft */}
                 <g
                   stroke={!effectiveShaftIntact ? '#8E8B83' : '#141413'}
                   strokeLinecap="round"
@@ -553,7 +613,6 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
                   ))}
                 </g>
 
-                {/* Central Apical Coupling Shaft */}
                 {effectiveShaftIntact ? (
                   <g>
                     <path
@@ -563,22 +622,19 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
                       strokeWidth="3.2"
                       strokeLinecap="round"
                     />
-                    {/* Live action-potential sparks racing along intact Ca2+ trunk */}
-                    {[0, 0.34, 0.68].map((offset) => {
-                      const t = (phaseTick * 0.45 + offset) % 1;
-                      const cy = 110 + t * 118;
-                      return (
-                        <circle
-                          key={offset}
-                          cx="284"
-                          cy={cy}
-                          r={mode.id === 'psilocybin' ? 5.2 : 4}
-                          fill={activeAccent}
-                          opacity={0.92}
-                        />
-                      );
-                    })}
-                    {/* Incoming crimson GABA-A Propofol ring sliding down to the Ca2+ junction during the 2.0s countdown! */}
+                    {[0, 1, 2].map((idx) => (
+                      <circle
+                        key={idx}
+                        ref={(el) => {
+                          sparkRefs.current[idx] = el;
+                        }}
+                        cx="284"
+                        cy={115 + idx * 40}
+                        r={mode.id === 'psilocybin' ? 5.2 : 4}
+                        fill={activeAccent}
+                        opacity={0.92}
+                      />
+                    ))}
                     {isPropofolInfusing && (
                       <g>
                         <circle
@@ -605,7 +661,6 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
                     )}
                   </g>
                 ) : (
-                  /* BROKEN COUPLING SHAFT UNDER PROPOFOL ANESTHESIA! */
                   <g>
                     <path d="M 284 106 C 283 122, 284 136, 284 150" fill="none" stroke="#8E8B83" strokeWidth="2.8" strokeLinecap="round" />
                     <path d="M 284 196 C 285 210, 284 222, 284 232" fill="none" stroke="#8E8B83" strokeWidth="2.8" strokeLinecap="round" />
@@ -626,7 +681,6 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
                   </g>
                 )}
 
-                {/* Organic Cajal Pyramidal Soma */}
                 <path
                   d="M 284 224 C 291 242, 299 258, 309 274 C 292 278, 276 278, 259 274 C 269 258, 277 242, 284 224 Z"
                   fill={effectiveShaftIntact ? activeAccent : '#8E8B83'}
@@ -637,7 +691,6 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
                 />
                 <circle cx="284" cy="259" r="5.5" fill="none" stroke="#141413" strokeWidth="1" opacity="0.45" />
 
-                {/* Basal Dendrites & Axon */}
                 <g stroke={effectiveNeedleDown ? '#141413' : '#9E9B93'} strokeLinecap="round" fill="none">
                   <path d="M 264 273 C 246 282, 232 292, 206 312" strokeWidth="1.8" />
                   <path d="M 244 285 C 228 286, 214 290, 200 286" strokeWidth="1.2" />
@@ -654,9 +707,10 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
 
                 {effectiveShaftIntact && (
                   <circle
+                    ref={tuftPulseRef}
                     cx="284"
                     cy="50"
-                    r={22 + Math.sin(phaseTick * 3) * 4}
+                    r="22"
                     fill="none"
                     stroke={activeAccent}
                     strokeWidth="1.4"
@@ -666,31 +720,31 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
               </svg>
             </div>
 
-            <div className="pt-3 border-t border-[#141413]/10 flex items-center justify-between font-mono-tech text-[10.5px] text-[#5E5D59]">
-              <span>Suzuki & Larkum · Cell (2020)</span>
+            <div className="pt-3 border-t border-[#141413]/10 flex flex-wrap items-center justify-between gap-2 font-mono-tech text-[10.5px] text-[#5E5D59]">
+              <span>Suzuki &amp; Larkum · Cell (2020)</span>
               <span>Стиль туши: С. Рамон-и-Кахаль</span>
             </div>
           </div>
 
-          {/* RIGHT PAGE (6 cols): Minimalist Dieter Rams (Braun) Laboratory Turntable-Oscilloscope */}
+          {/* RIGHT PAGE: Dieter Rams Laboratory Turntable-Oscilloscope */}
           <div className="lg:col-span-6 rounded-2xl border border-[#141413]/14 bg-[#EFECE3] p-6 flex flex-col justify-between">
-            <div className="flex items-center justify-between font-mono-tech text-[10.5px] uppercase tracking-[0.12em] text-[#5E5D59]">
-              <span>ПРИБОР V.2 · ОСЦИЛЛОГРАФ DIETER RAMS</span>
-              <span className="font-semibold" style={{ color: activeAccent }}>
+            <div className="flex items-center justify-between gap-2 font-mono-tech text-[10px] uppercase tracking-[0.11em] text-[#5E5D59]">
+              <span className="whitespace-nowrap">ПРИБОР V.2 · DIETER RAMS</span>
+              <span className="font-semibold whitespace-nowrap" style={{ color: activeAccent }}>
                 {isPropofolInfusing ? 'ИНФУЗИЯ · 10… 9… 8…' : mode.complexityLabel}
               </span>
             </div>
 
-            {/* Dieter Rams Turntable Platter + Articulated Graphite Tonearm */}
             <div className="my-4 grid grid-cols-1 sm:grid-cols-12 gap-5 items-center">
               <div className="sm:col-span-6 flex items-center justify-center">
                 <svg viewBox="0 0 240 220" className="w-56 h-52 block overflow-visible">
                   <rect x="10" y="10" width="220" height="200" rx="16" fill="#FAF9F5" stroke="#141413" strokeWidth="1.2" strokeOpacity="0.16" />
 
                   <g
+                    ref={platterRef}
                     style={{
                       transformOrigin: '102px 98px',
-                      transform: effectivePlatterSpinning ? `rotate(${(phaseTick * 36) % 360}deg)` : 'rotate(0deg)',
+                      transform: 'rotate(0deg)',
                     }}
                   >
                     <circle cx="102" cy="98" r="66" fill="#1C1C1B" />
@@ -731,31 +785,36 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
                 </div>
 
                 <h3 className="font-display font-bold text-[19px] leading-snug text-[#141413]">
-                  {mode.headline}
+                  {ruTypo(mode.headline)}
                 </h3>
 
-                <p className="text-[13.5px] leading-[1.58] text-[#3B3A37]">{mode.description}</p>
+                <p className="text-[13.5px] leading-[1.58] text-[#3B3A37]">{ruTypo(mode.description)}</p>
 
                 {mode.cinemaWhisper && (
                   <p className="font-serif-editorial italic text-[13.5px] leading-[1.5] text-[#141413] pl-3 border-l-2 border-[#FC4109]">
-                    {mode.cinemaWhisper}
+                    {ruTypo(mode.cinemaWhisper)}
                   </p>
                 )}
               </div>
             </div>
 
-            {/* Live Oscilloscope Strip — plain Russian, zero premature PCI* numbers! */}
+            {/* Live Oscilloscope Strip (Zero React Re-Renders!) */}
             <div className="rounded-xl bg-[#FAF9F5] border border-[#141413]/12 px-4 py-3">
               <div className="flex items-center justify-between font-mono-tech text-[10px] uppercase tracking-[0.11em] text-[#5E5D59] mb-1">
                 <span>СИГНАЛ КОРЫ · СЛОЖНОСТЬ ВОЛНЫ</span>
                 <span style={{ color: activeAccent }} className="font-semibold">
-                  {effectiveShaftIntact ? 'СОЗНАНИЕ ГОРИТ (БОГАТАЯ ВОЛНА)' : 'ТИШИНА · ВОЛНА СХЛОПНУЛАСЬ'}
+                  {mode.id === 'nrem'
+                    ? 'МЕДЛЕННЫЙ КОЛОКОЛ (БЕЗ СНОВ)'
+                    : effectiveShaftIntact
+                      ? 'СОЗНАНИЕ ГОРИТ (БОГАТАЯ ВОЛНА)'
+                      : 'ТИШИНА · ВОЛНА СХЛОПНУЛАСЬ'}
                 </span>
               </div>
               <svg viewBox="0 0 320 68" className="w-full h-14 block">
                 <line x1="0" y1="34" x2="320" y2="34" stroke="rgba(20,20,19,0.08)" strokeDasharray="3 3" />
                 <path
-                  d={wavePath}
+                  ref={wavePathRef}
+                  d="M 0 34 L 320 34"
                   fill="none"
                   stroke={activeAccent}
                   strokeWidth="2.1"
@@ -765,18 +824,29 @@ export function Chapter5CajalTurntable({ onNextChapter }: Chapter5CajalTurntable
             </div>
           </div>
         </div>
+
+        {/* Archival Dossier Trigger below spread */}
+        <div className="mt-6 flex justify-end">
+          <DossierTrigger
+            dossier="larkum-dendrites"
+            label="Как общие анестетики обрывают кальциевый спайк (Suzuki & Larkum, Cell 2020)"
+            meta="Архивное досье IV.2 · Уровень 2"
+          />
+        </div>
       </div>
 
-      {/* SMOOTH "LIGHTS-OUT" ATMOSPHERIC TRANSITION BRIDGE (#FAF9F5 -> #111419) INTO DARK CHAPTER VI! */}
+      {/* SMOOTH "LIGHTS-OUT" ATMOSPHERIC TRANSITION BRIDGE INTO DARK CHAPTER VI */}
       <div
-        className="mt-16 pt-14 pb-16 px-5 md:px-12 lg:px-20"
+        className="mt-14 pt-14 pb-16 px-5 md:px-12 lg:px-20"
         style={{
           background: 'linear-gradient(180deg, #FAF9F5 0%, #DFDDD5 28%, #282C34 72%, #111419 100%)',
         }}
       >
         <div className="max-w-[1240px] mx-auto pt-8 flex flex-wrap items-center justify-between gap-6">
           <p className="font-serif-editorial italic text-[17.5px] leading-[1.55] text-[#E3E7EF] max-w-2xl">
-            Вы только что видели, как сознание может ярко гореть внутри парализованного тела (как в REM-сне с поднятой иглой). Как врачу в реанимации услышать этот тихий свет у пациента в коме?
+            {ruTypo(
+              'Вы только что видели, как сознание может ярко гореть внутри парализованного тела (как в REM-сне с поднятой иглой). Как врачу в реанимации услышать этот тихий свет у пациента в коме?',
+            )}
           </p>
           <button
             type="button"
