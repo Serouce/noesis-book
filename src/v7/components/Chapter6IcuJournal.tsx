@@ -5,6 +5,7 @@ import { CheckCircle2, FileArchive, Lock, XCircle, Zap } from 'lucide-react';
 import { ICU_TRUTH, useExplorer, type IcuVerdict } from '../context/ExplorerContext';
 import { DossierTrigger } from '../../v9/components/NoesisDossierSheet';
 import { LabHonestyBadge } from '../../v9/components/NoesisInstrumentFrame';
+import { NoesisBrain3D } from '../../v9/three/NoesisBrain3D';
 import { ruTypo } from '../../v9/utils/ruTypo';
 
 interface Chapter6IcuJournalProps {
@@ -470,77 +471,16 @@ export function Chapter6IcuJournal({
               <p className="text-[13px] leading-[1.52] text-[#A8B2C1]">{ruTypo(patient.clinicalChart)}</p>
             </div>
 
-            {/* 10-20 Top-Down Montage (Bug #9 Fix: uniform ring alpha — ZERO answer leak!) */}
-            <div className="relative mx-auto w-44 h-48 flex flex-col items-center justify-center">
-              <svg viewBox="0 0 220 220" className="w-44 h-44 block">
-                <path d="M 102 14 L 110 4 L 118 14" fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth="1.2" />
-                <path
-                  d="M 107 20 C 66 22, 34 58, 34 110 C 34 162, 64 198, 107 200 Z"
-                  fill="rgba(255,255,255,0.035)"
-                  stroke="rgba(255,255,255,0.22)"
-                  strokeWidth="1.2"
-                />
-                <path
-                  d="M 113 20 C 154 22, 186 58, 186 110 C 186 162, 156 198, 113 200 Z"
-                  fill="rgba(255,255,255,0.035)"
-                  stroke="rgba(255,255,255,0.22)"
-                  strokeWidth="1.2"
-                />
-
-                {isZapped &&
-                  [0.32, 0.62, 0.94].map((ringRatio, i) => {
-                    const r = 10 + sweepProgress * 84 * patient.spread * ringRatio;
-                    const alpha = Math.max(0, (1 - sweepProgress * 0.72) * 0.66);
-                    return (
-                      <circle
-                        key={i}
-                        cx="110"
-                        cy="152"
-                        r={r}
-                        fill="none"
-                        stroke={activeWaveColor}
-                        strokeWidth={i === 0 ? 2.2 : 1.3}
-                        opacity={alpha}
-                      />
-                    );
-                  })}
-
-                {[
-                  { x: 110, y: 152, delay: 0.0, lbl: 'Pz', dx: 11, dy: 3, anchor: 'start' as const, isZap: true },
-                  { x: 110, y: 108, delay: 0.24, lbl: 'Cz', dx: 10, dy: 3, anchor: 'start' as const, isZap: false },
-                  { x: 82, y: 180, delay: 0.28, lbl: 'O1', dx: -9, dy: 3, anchor: 'end' as const, isZap: false },
-                  { x: 56, y: 112, delay: 0.42, lbl: 'T3', dx: -9, dy: 3, anchor: 'end' as const, isZap: false },
-                  { x: 164, y: 112, delay: 0.44, lbl: 'T4', dx: 9, dy: 3, anchor: 'start' as const, isZap: false },
-                  { x: 152, y: 72, delay: 0.56, lbl: 'F4', dx: 9, dy: 3, anchor: 'start' as const, isZap: false },
-                  { x: 110, y: 56, delay: 0.66, lbl: 'Fz', dx: 10, dy: 3, anchor: 'start' as const, isZap: false },
-                ].map((node) => {
-                  const reached =
-                    isZapped && sweepProgress >= node.delay && (node.isZap || patient.spread > node.delay * 0.92);
-                  return (
-                    <g key={node.lbl}>
-                      <circle
-                        cx={node.x}
-                        cy={node.y}
-                        r={node.isZap ? 5.5 : 3.8}
-                        fill={node.isZap ? '#FC4109' : reached ? activeWaveColor : '#343D4D'}
-                      />
-                      <text
-                        x={node.x + node.dx}
-                        y={node.y + node.dy}
-                        textAnchor={node.anchor}
-                        fill={node.isZap ? '#FF9B7D' : 'rgba(255,255,255,0.55)'}
-                        fontSize="8.5"
-                        fontFamily="JetBrains Mono Variable, monospace"
-                      >
-                        {node.lbl}
-                      </text>
-                    </g>
-                  );
-                })}
-              </svg>
-              <span className="font-mono-tech text-[9.5px] uppercase tracking-[0.1em] text-[#7D8796]">
-                Вид сверху · нос вверху · датчики ЭЭГ
-              </span>
+            {/* Real Darkroom 3D MRI Brain (TMS-EEG PCI* cortical propagation wave from Pz!) */}
+            <div className="relative w-full h-[210px] rounded-xl overflow-hidden bg-[#0E1117] border border-[#FAF9F5]/10">
+              <NoesisBrain3D
+                mode="tms"
+                dark
+                focusMode={patient.spread > 0.5 ? 1 : 0}
+                pulseKey={isZapped ? pulseKey + (patient.id === 'p1' ? 10 : patient.id === 'p2' ? 20 : 30) : 0}
+                className="w-full h-full"
+                caption="3D МРТ · Точка удара Pz · Отклик коры"
+              />
             </div>
 
             <button

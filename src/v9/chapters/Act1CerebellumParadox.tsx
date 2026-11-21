@@ -1,268 +1,32 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Zap, RotateCcw } from 'lucide-react';
 import { useExplorer } from '../../v7/context/ExplorerContext';
 import { NoesisInstrumentFrame } from '../components/NoesisInstrumentFrame';
-import { useViewportRaf } from '../hooks/useViewportRaf';
-import {
-  drawOpticalSpikeDot,
-  drawSwissGrid,
-  releaseCanvasMemory,
-  resizeHiDpiCanvas,
-} from '../canvas/noesisCanvasKit';
+import { NoesisBrain3D } from '../three/NoesisBrain3D';
 import { ruTypo } from '../utils/ruTypo';
 
-interface PulseParticle {
-  t: number; // 0..1+
-  lane: number;
-}
-
-interface CorticalEdge {
-  from: number;
-  to: number;
-}
-
-// 14 cortical rich-club hubs with dense recurrent loops (right canvas)
-const CORTEX_NODES: Array<{ x: number; y: number }> = [
-  { x: 0.16, y: 0.25 },
-  { x: 0.36, y: 0.18 },
-  { x: 0.58, y: 0.22 },
-  { x: 0.82, y: 0.24 },
-  { x: 0.22, y: 0.52 },
-  { x: 0.46, y: 0.44 },
-  { x: 0.68, y: 0.48 },
-  { x: 0.86, y: 0.56 },
-  { x: 0.18, y: 0.78 },
-  { x: 0.40, y: 0.74 },
-  { x: 0.62, y: 0.78 },
-  { x: 0.80, y: 0.82 },
-];
-
-const CORTEX_EDGES: CorticalEdge[] = [
-  { from: 0, to: 1 },
-  { from: 1, to: 2 },
-  { from: 2, to: 3 },
-  { from: 0, to: 4 },
-  { from: 4, to: 5 },
-  { from: 5, to: 6 },
-  { from: 6, to: 7 },
-  { from: 4, to: 8 },
-  { from: 8, to: 9 },
-  { from: 9, to: 10 },
-  { from: 10, to: 11 },
-  // Recurrent feedback & long-range cross-cortical loops!
-  { from: 1, to: 5 },
-  { from: 5, to: 2 },
-  { from: 2, to: 6 },
-  { from: 6, to: 3 },
-  { from: 5, to: 9 },
-  { from: 9, to: 6 },
-  { from: 6, to: 10 },
-  { from: 10, to: 7 },
-  { from: 7, to: 2 },
-  { from: 11, to: 5 },
-  { from: 9, to: 0 },
-];
-
 /**
- * ACT I · CHAPTER 01: "Парадокс 69 миллиардов"
- * - Opens with Leibniz's Mill (1714) -> Cerebellum (69B) vs Cortex (16B) paradox (Azevedo 2009; Yu et al., Brain 2014).
- * - Local analog physics (-70 -> +30 mV, zero von Neumann bus cliché, zero premature 6 cortical layers!).
- * - Instrument 01: Side-by-side live Canvas 2D impulse comparator (feed-forward modular lanes vs recurrent cortical web).
+ * ACT I · CHAPTER I.1: "Парадокс 69 миллиардов" (NOESIS v9.2 Real 3D MRI Upgrade)
+ * - Replaces squished 2D canvas with real FreeSurfer fsaverage5 + SUIT MNI152 3D MRI Brain!
+ * - Interactive "Обратные петли коры: 0% -> 100%" slider lets reader physically reveal internal recurrent tracts & adjust cortical reverberation!
+ * - Scientifically accurate: Cerebellum has parallel modular fibers without global recurrent cross-module loops (Azevedo 2009; Yu et al., Brain 2014).
  */
 export function Act1CerebellumParadox() {
   const { state, setCerebellumTested } = useExplorer();
   const [pulseCount, setPulseCount] = useState(0);
-  const [phaseReadout, setPhaseReadout] = useState<'idle' | 'active' | 'settled'>('idle');
-
-  const stageRef = useRef<HTMLDivElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const pulseStartRef = useRef<number | null>(null);
-  const lanesRef = useRef<PulseParticle[]>([]);
+  const [feedbackPct, setFeedbackPct] = useState(82);
 
   const fireImpulse = () => {
-    pulseStartRef.current = performance.now();
-    lanesRef.current = Array.from({ length: 7 }, (_, i) => ({ t: 0, lane: i }));
     setPulseCount((c) => c + 1);
-    setPhaseReadout('active');
     setCerebellumTested(true);
   };
 
   const resetSim = () => {
-    pulseStartRef.current = null;
-    lanesRef.current = [];
-    setPhaseReadout('idle');
+    setPulseCount(0);
+    setFeedbackPct(82);
   };
 
-  const drawFrame = useCallback((nowMs: number) => {
-    const canvas = canvasRef.current;
-    const box = stageRef.current;
-    if (!canvas || !box) return;
-
-    const { ctx, width, height } = resizeHiDpiCanvas(canvas, box.clientWidth, box.clientHeight);
-    if (!ctx) return;
-
-    ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = '#FAF9F5';
-    ctx.fillRect(0, 0, width, height);
-    drawSwissGrid(ctx, width, height, 28, false);
-
-    const isNarrow = width < 560;
-    const halfW = isNarrow ? width : width / 2;
-    const panelH = isNarrow ? height / 2 : height;
-
-    const elapsed = pulseStartRef.current !== null ? (nowMs - pulseStartRef.current) / 1000 : -1;
-
-    // Divider line
-    ctx.save();
-    ctx.strokeStyle = 'rgba(20, 20, 19, 0.14)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    if (isNarrow) {
-      const my = Math.round(panelH) + 0.5;
-      ctx.moveTo(0, my);
-      ctx.lineTo(width, my);
-    } else {
-      const mx = Math.round(halfW) + 0.5;
-      ctx.moveTo(mx, 0);
-      ctx.lineTo(mx, height);
-    }
-    ctx.stroke();
-    ctx.restore();
-
-    // === PANEL A: CEREBELLUM (69B — Parallel Feed-Forward Lanes, 0 Cross-Talk!) ===
-    const cPadX = 28;
-    const cTop = 44;
-    const cBot = panelH - 26;
-    const laneCount = 7;
-
-    ctx.save();
-    ctx.font = '600 10px "JetBrains Mono Variable", monospace';
-    ctx.fillStyle = '#5E5D59';
-    ctx.fillText('МОЗЖЕЧОК · 69 МЛРД НЕЙРОНОВ (80%)', 16, 22);
-    ctx.fillStyle = elapsed >= 0 && elapsed < 0.7 ? '#004EDF' : '#7A7872';
-    ctx.fillText(
-      elapsed >= 0 && elapsed < 0.65
-        ? 'ПРЯМОЙ ПРОГОН · 0 ПЕРЕКРЁСТНЫХ СВЯЗЕЙ'
-        : elapsed >= 0.65
-          ? 'СИГНАЛ ВЫШЕЛ ЗА 40 МС · ТИШИНА'
-          : 'ПАРАЛЛЕЛЬНЫЕ МОДУЛИ (КОНВЕЙЕР)',
-      16,
-      36,
-    );
-
-    for (let i = 0; i < laneCount; i += 1) {
-      const lx = cPadX + (i / (laneCount - 1)) * (halfW - cPadX * 2);
-      // Isolated parallel vertical rail
-      ctx.strokeStyle = 'rgba(20, 20, 19, 0.18)';
-      ctx.lineWidth = 1.25;
-      ctx.beginPath();
-      ctx.moveTo(lx, cTop);
-      ctx.lineTo(lx, cBot);
-      ctx.stroke();
-
-      // 4 isolated module nodes along each lane
-      for (let r = 0; r < 4; r += 1) {
-        const ny = cTop + (r / 3) * (cBot - cTop);
-        ctx.fillStyle = '#FAF9F5';
-        ctx.strokeStyle = 'rgba(20, 20, 19, 0.42)';
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.arc(lx, ny, 3.4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-      }
-
-      // Fast unidirectional impulse (completes in 0.58s and dies cleanly!)
-      if (elapsed >= 0 && elapsed <= 0.62) {
-        const frac = Math.min(1, elapsed / 0.56);
-        const py = cTop + frac * (cBot - cTop);
-        drawOpticalSpikeDot(ctx, lx, py, 3.2, '#004EDF');
-      }
-    }
-    ctx.restore();
-
-    // === PANEL B: CEREBRAL CORTEX (16B — Dense Recurrent Reverberating Web!) ===
-    const ox = isNarrow ? 0 : halfW;
-    const oy = isNarrow ? panelH : 0;
-
-    ctx.save();
-    ctx.translate(ox, oy);
-    ctx.font = '600 10px "JetBrains Mono Variable", monospace';
-    ctx.fillStyle = '#141413';
-    ctx.fillText('КОРА ПОЛУШАРИЙ · 16 МЛРД НЕЙРОНОВ (19%)', 16, 22);
-    ctx.fillStyle = elapsed >= 0 && elapsed < 3.6 ? '#FC4109' : '#5E5D59';
-    ctx.fillText(
-      elapsed >= 0 && elapsed < 3.6
-        ? 'ОБРАТНЫЕ ПЕТЛИ · ГЛОБАЛЬНОЕ ЭХО ПО СЕТИ'
-        : 'ОБРАТНЫЕ ПЕТЛИ · СВЯЗНАЯ ПАУТИНА',
-      16,
-      36,
-    );
-
-    const mapNode = (idx: number) => ({
-      x: 16 + CORTEX_NODES[idx].x * (halfW - 32),
-      y: 44 + CORTEX_NODES[idx].y * (panelH - 64),
-    });
-
-    // Draw cortical edges
-    for (let eIdx = 0; eIdx < CORTEX_EDGES.length; eIdx += 1) {
-      const e = CORTEX_EDGES[eIdx];
-      const a = mapNode(e.from);
-      const b = mapNode(e.to);
-      const isEchoActive = elapsed >= 0 && elapsed < 3.8;
-      ctx.strokeStyle = isEchoActive
-        ? 'rgba(252, 65, 9, 0.28)'
-        : 'rgba(20, 20, 19, 0.16)';
-      ctx.lineWidth = isEchoActive ? 1.35 : 1;
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.stroke();
-
-      // Reverberating multi-hop spikes racing back and forth for 3.6 seconds!
-      if (elapsed >= 0 && elapsed < 3.6) {
-        const delay = (eIdx % 5) * 0.11;
-        if (elapsed > delay) {
-          const cycle = ((elapsed - delay) * 1.15) % 1;
-          const reverse = Math.floor((elapsed - delay) * 1.15) % 2 === 1;
-          const f = reverse ? 1 - cycle : cycle;
-          const px = a.x + (b.x - a.x) * f;
-          const py = a.y + (b.y - a.y) * f;
-          const fade = Math.max(0.15, 1 - elapsed / 3.8);
-          ctx.save();
-          ctx.globalAlpha = fade;
-          drawOpticalSpikeDot(ctx, px, py, 2.6, eIdx % 3 === 0 ? '#004EDF' : '#FC4109');
-          ctx.restore();
-        }
-      }
-    }
-
-    // Draw cortical nodes
-    for (let nIdx = 0; nIdx < CORTEX_NODES.length; nIdx += 1) {
-      const p = mapNode(nIdx);
-      const lit = elapsed >= 0 && elapsed < 3.6 && Math.sin(elapsed * 7 + nIdx) > 0;
-      ctx.fillStyle = lit ? '#FC4109' : '#FAF9F5';
-      ctx.strokeStyle = lit ? '#FC4109' : '#141413';
-      ctx.lineWidth = 1.4;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, lit ? 4.4 : 3.8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-    }
-
-    ctx.restore();
-
-    if (elapsed > 3.7 && phaseReadout === 'active') {
-      setPhaseReadout('settled');
-    }
-  }, [phaseReadout]);
-
-  useViewportRaf(stageRef, drawFrame, { enabled: true });
-
-  useEffect(() => {
-    const c = canvasRef.current;
-    return () => releaseCanvasMemory(c);
-  }, []);
+  const feedbackRatio = feedbackPct / 100;
 
   return (
     <section
@@ -277,17 +41,17 @@ export function Act1CerebellumParadox() {
           <span>ПАРАДОКС 69 МИЛЛИАРДОВ · стр. 08</span>
         </div>
 
-        {/* Opening Editorial Prose + Leibniz's Mill */}
+        {/* Opening Editorial Prose (5 cols) + Real 3D MRI Brain Comparator (7 cols) */}
         <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-          <div className="lg:col-span-6 space-y-5">
-            <h2 className="text-[clamp(32px,4.4vw,54px)] leading-[1.06] tracking-[-0.03em]">
+          <div className="lg:col-span-5 space-y-5">
+            <h2 className="text-[clamp(32px,4.2vw,52px)] leading-[1.06] tracking-[-0.03em]">
               <span className="font-display font-bold block">80% ваших нейронов</span>
               <span className="font-serif-display italic font-normal text-[#30302E] block mt-1">
                 живут в полной темноте.
               </span>
             </h2>
 
-            <p className="text-[16px] leading-[1.68] text-[#282725]">
+            <p className="text-[15.5px] leading-[1.68] text-[#282725]">
               {ruTypo(
                 'Ещё в 1714 году Готфрид Лейбниц предложил увеличить мозг до размеров мельницы и войти внутрь: вы увидите лишь шестерни, толкающие друг друга, — но нигде не найдёте самой мысли. Внутри черепа вместо шестерён трудятся ',
               )}
@@ -297,7 +61,7 @@ export function Act1CerebellumParadox() {
               )}
             </p>
 
-            <p className="text-[15.5px] leading-[1.68] text-[#454440]">
+            <p className="text-[15px] leading-[1.68] text-[#454440]">
               {ruTypo(
                 'Кажется очевидным: чем больше нейронов — тем ярче сознание. Но нейробиология ломает эту интуицию на первом же шаге. Ровно ',
               )}
@@ -311,43 +75,44 @@ export function Act1CerebellumParadox() {
             </p>
 
             {/* Key Architectural Takeaway Strip */}
-            <div className="grid grid-cols-2 gap-3 pt-1">
-              <div className="p-4 rounded-xl bg-[#F3F1E9] border border-[#141413]/12">
-                <div className="font-serif-display text-[28px] leading-none text-[#004EDF]">69 млрд</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div className="p-4 rounded-xl bg-[#F3F1E9] border border-[#004EDF]/25">
+                <div className="font-serif-display text-[26px] leading-none text-[#004EDF]">69 млрд</div>
                 <div className="font-mono-tech text-[10px] uppercase tracking-[0.11em] text-[#5E5D59] mt-2">
                   МОЗЖЕЧОК · ПАРАЛЛЕЛЬНЫЕ МОДУЛИ
                 </div>
                 <p className="text-[12.5px] leading-[1.52] text-[#3F3E3A] mt-1.5">
-                  Независимые каналы оттачивают точность движений, но почти не разговаривают друг с другом.
+                  Сотни изолированных микромодулей без глобальных обратных петель между разными зонами — идеальный моторный автопилот без «Я».
                 </p>
               </div>
 
               <div className="p-4 rounded-xl bg-[#F3F1E9] border border-[#FC4109]/30">
-                <div className="font-serif-display text-[28px] leading-none text-[#FC4109]">16 млрд</div>
+                <div className="font-serif-display text-[26px] leading-none text-[#FC4109]">16 млрд</div>
                 <div className="font-mono-tech text-[10px] uppercase tracking-[0.11em] text-[#5E5D59] mt-2">
-                  КОРА · ОБРАТНЫЕ ПЕТЛИ
+                  КОРА · ГЛОБАЛЬНЫЕ ОБРАТНЫЕ ПЕТЛИ
                 </div>
                 <p className="text-[12.5px] leading-[1.52] text-[#3F3E3A] mt-1.5">
-                  В четыре раза меньше клеток — но сигнал бесконечно возвращается назад, связывая весь опыт воедино.
+                  В четыре раза меньше клеток — но длинные обратные тракты бесконечно возвращают сигнал назад, сшивая весь опыт воедино.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Right 6 cols: Instrument 01 — Live Canvas Architecture Comparator */}
-          <div className="lg:col-span-6">
+          {/* Right 7 cols: Real 3D MRI Brain (FreeSurfer fsaverage5 Cortex + SUIT Cerebellum + Recurrent Loops) */}
+          <div className="lg:col-span-7">
             <NoesisInstrumentFrame
-              code="ПРИБОР I.1 · АРХИТЕКТУРА ПРОТИВ КОЛИЧЕСТВА"
+              code="ПРИБОР I.1 · 3D МРТ-АНАТОМИЯ: МОЗЖЕЧОК ПРОТИВ КОРЫ"
               badge="reconstruction"
               telemetry={
                 pulseCount > 0
-                  ? `ИМПУЛЬСОВ ПОДАНО: ${pulseCount}`
-                  : 'СРАВНИТЕ ОТКЛИК ДВУХ СЕТЕЙ'
+                  ? `ОБРАТНЫЕ ПЕТЛИ: ${feedbackPct}% · ИМПУЛЬС #${pulseCount}`
+                  : `ОБРАТНЫЕ ПЕТЛИ КОРЫ: ${feedbackPct}%`
               }
               surface="vellum"
-              footnote="Azevedo et al. (2009) · Yu et al. (Brain, 2014) · дело не в числе клеток, а в схеме связей"
+              footnote="Реальная МРТ-поверхность FreeSurfer fsaverage5 + мозжечок SUIT MNI152 · Azevedo (2009) · Yu et al. (Brain, 2014)"
             >
               <div className="space-y-4">
+                {/* Interactive Controls: Pulse trigger + Real Feedback Loop Strength Slider */}
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <button
                     type="button"
@@ -370,30 +135,60 @@ export function Act1CerebellumParadox() {
                   )}
                 </div>
 
-                {/* Live Canvas 2D Split Comparator */}
-                <div
-                  ref={stageRef}
-                  className="relative w-full h-[320px] sm:h-[290px] rounded-xl overflow-hidden border border-[#141413]/15 bg-[#FAF9F5]"
-                >
-                  <canvas ref={canvasRef} className="w-full h-full block" />
+                {/* Live Interactive 3D MRI Stage */}
+                <div className="rounded-xl border border-[#141413]/14 bg-[#FAF9F5] overflow-hidden">
+                  <NoesisBrain3D
+                    mode="cerebellum"
+                    progress={feedbackRatio}
+                    pulseKey={pulseCount}
+                    className="w-full h-[340px] sm:h-[380px]"
+                    caption="3D МРТ · Вращайте мышкой · Кобальт = мозжечок (69 млрд) · Алый = обратные петли коры (16 млрд)"
+                  />
                 </div>
 
-                {/* Crisp Verdict Readout */}
-                <div className="rounded-xl bg-[#FAF9F5] border border-[#141413]/12 p-4 text-[13.5px] leading-[1.6] text-[#2F2E2B]">
-                  {state.cerebellumTested ? (
-                    <p>
-                      <strong className="text-[#141413]">Видите разницу?</strong>{' '}
-                      {ruTypo(
-                        'В мозжечке импульс пролетает по изолированным рельсам за доли секунды и гаснет — каждая дорожка «не знает», что творится в соседней. В коре один и тот же стимул запускает многократный диалог обратных петель. Именно эта архитектура связей отличает слепой автомат от носителя опыта.',
-                      )}
-                    </p>
-                  ) : (
-                    <p className="text-[#5E5D59]">
-                      {ruTypo(
-                        'Нажмите кнопку выше, чтобы отправить один и тот же электрический импульс одновременно в модульный мозжечок (слева) и в кору с обратными петлями (справа).',
-                      )}
-                    </p>
-                  )}
+                {/* Tactile Feedback-Loop Density Slider */}
+                <div className="rounded-xl bg-[#FAF9F5] border border-[#141413]/12 p-4 space-y-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2 font-mono-tech text-[10.5px] uppercase tracking-[0.11em]">
+                    <span className="text-[#141413] font-semibold">
+                      СИЛА ОБРАТНЫХ ПЕТЕЛЬ КОРЫ: <span className="text-[#FC4109]">{feedbackPct}%</span>
+                    </span>
+                    <span className="text-[#5E5D59]">
+                      {feedbackPct < 25
+                        ? 'РЕЖИМ КОНВЕЙЕРА (ГАСНЕТ СРАЗУ)'
+                        : feedbackPct < 65
+                          ? 'СЛАБАЯ СВЯЗНОСТЬ (ЛОКАЛЬНЫЙ ОТКЛИК)'
+                          : 'ГЛОБАЛЬНАЯ РЕВЕРБЕРАЦИЯ ОПЫТА'}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={feedbackPct}
+                    onChange={(e) => {
+                      setFeedbackPct(Number(e.target.value));
+                      setCerebellumTested(true);
+                    }}
+                    className="w-full accent-[#FC4109] cursor-pointer"
+                    aria-label="Сила обратных петель коры от 0 до 100 процентов"
+                  />
+                  <p className="text-[13px] leading-[1.58] text-[#2F2E2B]">
+                    {state.cerebellumTested ? (
+                      feedbackPct < 25 ? (
+                        ruTypo(
+                          'При 0–20% обратных связей кора ведёт себя почти как мозжечок: импульс проскакивает насквозь и гаснет за доли секунды. Увеличьте ползунок выше 65% и подайте импульс — увидите, как сеть удерживает живое эхо.',
+                        )
+                      ) : (
+                        ruTypo(
+                          'В синем мозжечке снизу импульс пролетает по параллельным модулям и затихает за доли секунды. В коре над ним длинные обратные тракты возвращают сигнал между долями, поддерживая единый отклик. Дело не в числе клеток, а в схеме связей.',
+                        )
+                      )
+                    ) : (
+                      ruTypo(
+                        'Поверните 3D-мозг мышкой, сдвиньте ползунок обратных петель и нажмите «Подать импульс», чтобы сравнить синий мозжечок (69 млрд) и полупрозрачную кору (16 млрд).',
+                      )
+                    )}
+                  </p>
                 </div>
               </div>
             </NoesisInstrumentFrame>

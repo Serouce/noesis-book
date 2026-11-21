@@ -6,6 +6,7 @@ import { useExplorer } from '../context/ExplorerContext';
 import { ScholarPortraitSvg } from './ScholarMarginalia';
 import { DossierTrigger } from '../../v9/components/NoesisDossierSheet';
 import { LabHonestyBadge } from '../../v9/components/NoesisInstrumentFrame';
+import { Act5SiliconQualia } from '../../v9/chapters/Act5SiliconQualia';
 import { ruTypo } from '../../v9/utils/ruTypo';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -516,6 +517,9 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
           )}
         </div>
       </div>
+
+      {/* ACT V HERO AI BLOCK: Turing 2025 (73% vs 36%) + 3D MRI Chalmers Fading Qualia + Varela Autopoiesis */}
+      <Act5SiliconQualia />
 
       {/* SIGNATURE SCROLL SETPIECE #3 (~155vh): #FC4109 DOT -> VERTICAL MONOLITH HAL 9000! */}
       <div

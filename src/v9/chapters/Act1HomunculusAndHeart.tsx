@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Activity, Fingerprint } from 'lucide-react';
+import { Activity, Fingerprint, Scissors } from 'lucide-react';
 import { useExplorer } from '../../v7/context/ExplorerContext';
 import { NoesisInstrumentFrame } from '../components/NoesisInstrumentFrame';
 import { DossierTrigger } from '../components/NoesisDossierSheet';
+import { NoesisBrain3D } from '../three/NoesisBrain3D';
 import { useViewportRaf } from '../hooks/useViewportRaf';
 import {
   drawOpticalSpikeDot,
@@ -12,41 +13,39 @@ import {
   releaseCanvasMemory,
   resizeHiDpiCanvas,
 } from '../canvas/noesisCanvasKit';
-import { assetUrl } from '../utils/assetUrl';
 import { ruTypo } from '../utils/ruTypo';
 
 gsap.registerPlugin(ScrollTrigger);
 
 type CardiacPhase = 'systole' | 'diastole';
 
-interface HepTrial {
-  phase: CardiacPhase;
-  detected: boolean;
-  seq: number;
-}
-
 /**
- * ACT I · CHAPTER 02: "Взломанный Гомункулус и Затвор Сердца"
- * 1. Scroll Setpiece #1 (205vh, pure CSS position:sticky):
- *    Sculptural studio coronal M1 slice (/v9/brain-coronal-m1.jpg) + 1937 Penfield radial arc ->
- *    physically fractures into 3 crimson SCAN inter-effector nodes (Gordon & Dosenbach, Nature 2023)!
- * 2. Instrument 02 (Cardiac Gate HEP, Al & Villringer PNAS 2020):
- *    Honest x5 slowed ECG waveform + manual phase probe (Systole raises threshold / lowers sensitivity vs Diastole opens gate!).
- * 3. Level-2 Dossier ("scan-parkinson-2026") cleanly holds the Feb 2026 Parkinson's/TMS study (no premature TMS leak!).
+ * ACT I · CHAPTER I.2: "Взломанный Гомункулус и Затвор Сердца" (NOESIS v9.2 Real 3D MRI + Honest PNAS 2020)
+ * 1. Scroll Setpiece #1 (205vh, CSS position:sticky — 0 GSAP pin:true!):
+ *    Real FreeSurfer fsaverage5 3D MRI Brain where the continuous 1937 Penfield cobalt ribbon along the
+ *    precentral gyrus (M1) PHYSICALLY FRACTURES in the fragment shader into 3 crimson SCAN inter-effector
+ *    nodes (Gordon & Dosenbach, Nature 2023) + live optical anterior-posterior slice plane (clipZ)!
+ *    All labels are crisp HTML (>=11px) — zero 7px SVG text or brain collision!
+ * 2. Instrument I.2 (Cardiac Gate, Al & Villringer PNAS 2020):
+ *    Honest explanation of individual ~50% psychometric threshold calibration (with clearly noted contrast
+ *    amplification in the x5 interactive model: 3/8 systole vs 6/8 diastole) & unbounded exact counters!
  */
 export function Act1HomunculusAndHeart() {
   const { setHepTested } = useExplorer();
 
-  // Scroll Setpiece #1 refs (Coronal M1 Penfield 1937 -> SCAN 2023)
+  // Scroll Setpiece #1 refs (3D MRI Penfield 1937 -> SCAN 2023 fracture)
   const runwayRef = useRef<HTMLDivElement | null>(null);
   const progressBarRef = useRef<HTMLDivElement | null>(null);
-  const penfieldGroupRef = useRef<SVGGElement | null>(null);
-  const scanGroupRef = useRef<SVGGElement | null>(null);
+  const [scanProgress, setScanProgress] = useState(0);
   const [scanPhase, setScanPhase] = useState<'penfield' | 'fracturing' | 'scan'>('penfield');
+  const [sliceMode, setSliceMode] = useState(false);
+  const [sliceDepth, setSliceDepth] = useState(0.02); // Coronal optical cut right along M1 precentral gyrus!
 
-  // Instrument 02 (Cardiac Gate HEP x5 Slow-Motion)
+  // Instrument I.2 (Cardiac Gate x5 Slow-Motion) — unbounded exact counters (fixes .slice(-15) bug!)
   const [selectedPhase, setSelectedPhase] = useState<CardiacPhase>('systole');
-  const [trials, setTrials] = useState<HepTrial[]>([]);
+  const [systoleStats, setSystoleStats] = useState({ total: 0, hits: 0 });
+  const [diastoleStats, setDiastoleStats] = useState({ total: 0, hits: 0 });
+
   const ecgWrapRef = useRef<HTMLDivElement | null>(null);
   const ecgCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const lastProbeRef = useRef<{ phase: CardiacPhase; detected: boolean; atMs: number; u: number } | null>(null);
@@ -59,23 +58,17 @@ export function Act1HomunculusAndHeart() {
       trigger: runway,
       start: 'top top',
       end: 'bottom bottom',
-      scrub: 0.45,
+      scrub: 0.35,
       onUpdate: (self) => {
         const p = self.progress;
-        const nextPhase = p < 0.36 ? 'penfield' : p < 0.66 ? 'fracturing' : 'scan';
+        const nextPhase = p < 0.34 ? 'penfield' : p < 0.66 ? 'fracturing' : 'scan';
         setScanPhase((prev) => (prev === nextPhase ? prev : nextPhase));
+
+        const fracture = Math.max(0, Math.min(1, (p - 0.22) / 0.56));
+        setScanProgress((prev) => (Math.abs(prev - fracture) > 0.015 ? fracture : prev));
 
         if (progressBarRef.current) {
           progressBarRef.current.style.transform = `scaleX(${p.toFixed(4)})`;
-        }
-
-        // Smooth optical crossfade: Penfield 1937 solid cobalt ribbon softens as 3 SCAN crimson nodes fracture it!
-        const scanT = Math.max(0, Math.min(1, (p - 0.32) / 0.42));
-        if (penfieldGroupRef.current) {
-          penfieldGroupRef.current.style.opacity = `${(1 - scanT * 0.72).toFixed(3)}`;
-        }
-        if (scanGroupRef.current) {
-          scanGroupRef.current.style.opacity = `${scanT.toFixed(3)}`;
         }
       },
     });
@@ -83,17 +76,19 @@ export function Act1HomunculusAndHeart() {
     return () => trigger.kill();
   }, []);
 
-  // Deterministic realistic PNAS 2020 detection probability sequence (Systole ~38% vs Diastole ~76% — never purely random confusing noise!)
-  const systoleCount = trials.filter((t) => t.phase === 'systole').length;
-  const diastoleCount = trials.filter((t) => t.phase === 'diastole').length;
-
   const fireTactileProbe = () => {
-    const patternSystole = [false, false, true, false, false, true, false, false];
-    const patternDiastole = [true, true, false, true, true, true, false, true];
-    const detected =
-      selectedPhase === 'systole'
-        ? patternSystole[systoleCount % patternSystole.length]
-        : patternDiastole[diastoleCount % patternDiastole.length];
+    // Deterministic clear pattern aligned with honest note (model contrasts ~50% threshold shift: 3/8 systole vs 6/8 diastole)
+    const patternSystole = [false, false, true, false, true, false, false, true]; // 3/8
+    const patternDiastole = [true, true, false, true, true, true, false, true]; // 6/8
+
+    let detected = false;
+    if (selectedPhase === 'systole') {
+      detected = patternSystole[systoleStats.total % patternSystole.length];
+      setSystoleStats((s) => ({ total: s.total + 1, hits: s.hits + (detected ? 1 : 0) }));
+    } else {
+      detected = patternDiastole[diastoleStats.total % patternDiastole.length];
+      setDiastoleStats((s) => ({ total: s.total + 1, hits: s.hits + (detected ? 1 : 0) }));
+    }
 
     // Anchor marker to the exact nearest visible Systole (+0.33) or Diastole (+0.74) band on the scrolling ECG!
     const nowMs = performance.now();
@@ -104,7 +99,6 @@ export function Act1HomunculusAndHeart() {
     const probeU = targetBeat + bandOffset;
 
     lastProbeRef.current = { phase: selectedPhase, detected, atMs: nowMs, u: probeU };
-    setTrials((prev) => [...prev.slice(-15), { phase: selectedPhase, detected, seq: prev.length + 1 }]);
     setHepTested(true);
   };
 
@@ -123,13 +117,11 @@ export function Act1HomunculusAndHeart() {
       ctx.fillRect(0, 0, width, height);
       drawSwissGrid(ctx, width, height, 24, true);
 
-      // Slowed x5 cardiac cycle (1 beat = 4.2 seconds visual playback)
       const beatPeriod = 4.2;
       const phaseOffset = (nowMs * 0.001) / beatPeriod;
 
       const ecgSample = (u: number): number => {
         const f = ((u % 1) + 1) % 1;
-        // P-wave (0.10) + crisp QRS spike (0.20) + T-wave (0.40) + flat Diastole (0.52..0.98)
         let v = 0;
         v += 0.14 * Math.exp(-Math.pow((f - 0.11) / 0.025, 2));
         v -= 0.16 * Math.exp(-Math.pow((f - 0.185) / 0.009, 2));
@@ -139,30 +131,26 @@ export function Act1HomunculusAndHeart() {
         return v;
       };
 
-      // Highlight selected window band on the scrolling timeline
       const cyclesAcross = 1.65;
       const midY = height * 0.62;
       const ampY = height * 0.42;
 
       for (let c = -1; c <= 2; c += 1) {
         const beatStartU = Math.floor(phaseOffset) + c - phaseOffset;
-        const sysX1 = (beatStartU + 0.18) / cyclesAcross * width;
-        const sysX2 = (beatStartU + 0.48) / cyclesAcross * width;
-        const diaX1 = (beatStartU + 0.52) / cyclesAcross * width;
-        const diaX2 = (beatStartU + 0.96) / cyclesAcross * width;
+        const sysX1 = ((beatStartU + 0.18) / cyclesAcross) * width;
+        const sysX2 = ((beatStartU + 0.48) / cyclesAcross) * width;
+        const diaX1 = ((beatStartU + 0.52) / cyclesAcross) * width;
+        const diaX2 = ((beatStartU + 0.96) / cyclesAcross) * width;
 
-        // Systole zone tint
         ctx.fillStyle =
           selectedPhase === 'systole' ? 'rgba(252, 65, 9, 0.18)' : 'rgba(252, 65, 9, 0.05)';
         ctx.fillRect(sysX1, 0, Math.max(0, sysX2 - sysX1), height);
 
-        // Diastole zone tint
         ctx.fillStyle =
           selectedPhase === 'diastole' ? 'rgba(52, 211, 153, 0.14)' : 'rgba(52, 211, 153, 0.03)';
         ctx.fillRect(diaX1, 0, Math.max(0, diaX2 - diaX1), height);
       }
 
-      // Draw ECG trace
       ctx.save();
       ctx.strokeStyle = '#FAF9F5';
       ctx.lineWidth = 1.85;
@@ -178,7 +166,6 @@ export function Act1HomunculusAndHeart() {
       ctx.stroke();
       ctx.restore();
 
-      // Recent tactile probe flash marker — locked to the EXACT scrolling Systole/Diastole band & ECG trace!
       const probe = lastProbeRef.current;
       if (probe && nowMs - probe.atMs < 1800) {
         const age = (nowMs - probe.atMs) / 1800;
@@ -217,30 +204,21 @@ export function Act1HomunculusAndHeart() {
     return () => releaseCanvasMemory(c);
   }, []);
 
-  const systoleStats = {
-    total: trials.filter((t) => t.phase === 'systole').length,
-    hits: trials.filter((t) => t.phase === 'systole' && t.detected).length,
-  };
-  const diastoleStats = {
-    total: trials.filter((t) => t.phase === 'diastole').length,
-    hits: trials.filter((t) => t.phase === 'diastole' && t.detected).length,
-  };
-
   const scanStages = {
     penfield: {
       kicker: 'СКРОЛЛ-СЕТПИС #1 · 1937 · КАРТА ПЕНФИЛДА',
       title: 'Восемьдесят шесть лет учебники рисовали ровную полосу тела',
-      body: 'В 1937 году нейрохирург Уайлдер Пенфилд начертил знаменитый кортикальный гомункулус: вдоль моторной коры (M1) от макушки к виску якобы тянется непрерывная карта — стопа, туловище, гигантская кисть руки и лицо.',
+      body: 'В 1937 году нейрохирург Уайлдер Пенфилд начертил знаменитый кортикальный гомункулус: вдоль прецентральной извилины моторной коры (M1) от макушки к виску якобы тянется непрерывная лента — стопа, кисть и лицо.',
     },
     fracturing: {
-      kicker: 'СКРОЛЛ-СЕТПИС #1 · 2023 · ПРОВЕРКА СВЕРХТОЧНЫМ СКАНЕРОМ',
-      title: 'Но в 2023 году непрерывная карта треснула в трёх местах',
-      body: 'Когда Эван Гордон и Нико Дозенбах (Nature, 2023) просканировали мозг каждого человека часами в сверхвысоком разрешении, ровная лента Пенфилда распалась.',
+      kicker: 'СКРОЛЛ-СЕТПИС #1 · 2023 · ПРОВЕРКА СВЕРХТОЧНЫМ МРТ',
+      title: 'Но в 2023 году непрерывная лента треснула в трёх местах',
+      body: 'Когда Эван Гордон и Нико Дозенбах (Nature, 2023) просканировали мозг каждого человека часами в сверхвысоком разрешении, сплошная дуга M1 распалась.',
     },
     scan: {
       kicker: 'СКРОЛЛ-СЕТПИС #1 · СЕТЬ SCAN (NATURE 2023)',
-      title: 'Три вставки разума, связывающие мышцы, план и внутренние органы',
-      body: 'Между зонами стопы, кисти и рта оказались вшиты три узла сети SCAN (сомато-когнитивного действия). Она соединяет кору не с отдельным пальцем, а с дыханием, пульсом, осанкой и волей — поэтому ум неразрывно вплетён в тело.',
+      title: 'Три вставки разума, сшивающие мышцы, план и внутренние органы',
+      body: 'Строго между стопой, кистью и ртом оказались вшиты три узла сети SCAN (сомато-когнитивного действия). Они связывают кору не с отдельным пальцем, а с дыханием, пульсом, осанкой и волей — поэтому ум неразрывно вплетён в тело.',
     },
   };
 
@@ -252,28 +230,55 @@ export function Act1HomunculusAndHeart() {
       className="relative bg-[#FAF9F5] text-[#141413] border-b border-[#141413]/10"
       aria-label="Глава I.2 — Взломанный Гомункулус и Затвор Сердца"
     >
-      {/* SCROLL SETPIECE #1 (205vh, CSS position:sticky — 0 GSAP pin:true!): PENFIELD 1937 -> SCAN 2023 */}
+      {/* SCROLL SETPIECE #1 (205vh, CSS position:sticky — 0 GSAP pin:true!): REAL 3D MRI PENFIELD 1937 -> SCAN 2023 */}
       <div ref={runwayRef} className="relative h-[205vh] bg-[#FAF9F5] border-b border-[#141413]/10">
-        <div className="sticky top-0 h-[100svh] w-full overflow-hidden flex flex-col justify-between px-5 md:px-12 lg:px-20 py-20 md:py-24">
-          <div className="max-w-[1240px] mx-auto w-full flex flex-wrap items-center justify-between gap-3 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
+        <div className="sticky top-0 min-h-[100svh] lg:h-[100svh] w-full flex flex-col justify-between px-5 md:px-12 lg:px-20 pt-24 pb-10 md:pt-24 md:pb-12">
+          <div className="max-w-[1240px] mx-auto w-full flex flex-wrap items-center justify-between gap-2 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
             <span className="text-[#FC4109] font-semibold">АКТ I · ГЛАВА I.2 · {activeCopy.kicker}</span>
-            <span>ПОПЕРЕЧНЫЙ СРЕЗ КОРЫ M1 · стр. 14</span>
+            <span>ПРЕЦЕНТРАЛЬНАЯ ИЗВИЛИНА M1 · стр. 14</span>
           </div>
 
-          <div className="max-w-[1240px] mx-auto w-full flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            {/* Left 5 cols: Editorial Story */}
+          <div className="max-w-[1240px] mx-auto w-full flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center my-4">
+            {/* Left 5 cols: Editorial Story + Clean Crisp HTML Anatomy Legend (>= 11px, 0% overlap!) */}
             <div className="lg:col-span-5 space-y-4">
-              <h2 className="text-[clamp(26px,3.4vw,44px)] leading-[1.08] tracking-[-0.028em]">
+              <h2 className="text-[clamp(24px,3.2vw,42px)] leading-[1.08] tracking-[-0.028em]">
                 <span className="font-display font-bold block text-[#141413]">
                   {ruTypo(activeCopy.title)}
                 </span>
               </h2>
-              <p className="font-serif-editorial italic text-[17px] md:text-[18px] leading-[1.58] text-[#353431]">
+              <p className="font-serif-editorial italic text-[16px] md:text-[17.5px] leading-[1.56] text-[#353431]">
                 {ruTypo(activeCopy.body)}
               </p>
 
-              <div className="pt-2 flex items-center gap-3">
-                <div className="w-36 h-[3px] rounded-full bg-[#141413]/14 overflow-hidden">
+              {/* Crisp HTML Anatomy Key replacing tiny unreadable 7px SVG labels! */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                <div className="p-3 rounded-xl bg-[#F3F1E9] border border-[#004EDF]/30">
+                  <div className="font-mono-tech text-[10.5px] uppercase tracking-[0.11em] text-[#004EDF] font-semibold">
+                    ● КОБАЛЬТ · ПЕНФИЛД 1937
+                  </div>
+                  <p className="text-[12px] leading-[1.48] text-[#3B3A37] mt-1">
+                    Три изолированных участка M1: <strong>Стопа</strong> (у макушки), <strong>Кисть</strong> (середина) и <strong>Лицо / Рот</strong> (висок).
+                  </p>
+                </div>
+
+                <div
+                  className={`p-3 rounded-xl border transition-colors ${
+                    scanProgress > 0.25
+                      ? 'bg-[#FC4109]/8 border-[#FC4109]/45'
+                      : 'bg-[#F3F1E9] border-[#141413]/12 opacity-65'
+                  }`}
+                >
+                  <div className="font-mono-tech text-[10.5px] uppercase tracking-[0.11em] text-[#FC4109] font-semibold">
+                    ● АЛЫЙ · 3 УЗЛА SCAN 2023
+                  </div>
+                  <p className="text-[12px] leading-[1.48] text-[#3B3A37] mt-1">
+                    Вклинены строго <strong>между</strong> стопой/кистью, кистью/ртом и ниже рта — уходят нитями вглубь к телу.
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-1 flex items-center gap-3">
+                <div className="w-32 h-[3px] rounded-full bg-[#141413]/14 overflow-hidden">
                   <div
                     ref={progressBarRef}
                     className="h-full w-full origin-left bg-[#FC4109]"
@@ -282,148 +287,75 @@ export function Act1HomunculusAndHeart() {
                 </div>
                 <span className="font-mono-tech text-[10.5px] uppercase tracking-[0.1em] text-[#5E5D59]">
                   {scanPhase === 'scan'
-                    ? 'Карта 1937 года переписана · SCAN 2023'
-                    : 'Листайте вниз · разлом карты'}
+                    ? 'Лента разорвана · SCAN 2023'
+                    : 'Листайте вниз · разлом 3D-коры'}
                 </span>
               </div>
             </div>
 
-            {/* Right 7 cols: Museum Studio Coronal M1 Plate + Swiss Precision Penfield/SCAN Vector Overlay */}
-            <div className="lg:col-span-7 relative aspect-[16/10] w-full max-h-[540px] rounded-2xl border border-[#141413]/12 bg-[#FAF9F5] overflow-hidden shadow-[0_20px_54px_rgba(20,20,19,0.06)]">
-              <img
-                src={assetUrl('/v9/brain-coronal-m1.jpg')}
-                alt="Скульптурный корональный срез первичной моторной коры M1 человека"
-                className="w-full h-full object-cover select-none"
-                draggable={false}
-              />
+            {/* Right 7 cols: Real Interactive 3D MRI Brain (FreeSurfer fsaverage5) + Live Optical Coronal Slice Control */}
+            <div className="lg:col-span-7 space-y-3">
+              <div className="relative rounded-2xl border border-[#141413]/12 bg-[#FAF9F5] overflow-hidden shadow-[0_20px_54px_rgba(20,20,19,0.06)]">
+                <NoesisBrain3D
+                  mode="scan"
+                  progress={scanProgress}
+                  clipZ={sliceMode ? sliceDepth : 2.5}
+                  className="w-full h-[320px] sm:h-[380px] lg:h-[430px]"
+                  caption={
+                    sliceMode
+                      ? '3D Оптический срез коры M1 · Внутри видны нити SCAN к подкорке'
+                      : '3D МРТ · Вращайте мышкой · Прецентральная извилина M1 (fsaverage5)'
+                  }
+                />
+              </div>
 
-              {/* Swiss Vector Engraving Overlay calibrated cleanly to the outer cortical arch */}
-              <svg
-                viewBox="0 0 1600 1000"
-                className="absolute inset-0 w-full h-full pointer-events-none"
-                aria-hidden="true"
-              >
-                {/* LAYER 1: 1937 PENFIELD CONTINUOUS COBALT RIBBON (right hemisphere rim) */}
-                <g ref={penfieldGroupRef} style={{ opacity: 1 }}>
-                  <path
-                    d="M 818 148 C 960 156, 1085 215, 1168 315 C 1226 385, 1254 468, 1252 548"
-                    fill="none"
-                    stroke="#004EDF"
-                    strokeWidth="9"
-                    strokeLinecap="round"
-                    opacity="0.45"
-                  />
-                  {/* Radial engraving ticks & Penfield 1937 somatic labels */}
-                  {[
-                    { x: 868, y: 156, tx: 888, ty: 94, lbl: 'СТОПА · НОГА' },
-                    { x: 1036, y: 204, tx: 1126, ty: 146, lbl: 'КОРПУС' },
-                    { x: 1166, y: 314, tx: 1296, ty: 266, lbl: 'КИСТЬ (×5 ПЛОЩАДЬ)' },
-                    { x: 1246, y: 470, tx: 1356, ty: 448, lbl: 'ЛИЦО · ЯЗЫК' },
-                  ].map((pt) => (
-                    <g key={pt.lbl}>
-                      <line
-                        x1={pt.x}
-                        y1={pt.y}
-                        x2={pt.tx}
-                        y2={pt.ty}
-                        stroke="#004EDF"
-                        strokeWidth="1.6"
-                        strokeDasharray="4 4"
-                      />
-                      <circle cx={pt.x} cy={pt.y} r="6" fill="#004EDF" />
-                      <text
-                        x={pt.tx + 8}
-                        y={pt.ty + 5}
-                        fill="#004EDF"
-                        fontSize="21"
-                        fontWeight="700"
-                        fontFamily="JetBrains Mono Variable, monospace"
-                      >
-                        {pt.lbl}
-                      </text>
-                    </g>
-                  ))}
+              {/* Tactile Optical Clipping-Plane Switcher (Slices real 3D MRI brain along M1!) */}
+              <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-[#F3F1E9] border border-[#141413]/12">
+                <button
+                  type="button"
+                  onClick={() => setSliceMode((v) => !v)}
+                  className={`v6-pill px-3.5 py-1.5 rounded-full font-mono-tech text-[10.5px] uppercase tracking-[0.09em] inline-flex items-center gap-1.5 cursor-pointer border ${
+                    sliceMode
+                      ? 'bg-[#FC4109] text-[#FAF9F5] border-[#FC4109]'
+                      : 'bg-[#FAF9F5] text-[#141413] border-[#141413]/18 hover:bg-[#EAE7DC]'
+                  }`}
+                >
+                  <Scissors className="w-3.5 h-3.5" />
+                  <span>{sliceMode ? 'Убрать 3D-срез' : 'Поперечный 3D-срез M1'}</span>
+                </button>
 
-                  <rect x="44" y="44" width="380" height="52" rx="10" fill="#FAF9F5" fillOpacity="0.94" stroke="#004EDF" strokeOpacity="0.35" strokeWidth="1.6" />
-                  <text x="64" y="77" fill="#004EDF" fontSize="21" fontWeight="700" fontFamily="JetBrains Mono Variable, monospace">
-                    1937 · СПЛОШНОЙ ГОМУНКУЛУС
-                  </text>
-                </g>
-
-                {/* LAYER 2: 2023 SCAN INTER-EFFECTOR FRACTURE NODES (3 crimson nodes + cross-hemisphere action filaments!) */}
-                <g ref={scanGroupRef} style={{ opacity: 0 }}>
-                  {/* Cross-hemisphere SCAN integration arcs bridging both hemispheres & deep brainstem/viscera */}
-                  <path
-                    d="M 656 178 Q 800 320, 944 178"
-                    fill="none"
-                    stroke="#FC4109"
-                    strokeWidth="2.4"
-                    strokeDasharray="7 5"
-                    opacity="0.72"
-                  />
-                  <path
-                    d="M 480 286 Q 800 412, 1120 286"
-                    fill="none"
-                    stroke="#FC4109"
-                    strokeWidth="2.4"
-                    strokeDasharray="7 5"
-                    opacity="0.72"
-                  />
-                  <path
-                    d="M 392 478 Q 800 546, 1208 478"
-                    fill="none"
-                    stroke="#FC4109"
-                    strokeWidth="2.4"
-                    strokeDasharray="7 5"
-                    opacity="0.72"
-                  />
-
-                  {/* 3 Paired Crimson SCAN Nodes fracturing Foot / Hand / Mouth! */}
-                  {[
-                    { lx: 656, rx: 944, y: 178, tag: 'SCAN 1 · ПЛАН И ОСАНКА', tx: 96, ty: 174 },
-                    { lx: 480, rx: 1120, y: 286, tag: 'SCAN 2 · ЦЕЛОСТНОЕ ДЕЙСТВИЕ', tx: 46, ty: 334 },
-                    { lx: 392, rx: 1208, y: 478, tag: 'SCAN 3 · ДЫХАНИЕ И ПУЛЬС', tx: 46, ty: 522 },
-                  ].map((node) => (
-                    <g key={node.tag}>
-                      {/* Left & Right bilateral SCAN hubs */}
-                      <circle cx={node.lx} cy={node.y} r="17" fill="#FC4109" fillOpacity="0.22" stroke="#FC4109" strokeWidth="2.5" />
-                      <circle cx={node.lx} cy={node.y} r="6.5" fill="#FC4109" />
-                      <circle cx={node.rx} cy={node.y} r="17" fill="#FC4109" fillOpacity="0.22" stroke="#FC4109" strokeWidth="2.5" />
-                      <circle cx={node.rx} cy={node.y} r="6.5" fill="#FC4109" />
-
-                      {/* Crisp left-margin callout pill (zero collision with brain or right Penfield labels!) */}
-                      <line x1={node.lx - 18} y1={node.y} x2={node.tx + 286} y2={node.ty - 14} stroke="#FC4109" strokeWidth="1.8" />
-                      <rect x={node.tx} y={node.ty - 38} width="330" height="44" rx="8" fill="#141413" fillOpacity="0.92" />
-                      <text
-                        x={node.tx + 14}
-                        y={node.ty - 10}
-                        fill="#FAF9F5"
-                        fontSize="18.5"
-                        fontWeight="700"
-                        fontFamily="JetBrains Mono Variable, monospace"
-                      >
-                        {node.tag}
-                      </text>
-                    </g>
-                  ))}
-
-                  <rect x="44" y="886" width="510" height="54" rx="10" fill="#FC4109" />
-                  <text x="66" y="921" fill="#FAF9F5" fontSize="21" fontWeight="700" fontFamily="JetBrains Mono Variable, monospace">
-                    2023 · 3 ВСТАВКИ SCAN РАЗРЫВАЮТ КАРТУ
-                  </text>
-                </g>
-              </svg>
+                {sliceMode ? (
+                  <div className="flex items-center gap-2.5 flex-1 min-w-[180px]">
+                    <span className="font-mono-tech text-[10px] uppercase text-[#5E5D59] shrink-0">
+                      Глубина среза:
+                    </span>
+                    <input
+                      type="range"
+                      min={-65}
+                      max={65}
+                      value={Math.round(sliceDepth * 100)}
+                      onChange={(e) => setSliceDepth(Number(e.target.value) / 100)}
+                      className="w-full accent-[#FC4109] cursor-pointer"
+                      aria-label="Глубина поперечного 3D-среза коры M1"
+                    />
+                  </div>
+                ) : (
+                  <span className="font-mono-tech text-[10px] uppercase tracking-[0.1em] text-[#5E5D59]">
+                    Разрежьте кору, чтобы увидеть внутренние нити SCAN
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="max-w-[1240px] mx-auto w-full flex items-center justify-between font-mono-tech text-[10px] uppercase tracking-[0.12em] text-[#7A7872]">
+          <div className="max-w-[1240px] mx-auto w-full hidden sm:flex items-center justify-between font-mono-tech text-[10px] uppercase tracking-[0.12em] text-[#7A7872]">
             <span>GORDON &amp; DOSENBACH · NATURE 2023</span>
             <span>ТЕЛО И СОЗНАНИЕ СШИТЫ В ОДНОЙ КОРЕ</span>
           </div>
         </div>
       </div>
 
-      {/* PART 2.2: INSTRUMENT 02 — CARDIAC GATE HEP (AL & VILLRINGER, PNAS 2020) */}
+      {/* PART 2.2: INSTRUMENT I.2 — CARDIAC GATE (AL & VILLRINGER, PNAS 2020 — HONEST CALIBRATION!) */}
       <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20 py-18 md:py-24">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           {/* Left 5 cols: Editorial Explanation + Level-2 Dossier */}
@@ -442,12 +374,12 @@ export function Act1HomunculusAndHeart() {
                 повышает порог восприятия (чувствительность кожи падает)
               </strong>
               {ruTypo(
-                ' — слабые прикосновения буквально не доходят до вашего сознания (Al & Villringer, PNAS 2020).',
+                ' — пороговые прикосновения, настроенные на ~50% слышимости, в момент удара сердца заметно чаще проскальзывают мимо сознания (Al & Villringer, PNAS 2020).',
               )}
             </p>
             <p className="text-[14.5px] leading-[1.66] text-[#4F4E4A]">
               {ruTypo(
-                'В паузе между ударами (диастоле) затвор снова открывается — и тот же самый слабый сигнал прорывается в опыт. Проверьте модель в замедлении ×5 справа.',
+                'В паузе между ударами (диастоле) затвор снова открывается — и тот же самый слабый сигнал прорывается в опыт. В модели справа сдвиг порога контрастно усилен, чтобы вы чётко увидели разницу за 6–8 проб в замедлении ×5.',
               )}
             </p>
 
@@ -470,10 +402,9 @@ export function Act1HomunculusAndHeart() {
                   : 'ФАЗА: ДИАСТОЛА (ЗАТВОР ОТКРЫТ)'
               }
               surface="darkroom"
-              footnote="Модель данных Al & Villringer (PNAS, 2020): систола снижает чувствительность к слабым стимулам"
+              footnote="Al & Villringer (PNAS, 2020): стимул на ~50% пороге реже осознаётся в систолу (в модели контраст усилен для наглядности)"
             >
               <div className="space-y-4">
-                {/* Phase selector + tactile probe trigger */}
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="inline-flex p-1 rounded-full bg-[#191E28] border border-[#FAF9F5]/14">
                     <button
@@ -506,7 +437,7 @@ export function Act1HomunculusAndHeart() {
                     className="v6-pill h-9 px-4 rounded-full bg-[#FAF9F5] hover:bg-[#ECEAE2] text-[#141413] font-sans-ui text-[12.5px] font-semibold inline-flex items-center gap-2 cursor-pointer"
                   >
                     <Fingerprint className="w-3.5 h-3.5 text-[#FC4109]" />
-                    <span>Подать слабый стимул</span>
+                    <span>Подать пороговый стимул</span>
                   </button>
                 </div>
 
@@ -522,12 +453,12 @@ export function Act1HomunculusAndHeart() {
                   </div>
                 </div>
 
-                {/* Live Trial Counter comparing Systole vs Diastole */}
+                {/* Unbounded Honest Trial Counters */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono-tech text-[11px]">
                   <div className="p-3.5 rounded-xl bg-[#181D27] border border-[#FC4109]/30">
                     <div className="flex items-center justify-between text-[10px] text-[#FF9B7D]">
                       <span>В СИСТОЛУ (УДАР)</span>
-                      <span>ЭТАЛОН PNAS: ~38%</span>
+                      <span>ПОРОГ ВЫШЕ (~50% − Δ)</span>
                     </div>
                     <div className="text-[18px] font-bold text-[#FAF9F5] mt-1">
                       {systoleStats.total > 0
@@ -535,14 +466,14 @@ export function Act1HomunculusAndHeart() {
                         : 'Подайте пробу в систолу'}
                     </div>
                     <div className="text-[11px] font-sans-ui text-[#9AA3B2] mt-1">
-                      Порог повышен — барорецепторы глушат слабый сигнал.
+                      Барорецепторы тормозят кору — часть слабых сигналов гасится (в модели ~3/8).
                     </div>
                   </div>
 
                   <div className="p-3.5 rounded-xl bg-[#181D27] border border-[#34D399]/30">
                     <div className="flex items-center justify-between text-[10px] text-[#34D399]">
                       <span>В ДИАСТОЛУ (ПАУЗА)</span>
-                      <span>ЭТАЛОН PNAS: ~76%</span>
+                      <span>ЗАТВОР ОТКРЫТ (~50% + Δ)</span>
                     </div>
                     <div className="text-[18px] font-bold text-[#FAF9F5] mt-1">
                       {diastoleStats.total > 0
@@ -550,7 +481,7 @@ export function Act1HomunculusAndHeart() {
                         : 'Подайте пробу в диастолу'}
                     </div>
                     <div className="text-[11px] font-sans-ui text-[#9AA3B2] mt-1">
-                      Затвор открыт — тот же стимул проходит в сознание.
+                      Между ударами порог ниже — те же стимулы проходят заметно чаще (в модели ~6/8).
                     </div>
                   </div>
                 </div>

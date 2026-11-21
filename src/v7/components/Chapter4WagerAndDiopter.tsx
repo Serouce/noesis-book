@@ -1,9 +1,10 @@
 import { useCallback, useRef, useState } from 'react';
-import { ArrowDown, Crosshair, Lock, Scissors, Sparkles } from 'lucide-react';
+import { ArrowDown, Box, Crosshair, Lock, Scissors, Sparkles } from 'lucide-react';
 import { useExplorer, type CogitateBet } from '../context/ExplorerContext';
 import { ScholarMarginNote } from './ScholarMarginalia';
 import { DossierTrigger } from '../../v9/components/NoesisDossierSheet';
 import { LabHonestyBadge } from '../../v9/components/NoesisInstrumentFrame';
+import { NoesisBrain3D } from '../../v9/three/NoesisBrain3D';
 import { useViewportRaf } from '../../v9/hooks/useViewportRaf';
 import { assetUrl } from '../../v9/utils/assetUrl';
 import { ruTypo } from '../../v9/utils/ruTypo';
@@ -42,6 +43,7 @@ export function Chapter4WagerAndDiopter({ onNextChapter }: Chapter4WagerAndDiopt
   const [opticalMode, setOpticalMode] = useState<OpticalMode>(
     state.cogitateBet ? 'verdict' : 'raw',
   );
+  const [atlasView, setAtlasView] = useState<'3d' | '2d'>('3d');
   const [zoneLabel, setZoneLabel] = useState<string>(() => computeZoneLabel(50, 47));
   const [isEasing, setIsEasing] = useState(false);
 
@@ -376,7 +378,9 @@ export function Chapter4WagerAndDiopter({ onNextChapter }: Chapter4WagerAndDiopt
                 <p className="text-[13.5px] leading-[1.58] text-[#2F2E2B]">
                   {ruTypo(
                     opticalMode === 'raw'
-                      ? 'Сдвиньте линзу на центр мозга: внутри коры виден таламус — в апреле 2025 года в Science показали, что именно этот глубинный диспетчер опережает лобную кору в ритме 2–8 Гц.'
+                      ? outcomeRevealed
+                        ? 'Внутри стеклянной коры виден высший таламус — в апреле 2025 года в Science (Fang et al.) показали, что его интраламинарные ядра опережают лобную кору в тета-ритме 2–8 Гц.'
+                        : 'Поверните 3D-мозг (или переключитесь на 2D-диоптр): внутри полушарий виден таламус — главный диспетчер, соединяющий органы чувств с корой. Сделайте ставку ниже, прежде чем вскрыть вердикт 2025 года.'
                       : opticalMode === 'iit'
                         ? 'IIT предсказывала устойчивую синхронизацию в задней «горячей зоне» на всё время, пока человек видит картинку.'
                         : opticalMode === 'gnwt'
@@ -396,20 +400,134 @@ export function Chapter4WagerAndDiopter({ onNextChapter }: Chapter4WagerAndDiopt
               />
             </div>
 
-            {/* Right 8 cols: Monumental Studio Brain Plate + Zero-Re-Render Swiss Optical Diopter */}
+            {/* Right 8 cols: Real 3D MRI X-Ray Brain (COGITATE 2025 + High-Order Thalamus) OR 2D Leica Optical Diopter */}
             <div className="lg:col-span-8">
               <div className="rounded-2xl border border-[#141413]/14 bg-[#FAF9F5] p-4 md:p-6 shadow-[0_24px_60px_rgba(20,20,19,0.06)]">
                 <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3 border-b border-[#141413]/10 font-mono-tech text-[10.5px] uppercase tracking-[0.11em] text-[#5E5D59]">
                   <span className="flex flex-wrap items-center gap-2">
-                    <Crosshair className="w-3.5 h-3.5 text-[#FC4109]" />
-                    <span>{zoneLabel}</span>
+                    {atlasView === '3d' ? (
+                      <Box className="w-3.5 h-3.5 text-[#004EDF]" />
+                    ) : (
+                      <Crosshair className="w-3.5 h-3.5 text-[#FC4109]" />
+                    )}
+                    <span>
+                      {atlasView === '3d'
+                        ? opticalMode === 'iit'
+                          ? '3D РЕНТГЕН · ЗАДНЯЯ ГОРЯЧАЯ ЗОНА (IIT)'
+                          : opticalMode === 'gnwt'
+                            ? '3D РЕНТГЕН · ЛОБНОЕ ВОСПЛАМЕНЕНИЕ (GNWT)'
+                            : opticalMode === 'verdict'
+                              ? '3D РЕНТГЕН · COGITATE 2025 + ВЫСШИЙ ТАЛАМУС'
+                              : '3D РЕНТГЕН-МОЗГ · КОРТИКО-ТАЛАМИЧЕСКИЕ ТРАКТЫ'
+                        : zoneLabel}
+                    </span>
                     <LabHonestyBadge badge="reconstruction" />
                   </span>
-                  <span ref={coordsTextRef} className="whitespace-nowrap">
-                    X: 50% · Y: 47%
-                  </span>
+
+                  <div className="inline-flex p-0.5 rounded-full bg-[#EFECE3] border border-[#141413]/12">
+                    <button
+                      type="button"
+                      onClick={() => setAtlasView('3d')}
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-semibold cursor-pointer ${
+                        atlasView === '3d'
+                          ? 'bg-[#141413] text-[#FAF9F5]'
+                          : 'text-[#5E5D59] hover:text-[#141413]'
+                      }`}
+                    >
+                      3D МРТ-Рентген
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAtlasView('2d')}
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-semibold cursor-pointer ${
+                        atlasView === '2d'
+                          ? 'bg-[#141413] text-[#FAF9F5]'
+                          : 'text-[#5E5D59] hover:text-[#141413]'
+                      }`}
+                    >
+                      2D Диоптр
+                    </button>
+                  </div>
                 </div>
 
+                {atlasView === '3d' ? (
+                  <div className="space-y-3">
+                    <div className="relative rounded-xl overflow-hidden bg-[#111419] border border-[#141413]/18">
+                      <NoesisBrain3D
+                        mode="cogitate"
+                        dark
+                        focusMode={
+                          opticalMode === 'iit'
+                            ? 1
+                            : opticalMode === 'gnwt'
+                              ? 2
+                              : opticalMode === 'verdict'
+                                ? 3
+                                : 0
+                        }
+                        className="w-full h-[350px] sm:h-[410px]"
+                        caption="3D Рентген МРТ · Внутри: Высший таламус (CIT168, тета 2–8 Гц) · Снаружи: fsaverage5"
+                      />
+                    </div>
+
+                    {/* Clean HTML Legend for 3D X-Ray Zones (STRICTLY spoiler-free until state.cogitateBet is made!) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 font-mono-tech text-[10px]">
+                      <button
+                        type="button"
+                        onClick={() => setOpticalMode('iit')}
+                        className={`text-left px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
+                          opticalMode === 'iit'
+                            ? 'bg-[#004EDF]/12 border-[#004EDF] text-[#004EDF]'
+                            : 'bg-[#F3F1E9] border-[#141413]/10 text-[#454440] hover:border-[#004EDF]/40'
+                        }`}
+                      >
+                        <div className="font-bold">● КОБАЛЬТ · ЗАТЫЛОК (IIT)</div>
+                        <div className="font-sans-ui text-[11px] mt-0.5 text-[#4B4A46]">
+                          {outcomeRevealed
+                            ? 'Образ держится, но без гамма-синхронизации'
+                            : 'Прогноз IIT: устойчивая синхронизация в задней коре'}
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setOpticalMode('gnwt')}
+                        className={`text-left px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
+                          opticalMode === 'gnwt'
+                            ? 'bg-[#FC4109]/12 border-[#FC4109] text-[#FC4109]'
+                            : 'bg-[#F3F1E9] border-[#141413]/10 text-[#454440] hover:border-[#FC4109]/40'
+                        }`}
+                      >
+                        <div className="font-bold">● АЛЫЙ · ЛОБ (GNWT)</div>
+                        <div className="font-sans-ui text-[11px] mt-0.5 text-[#4B4A46]">
+                          {outcomeRevealed
+                            ? 'Реагирует на вход, но нет вспышки на смену'
+                            : 'Прогноз GNWT: двойная вспышка во лбу на вход и выход'}
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setOpticalMode(outcomeRevealed ? 'verdict' : 'raw')}
+                        className={`text-left px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
+                          opticalMode === 'verdict' || opticalMode === 'raw'
+                            ? 'bg-[#0D7A5F]/12 border-[#0D7A5F] text-[#0D7A5F]'
+                            : 'bg-[#F3F1E9] border-[#141413]/10 text-[#454440] hover:border-[#0D7A5F]/40'
+                        }`}
+                      >
+                        <div className="font-bold">
+                          {outcomeRevealed ? '● ЯДРО · ТАЛАМУС (2025)' : '● ЦЕНТР · ТАЛАМУС'}
+                        </div>
+                        <div className="font-sans-ui text-[11px] mt-0.5 text-[#4B4A46]">
+                          {outcomeRevealed
+                            ? 'Интраламинарные ядра: тета 2–8 Гц раньше ПФК'
+                            : 'Глубинный диспетчер, связывающий кору и чувства'}
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                <>
                 <div
                   ref={plateRef}
                   onPointerMove={(e) => {
@@ -610,10 +728,15 @@ export function Chapter4WagerAndDiopter({ onNextChapter }: Chapter4WagerAndDiopt
                     ))}
                   </div>
                   <span className="font-mono-tech text-[10.5px] text-[#5E5D59] inline-flex items-center gap-1.5">
+                    <span ref={coordsTextRef} className="whitespace-nowrap mr-2">
+                      X: 50% · Y: 47%
+                    </span>
                     <Sparkles className="w-3 h-3 text-[#FC4109]" />
                     <span>Cogitate Consortium · Nature 2025</span>
                   </span>
                 </div>
+                </>
+                )}
               </div>
             </div>
           </div>
