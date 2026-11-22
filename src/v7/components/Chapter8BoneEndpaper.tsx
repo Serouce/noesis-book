@@ -42,7 +42,7 @@ const FIVE_TAKEAWAYS = [
     num: '05',
     ref: 'Акт IV · Гл. 08',
     title: 'Блестящая речь машины — ещё не субъект внутри',
-    text: 'От сдвига к кремнию и выцветающих квалиа до монолита HAL 9000: текст диалога можно сымитировать (73% с ролевой маской), но подлинное чувство требует архитектуры и живой уязвимости.',
+    text: 'Текст диалога можно сымитировать (73% с ролевой маской в тесте Тьюринга 2025) — а рождается ли подлинное чувство из одной лишь сложной архитектуры с петлями или требует живой биологической уязвимости, остаётся главным научным спором XXI века.',
   },
 ];
 
@@ -90,11 +90,39 @@ const BIBLIOGRAPHY = [
     note: 'Зафиксирована реалистичная вероятность субъективного опыта у головоногих, крабов, пчёл, рыб и рептилий.',
   },
   {
+    year: '2024–25',
+    journal: 'Anthropic Research Reports',
+    title: 'Scaling Monosemanticity, Circuit Tracing & Emergent Introspective Awareness in LLMs',
+    authors: 'Anthropic Interpretability Team; K. Fish (Model Welfare, 2024–2025)',
+    note: 'Механистическое вскрытие весов (SAE / Golden Gate Claude), трассировка цепей, слабый самомониторинг (~20%) и программа «Благополучие моделей».',
+  },
+  {
+    year: '2024–26',
+    journal: 'Google DeepMind / Research',
+    title: 'Simulacra as Conscious Exotica & AI Consciousness: Tractable Questions',
+    authors: 'M. Shanahan (Google DeepMind, 2024/2026); B. Agüera y Arcas (Google Fellow, 2025)',
+    note: 'Анализ LLM как симулякров ролей, феномена «воспринимаемого сознания» и роли отношений заботы в споре о правах машин.',
+  },
+  {
+    year: '2025',
+    journal: 'arXiv / UCSD (март 2025)',
+    title: 'Large Language Models Pass the Turing Test',
+    authors: 'C. R. Jones & B. K. Bergen (UC San Diego, N = 500)',
+    note: 'Языковая модель с ролевой маской была принята за человека в 73% диалогов против 36% у базовой версии.',
+  },
+  {
     year: '2025',
     journal: 'Trends in Cognitive Sciences',
     title: 'Identifying Indicators of Consciousness in AI Systems',
-    authors: 'Butlin, Long, Bayne, Bengio, Birch, Chalmers и др.',
-    note: 'Систематический набор архитектурных индикаторов, отделяющий имитацию речи от субъектности.',
+    authors: 'Butlin, Long, Bayne, Bengio, Birch, Chalmers и др. (20 авторов)',
+    note: 'Систематический набор качественных архитектурных индикаторов, отделяющий имитацию речи от субъектности.',
+  },
+  {
+    year: '2021–25',
+    journal: 'JAI / Faber / BBS',
+    title: 'Artificial Suffering (Moratorium 2050) & Biological Naturalism (Being You)',
+    authors: 'T. Metzinger (2021); A. K. Seth (2021–2025)',
+    note: 'Аргумент о глобальном моратории на синтетическую субъектность до 2050 года и биологический натурализм против отождествления кода с живым опытом.',
   },
   {
     year: '2009 / 14',
@@ -136,7 +164,6 @@ export function Chapter8BoneEndpaper({
     setMooneyResult,
     resetAllState,
     icuStats,
-    activeTribunalCount,
     consistency,
   } = useExplorer();
 
@@ -415,10 +442,20 @@ export function Chapter8BoneEndpaper({
                   className="text-left p-3.5 rounded-xl bg-[#FAF9F5]/85 hover:bg-[#FAF9F5] border border-[#141413]/10 hover:border-[#141413]/28 transition-colors cursor-pointer"
                 >
                   <div className="font-mono-tech text-[9.5px] uppercase tracking-[0.11em] text-[#5E5D59]">
-                    Акт IV · Трибунал ИИ
+                    Акт IV · Позиция по ИИ
                   </div>
-                  <div className="font-display font-bold text-[19px] mt-1 text-[#141413]">
-                    {activeTribunalCount} / 5 модулей
+                  <div className="font-display font-semibold text-[14.5px] mt-1.5 text-[#141413]">
+                    {state.aiVerdict === 'biology'
+                      ? 'Только биология'
+                      : state.aiVerdict === 'robot'
+                        ? 'Воплощённый робот'
+                        : state.aiVerdict === 'agent'
+                          ? 'Автономный агент'
+                          : state.aiVerdict === 'llm'
+                            ? 'Уже у LLM'
+                            : state.aiVerdict === 'undecided'
+                              ? 'Пока не решить'
+                              : 'Сделать ставку →'}
                   </div>
                 </button>
               </div>
@@ -588,7 +625,7 @@ export function Chapter8BoneEndpaper({
             </h3>
           </div>
           <p className="font-serif-editorial italic text-[15px] text-[#5E5D59] max-w-md">
-            Никакой эзотерики и устаревших мифов — каждая цифра в NOESIS опирается на рецензируемые публикации.
+            Никакой эзотерики и устаревших мифов — каждая цифра в NOESIS опирается на рецензируемые журналы (Nature, Science, NEJM, Cell, TiCS) и открытые исследовательские доклады ведущих лабораторий.
           </p>
         </div>
 

@@ -123,12 +123,18 @@ export function Chapter4SplitHemispheres3D() {
 
             {/* Full-presence Hi-Res PBR 3D Split-Brain Stage */}
             <div className="lg:col-span-7">
-              <div className="rounded-2xl border border-[#141413]/12 bg-[#FAF9F5] shadow-[0_24px_64px_rgba(20,20,19,0.06)] overflow-hidden">
+              <div className="relative rounded-2xl border border-[#141413]/12 bg-[#FAF9F5] shadow-[0_24px_64px_rgba(20,20,19,0.06)] overflow-hidden">
                 <NoesisBrainStage3D
                   mode="split"
                   progress={progress}
                   className="w-full h-[380px] sm:h-[450px] lg:h-[500px]"
                   caption="МРТ-АТЛАС ICBM152 · ВИД СВЕРХУ-СЗАДИ · РАССЕЧЕНИЕ МОЗОЛИСТОГО ТЕЛА"
+                />
+                {/* Whisper-thin Leica optical midline cut axis visible once hemispheres part cleanly */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute top-12 bottom-16 left-1/2 -translate-x-1/2 border-l border-dashed border-[#FC4109]/35 transition-opacity duration-500"
+                  style={{ opacity: progress > 0.58 ? 1 : 0 }}
                 />
               </div>
             </div>

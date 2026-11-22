@@ -301,7 +301,7 @@ export function Chapter1WhatIsConsciousness({
                   return (
                     <div
                       key={card.id}
-                      className={`rounded-xl border transition-colors ${
+                      className={`noesis-spotlight-card rounded-xl border transition-colors ${
                         isOpen
                           ? 'bg-[#FAF9F5] border-[#141413]/24 shadow-[0_8px_24px_rgba(20,20,19,0.05)]'
                           : 'bg-[#FAF9F5]/65 border-[#141413]/10 hover:bg-[#FAF9F5]'

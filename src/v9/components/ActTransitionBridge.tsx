@@ -142,7 +142,7 @@ export function ActBottomTurn({ actId, onSwitchAct, fromDark = false }: ActBotto
     >
       <div className="max-w-[920px] mx-auto">
         <div
-          className={`p-7 sm:p-10 rounded-2xl border ${
+          className={`noesis-spotlight-card p-7 sm:p-10 rounded-2xl border ${
             fromDark
               ? 'bg-[#161B24] border-[#FAF9F5]/16'
               : 'v9-paper-plate bg-[#FAF9F5] border-[#141413]/12'

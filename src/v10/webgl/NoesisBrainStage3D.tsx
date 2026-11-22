@@ -337,6 +337,20 @@ export function NoesisBrainStage3D({
   const pulseStartRef = useRef(-999);
   const lastPulseKeyRef = useRef(pulseKey);
   const resetViewRef = useRef<(() => void) | null>(null);
+  const dragOriginRef = useRef<{ progress: number; focusMode: number } | null>(null);
+  const isPointerDownRef = useRef(false);
+
+  // Auto-release manual orbit when user scrolls meaningfully or switches camera pills,
+  // so scroll choreography (Split-Brain separation, SCAN, COGITATE, Thalamus) ALWAYS rotates back into crystal-clear view!
+  useEffect(() => {
+    if (!userDragged || isPointerDownRef.current || !dragOriginRef.current) return;
+    const progDelta = Math.abs(progress - dragOriginRef.current.progress);
+    const focusChanged = focusMode !== dragOriginRef.current.focusMode;
+    if (progDelta > 0.035 || focusChanged) {
+      dragOriginRef.current = null;
+      setUserDragged(false);
+    }
+  }, [progress, focusMode, userDragged]);
 
   useEffect(() => {
     if (pulseKey !== lastPulseKeyRef.current) {
@@ -442,11 +456,17 @@ export function NoesisBrainStage3D({
     controls.target.set(0, -0.05, 0);
 
     const onStartDrag = () => {
+      isPointerDownRef.current = true;
       canvas.style.cursor = 'grabbing';
       setUserDragged(true);
     };
     const onEndDrag = () => {
+      isPointerDownRef.current = false;
       canvas.style.cursor = 'grab';
+      dragOriginRef.current = {
+        progress: propsRef.current.progress,
+        focusMode: propsRef.current.focusMode,
+      };
     };
     controls.addEventListener('start', onStartDrag);
     controls.addEventListener('end', onEndDrag);
@@ -531,8 +551,9 @@ export function NoesisBrainStage3D({
     const rightGroup = new THREE.Group();
     root.add(leftGroup, rightGroup);
 
-    // Corpus Callosum (24 glowing commissural fibers bridging left <-> right in 'split' mode!)
-    const callosumGroup = new THREE.Group();
+    // Corpus Callosum (20 glowing commissural arches split cleanly at midline so they physically sever at Stage 3!)
+    const callosumLeftGroup = new THREE.Group();
+    const callosumRightGroup = new THREE.Group();
     const tractGeos: THREE.BufferGeometry[] = [];
     const tractMats: THREE.ShaderMaterial[] = [];
 
@@ -540,18 +561,30 @@ export function NoesisBrainStage3D({
       for (let i = 0; i < 20; i += 1) {
         const z = -0.46 + (i / 19) * 0.88;
         const archY = 0.18 + Math.sin((i / 19) * Math.PI) * 0.18;
-        const curve = new THREE.CatmullRomCurve3([
+        const colorHex = i % 2 === 0 ? '#004EDF' : '#FC4109';
+        const spd = 0.55 + (i % 4) * 0.15;
+        const rev = i % 3 === 0;
+
+        const leftCurve = new THREE.CatmullRomCurve3([
           new THREE.Vector3(-0.34, archY - 0.05, z),
-          new THREE.Vector3(0, archY + 0.06, z),
+          new THREE.Vector3(-0.17, archY + 0.035, z),
+          new THREE.Vector3(0.0, archY + 0.06, z),
+        ]);
+        const rightCurve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(0.0, archY + 0.06, z),
+          new THREE.Vector3(0.17, archY + 0.035, z),
           new THREE.Vector3(0.34, archY - 0.05, z),
         ]);
-        const geo = new THREE.TubeGeometry(curve, 24, 0.0085, 6, false);
-        const mat = createTractMaterial(i % 2 === 0 ? '#004EDF' : '#FC4109', 0.55 + (i % 4) * 0.15, i % 3 === 0);
-        tractGeos.push(geo);
+
+        const gL = new THREE.TubeGeometry(leftCurve, 16, 0.0085, 6, false);
+        const gR = new THREE.TubeGeometry(rightCurve, 16, 0.0085, 6, false);
+        const mat = createTractMaterial(colorHex, spd, rev);
+        tractGeos.push(gL, gR);
         tractMats.push(mat);
-        callosumGroup.add(new THREE.Mesh(geo, mat));
+        callosumLeftGroup.add(new THREE.Mesh(gL, mat));
+        callosumRightGroup.add(new THREE.Mesh(gR, mat));
       }
-      root.add(callosumGroup);
+      root.add(callosumLeftGroup, callosumRightGroup);
     }
 
     // Long-range recurrent / thalamocortical fiber arcs for 'atlas' mode
@@ -691,18 +724,23 @@ export function NoesisBrainStage3D({
         leftGroup.rotation.y = sep * 0.16;
         rightGroup.rotation.y = -sep * 0.16;
 
-        // Corpus callosum fibers stretch dramatically across the midline, then sever cleanly after p = 0.72!
-        const severed = THREE.MathUtils.smoothstep(p, 0.72, 0.90);
-        callosumGroup.scale.x = 1 + sep * 1.9;
-        callosumGroup.visible = severed < 0.98;
+        // Corpus callosum arches stretch intact until Frame 2/3 ("РАССЕЧЕНИЕ", p = 0.48..0.66), then physically snap open!
+        const severed = THREE.MathUtils.smoothstep(p, 0.48, 0.66);
+        const intactStretch = 1 + sep * (1.85 * (1 - severed));
+        callosumLeftGroup.scale.x = Math.max(0.45, intactStretch - severed * 0.72);
+        callosumRightGroup.scale.x = Math.max(0.45, intactStretch - severed * 0.72);
+        callosumLeftGroup.position.x = -sep * severed * 1.15;
+        callosumRightGroup.position.x = sep * severed * 1.15;
+        callosumLeftGroup.visible = true;
+        callosumRightGroup.visible = true;
         for (const tm of tractMats) {
           tm.uniforms.uTime.value = elapsed;
-          tm.uniforms.uOpacity.value = (1 - severed) * 0.96;
+          tm.uniforms.uOpacity.value = 0.96 - severed * 0.44;
         }
-        // Subtle laser sweep right at severance peak (p = 0.66..0.82)
-        const cutPeak = Math.exp(-Math.pow((p - 0.74) / 0.075, 2));
-        cutLineMat.opacity = cutPeak * 0.78;
-        cutLineMesh.position.y = THREE.MathUtils.lerp(0.68, -0.15, THREE.MathUtils.clamp((p - 0.62) / 0.22, 0, 1));
+        // Subtle laser sweep right during Frame 2/3 ("РАССЕЧЕНИЕ", peak at p = 0.58)
+        const cutPeak = Math.exp(-Math.pow((p - 0.58) / 0.075, 2));
+        cutLineMat.opacity = cutPeak * 0.80;
+        cutLineMesh.position.y = THREE.MathUtils.lerp(0.68, -0.15, THREE.MathUtils.clamp((p - 0.46) / 0.24, 0, 1));
 
         if (subMesh) subMesh.visible = false;
         if (cerebMesh) cerebMesh.visible = true;
@@ -800,9 +838,9 @@ export function NoesisBrainStage3D({
       glassOverlayMat.uniforms.uGlassMix.value = glassMode ? 1.0 : 0.0;
       glassOverlayMat.depthFunc = THREE.LessEqualDepth;
 
-      // Gently guide camera along scroll choreography unless user grabbed OrbitControls manually!
+      // Gently guide camera along scroll choreography unless user is actively dragging manually!
       if (!dragged) {
-        camera.position.lerp(desiredCam, 0.065);
+        camera.position.lerp(desiredCam, 0.088);
       }
       controls.update();
       renderer.render(scene, camera);

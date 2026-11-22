@@ -18,6 +18,7 @@ import { BookIndexDrawer } from './v7/components/BookIndexDrawer';
 import { DossierProvider } from './v9/components/DossierContext';
 import { NoesisDossierSheet } from './v9/components/NoesisDossierSheet';
 import { prefetchHiResBrain } from './v10/webgl/brainHiresLoader';
+import { useEditorialChoreography } from './v10/motion/useEditorialChoreography';
 import { ACTS_META, getActMeta } from './v9/data/actsMeta';
 import {
   buildHashUrl,
@@ -79,6 +80,7 @@ function NoesisBookShell() {
   const [indexOpen, setIndexOpen] = useState(false);
   const [dossierOpen, setDossierOpen] = useState(false);
   const [isCurtainVisible, setIsCurtainVisible] = useState(false);
+  const [transitionTargetAct, setTransitionTargetAct] = useState<ActId | null>(null);
 
   const [hudTheme, setHudTheme] = useState<'light' | 'dark'>('light');
   const [immersiveCanvas, setImmersiveCanvas] = useState(false);
@@ -87,6 +89,7 @@ function NoesisBookShell() {
 
   const lenisRef = useRef<Lenis | null>(null);
   const mainRef = useRef<HTMLElement | null>(null);
+  useEditorialChoreography(mainRef, activeAct);
   const ch1DarkRef = useRef(false);
   const pendingSectionRef = useRef<string | null>(initialRoute.section);
   const activeActRef = useRef<ActId>(activeAct);
@@ -310,8 +313,9 @@ function NoesisBookShell() {
         window.clearTimeout(transitionTimerRef.current);
       }
 
-      // Phase 1: Lock & Curtain
+      // Phase 1: Lock & Leica Aperture Shutter Curtain with Target Act Title Stamp
       isTransitioningRef.current = true;
+      setTransitionTargetAct(targetAct);
       setIsCurtainVisible(true);
       setIndexOpen(false);
       setDossierOpen(false);
@@ -336,7 +340,7 @@ function NoesisBookShell() {
           lenisRef.current.scrollTo(0, { immediate: true, force: true });
         }
         lastMetricsRef.current = { y: -1, h: -1 };
-        setHudTheme('light');
+        setHudTheme(getActMeta(targetAct).startsDark ? 'dark' : 'light');
         setImmersiveCanvas(false);
         setIsScrolled(false);
         setScrollProgress(0);
@@ -344,7 +348,7 @@ function NoesisBookShell() {
         pendingSectionRef.current = targetSection ?? null;
         setActiveChapterId(targetSection ?? getActMeta(targetAct).chapters[0].id);
         setActiveAct(targetAct);
-      }, 130);
+      }, 280);
     },
     [],
   );
@@ -392,7 +396,7 @@ function NoesisBookShell() {
             }
             ScrollTrigger.refresh();
             syncHudFromViewport(true);
-          }, 70);
+          }, 190);
         });
       });
 
@@ -461,6 +465,8 @@ function NoesisBookShell() {
   );
 
   const ActiveActComponent = ACT_COMPONENTS[activeAct];
+  const shutterMeta = getActMeta(transitionTargetAct ?? activeAct);
+  const isShutterDark = Boolean(shutterMeta.startsDark);
 
   return (
     <DossierProvider onDossierRead={markDossierRead}>
@@ -468,13 +474,27 @@ function NoesisBookShell() {
         {/* Analog film grain overlay (0 GPU cost) */}
         <div className="v6-grain" aria-hidden="true" />
 
-        {/* Atomic Vellum Page-Turn Curtain (hides ScrollTrigger teardown/mount flicker) */}
+        {/* Cinema Leica Aperture Shutter Curtain with Editorial Act Title Stamp */}
         <div
           aria-hidden="true"
-          className={`fixed inset-0 z-[70] pointer-events-none bg-[#FAF9F5] transition-opacity duration-150 ${
-            isCurtainVisible ? 'opacity-100' : 'opacity-0'
+          data-open={isCurtainVisible ? 'true' : 'false'}
+          className={`noesis-shutter-curtain fixed inset-0 z-[70] pointer-events-none flex flex-col items-center justify-center px-6 ${
+            isShutterDark ? 'bg-[#0B0D11] text-[#FAF9F5]' : 'bg-[#FAF9F5] text-[#141413]'
           }`}
-        />
+        >
+          <div className="text-center space-y-4 max-w-lg">
+            <div className="font-mono-tech text-[11px] uppercase tracking-[0.22em] text-[#FC4109] font-semibold">
+              {shutterMeta.code}
+            </div>
+            <div className="font-serif-display text-[clamp(28px,4.2vw,48px)] leading-[1.06] tracking-[-0.024em]">
+              {shutterMeta.title}
+            </div>
+            <div
+              key={shutterMeta.id}
+              className="noesis-shutter-line mx-auto w-24 h-[2px] bg-[#FC4109] origin-center"
+            />
+          </div>
+        </div>
 
         {/* Dieter Rams 3-Node v9 HUD */}
         <BookHud

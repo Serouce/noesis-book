@@ -16,6 +16,7 @@ export type CogitateBet = 'iit' | 'gnwt' | 'draw' | null;
 export type TurntableMode = 'wake' | 'nrem' | 'rem' | 'psilocybin' | 'propofol';
 export type IcuVerdict = 'cmd' | 'coma';
 export type MooneyGuess = 'blobs' | 'face_or_animal' | 'object' | null;
+export type AiVerdict = 'biology' | 'robot' | 'agent' | 'llm' | 'undecided' | null;
 
 export interface IcuPatientTruth {
   id: 'p1' | 'p2' | 'p3';
@@ -28,8 +29,8 @@ export const ICU_TRUTH: Record<'p1' | 'p2' | 'p3', IcuVerdict> = {
   p3: 'cmd', // PCI* = 0.37 — минимальный порог, пациент слышит речь!
 };
 
-const STORAGE_KEY = 'noesis_v9_state_v1';
-const SCHEMA_VERSION = 1;
+const STORAGE_KEY = 'noesis_v10_state_v2';
+const SCHEMA_VERSION = 2;
 
 export interface ExplorerState {
   // Акт I — Иллюзия Муни + Гл. 01 «Что такое сознание?»
@@ -59,10 +60,11 @@ export interface ExplorerState {
   nremExperienced: boolean;
   remExperienced: boolean;
   propofolExperienced: boolean;
-  // Акт IV — Реанимация + Красная закладка NY 2024 + Трибунал ИИ
+  // Акт IV — Реанимация + Красная закладка NY 2024 + Позиция по ИИ
   icuDiagnoses: Partial<Record<'p1' | 'p2' | 'p3', IcuVerdict>>;
   ribbonBoundaryIndex: number;
   ribbonChecked: boolean;
+  aiVerdict: AiVerdict;
   tribunalModules: Record<string, boolean>;
   // Навигация и архив v10
   visitedActs: Record<string, boolean>;
@@ -100,6 +102,7 @@ interface ExplorerContextValue {
   setIcuDiagnosis: (patientId: 'p1' | 'p2' | 'p3', verdict: IcuVerdict) => void;
   setRibbonBoundaryIndex: (idx: number) => void;
   setRibbonChecked: (v: boolean) => void;
+  setAiVerdict: (verdict: Exclude<AiVerdict, null>) => void;
   toggleTribunalModule: (moduleId: string) => void;
   setTribunalModules: (modules: Record<string, boolean>) => void;
   markActVisited: (actId: ActId) => void;
@@ -147,6 +150,7 @@ const INITIAL_STATE: ExplorerState = {
   icuDiagnoses: {},
   ribbonBoundaryIndex: 3,
   ribbonChecked: false,
+  aiVerdict: null,
   tribunalModules: { ...DEFAULT_MODULES },
   visitedActs: { 'act-1': true },
   dossiersRead: [],
@@ -230,6 +234,15 @@ function sanitizePersistedState(raw: unknown): ExplorerState {
       ? Math.max(0, Math.min(4, Math.round(d.sperlingCuedScore)))
       : null;
 
+  const validAiVerdict: AiVerdict =
+    d.aiVerdict === 'biology' ||
+    d.aiVerdict === 'robot' ||
+    d.aiVerdict === 'agent' ||
+    d.aiVerdict === 'llm' ||
+    d.aiVerdict === 'undecided'
+      ? d.aiVerdict
+      : null;
+
   return {
     mooneyGuess: validGuess,
     mooneyExposed: d.mooneyExposed === true,
@@ -259,6 +272,7 @@ function sanitizePersistedState(raw: unknown): ExplorerState {
     icuDiagnoses,
     ribbonBoundaryIndex: ribbonIdx,
     ribbonChecked: d.ribbonChecked === true,
+    aiVerdict: validAiVerdict,
     tribunalModules,
     visitedActs,
     dossiersRead,
@@ -473,6 +487,11 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const setAiVerdict = useCallback(
+    (aiVerdict: Exclude<AiVerdict, null>) => setState((prev) => ({ ...prev, aiVerdict })),
+    [],
+  );
+
   const setTribunalModules = useCallback(
     (tribunalModules: Record<string, boolean>) =>
       setState((prev) => ({ ...prev, tribunalModules })),
@@ -542,7 +561,7 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
       'ch-4': state.cogitateBet !== null,
       'ch-5': state.remExperienced || state.propofolExperienced || state.nremExperienced,
       'ch-6': icuStats.attempted === 3,
-      'ch-7': state.ribbonChecked || activeTribunalCount > 0,
+      'ch-7': state.ribbonChecked || state.aiVerdict !== null,
       'ch-8': true,
       // Legacy aliases preserved for un-deleted files before coordinator cleanup
       prologue: state.prologueExplored,
@@ -589,13 +608,16 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
       };
     }
 
-    if (state.maryBet === 'learns_new' && activeTribunalCount >= 4) {
+    const choseSilicon =
+      state.aiVerdict === 'robot' || state.aiVerdict === 'agent' || state.aiVerdict === 'llm';
+
+    if (state.maryBet === 'learns_new' && choseSilicon) {
       return {
         author: 'dennett',
         stampTitle: 'ШПИЛЬКА Д. ДЕННЕТА',
         stampSubtitle: 'Полемическая заметка на полях',
         commentary:
-          'Любопытный союз! В Акте II вы решили, что физика не объясняет красный цвет Мэри — а в Акте IV выдали опыт кремниевой машине по архитектурным модулям. Сам Чалмерс защищает обе позиции сразу, но мне всё равно кажется, что вы незаметно сдали квалиа вычислительной схеме.',
+          'Любопытный союз! В Акте II вы решили, что физика не объясняет красный цвет Мэри — а в Акте IV допустили субъективный опыт у кремниевой системы. Сам Чалмерс защищает обе позиции сразу, но мне всё равно кажется, что вы незаметно сдали квалиа вычислительной архитектуре.',
         isContradiction: false,
         isPolemic: true,
       };
@@ -644,7 +666,7 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
       stampTitle: 'СТРОГАЯ ПОСЛЕДОВАТЕЛЬНОСТЬ',
       stampSubtitle: 'Редкий штамп редакции NOESIS',
       commentary:
-        'Ваши ответы в Комнате Мэри, пари COGITATE и перед Трибуналом ИИ не поспорили друг с другом. Остался последний экзамен — переверните хлопковую карточку и проверьте собственный мозг.',
+        'Ваши ответы в Комнате Мэри, пари COGITATE и в разборе ИИ не поспорили друг с другом. Остался последний экзамен — переверните хлопковую карточку и проверьте собственный мозг.',
       isContradiction: false,
     };
   }, [
@@ -654,7 +676,7 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
     state.cogitateBet,
     state.ribbonChecked,
     state.ribbonBoundaryIndex,
-    activeTribunalCount,
+    state.aiVerdict,
   ]);
 
   const value = useMemo<ExplorerContextValue>(
@@ -679,6 +701,7 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
       setIcuDiagnosis,
       setRibbonBoundaryIndex,
       setRibbonChecked,
+      setAiVerdict,
       toggleTribunalModule,
       setTribunalModules,
       markActVisited,
@@ -712,6 +735,7 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
       setIcuDiagnosis,
       setRibbonBoundaryIndex,
       setRibbonChecked,
+      setAiVerdict,
       toggleTribunalModule,
       setTribunalModules,
       markActVisited,

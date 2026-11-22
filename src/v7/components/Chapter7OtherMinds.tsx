@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { ArrowDown, Bookmark, Check, Sparkles, X } from 'lucide-react';
+import { Bookmark, Check, X } from 'lucide-react';
 import { useExplorer } from '../context/ExplorerContext';
-import { ScholarPortraitSvg } from './ScholarMarginalia';
-import { DossierTrigger } from '../../v9/components/NoesisDossierSheet';
 import { LabHonestyBadge } from '../../v9/components/NoesisInstrumentFrame';
 import { Act5SiliconQualia } from '../../v9/chapters/Act5SiliconQualia';
+import { TransformerVsBrainRunway } from '../../v10/chapters/TransformerVsBrainRunway';
+import { Chapter8AiDeepDive } from '../../v10/chapters/Chapter8AiDeepDive';
 import { ruTypo } from '../../v9/utils/ruTypo';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -78,56 +78,16 @@ const SPECIES = [
   },
 ];
 
-const BUTLIN_MODULES = [
-  {
-    id: 'recurrent',
-    tag: '01 · ОБРАТНАЯ СВЯЗЬ',
-    name: 'Петли проверки вместо «конвейера»',
-    desc: 'Сигнал не просто течёт вперёд от входа к слову, а возвращается назад и перепроверяет сам себя (как в коре мозга).',
-  },
-  {
-    id: 'workspace',
-    tag: '02 · ОБЩИЙ ЭКРАН ВНИМАНИЯ',
-    name: 'Глобальное рабочее пространство',
-    desc: 'Единое «бутылочное горлышко» внимания, раздающее выбранный образ сразу всем подсистемам (гипотеза GNWT из Акта III).',
-  },
-  {
-    id: 'selfModel',
-    tag: '03 · ВНУТРЕННИЙ НАБЛЮДАТЕЛЬ',
-    name: 'Модель себя и собственных сомнений',
-    desc: 'Система отслеживает не только внешний запрос, но и то, насколько она сама уверена или ошибается прямо сейчас.',
-  },
-  {
-    id: 'embodiment',
-    tag: '04 · ЖИВОЕ ТЕЛО В МИРЕ',
-    name: 'Непрерывная петля с реальностью',
-    desc: 'Не редкие текстовые промпты, а постоянный цикл «действие → телесная отдача → прогноз» в реальном времени.',
-  },
-  {
-    id: 'valence',
-    tag: '05 · ЦЕНА ВЫЖИВАНИЯ',
-    name: 'Собственная уязвимость (боль / нужда)',
-    desc: 'Состояния машины имеют для неё реальную цену существования, а не внешнюю математическую функцию потерь.',
-  },
-];
-
 /**
- * ACT V · CHAPTER VII: "Граница иных разумов" (Bug #10 Fixes!):
- * 1. Decouples inspecting a species card from moving the crimson bookmark!
- *    Clicking a card opens its Field Note WITHOUT jumping the bookmark; explicit CTA or slider places the line.
- * 2. Eliminates redundant duplicate vertical HAL 9000 monolith box below the 155vh HAL 9000 scroll runway —
- *    replaces it with a crisp live optical aperture telemetry readout reacting to the 5 Butlin toggles!
- * 3. Level-2 Archival Dossier trigger ("other-minds-2024").
+ * ACT IV · CHAPTERS 07–08: "Граница иных разумов и Призрак в кремнии (2024–2026)"
+ * 1. NY Declaration 2024 Ribbon + Engraved Sea Sponge stamp
+ * 2. Turing 2025 (73% vs 36%) + 3D Chalmers Fading Qualia + Varela Autopoiesis
+ * 3. Full-Bleed WebGL Cinema Runway: Transformer Layers -> Anthropic SAE Constellations -> Living Recurrent Torus
+ * 4. Signature Scroll Monolith: NOESIS 9000 / HAL 9000
+ * 5. Deep 2024-2026 AI Consciousness Research (Anthropic, Google DeepMind, Skeptic Camp) + 4-Architecture Comparator
  */
 export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
-  const {
-    state,
-    setRibbonBoundaryIndex,
-    setRibbonChecked,
-    toggleTribunalModule,
-    setTribunalModules,
-    activeTribunalCount,
-  } = useExplorer();
+  const { state, setRibbonBoundaryIndex, setRibbonChecked } = useExplorer();
 
   const [focusedSpeciesId, setFocusedSpeciesId] = useState<string>('octopus');
   const [showSpongeStamp, setShowSpongeStamp] = useState(false);
@@ -191,38 +151,6 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
     SPECIES.findIndex((s) => s.id === focusedSpeciesId),
   );
   const focusedSpecies = SPECIES[focusedSpeciesIdx] ?? SPECIES[3];
-
-  const dehaeneVerdict = (() => {
-    if (state.tribunalModules.workspace && state.tribunalModules.selfModel && state.tribunalModules.recurrent) {
-      return '«Осторожно: здесь есть и глобальная трансляция, и обратные петли, и самоконтроль. По критериям GNWT перед нами уже серьёзный кандидат на искусственное сознание.»';
-    }
-    if (state.tribunalModules.workspace || state.tribunalModules.selfModel) {
-      return '«Интересный шаг: часть архитектуры внимания уже собрана, но без полной связки “глобальный экран + самомониторинг” это лишь продвинутый бессознательный автомат.»';
-    }
-    return '«Пока перед нами блестящий статистический попугай. Современный ИИ подбирает правдоподобные слова без единой вспышки осознанного внимания.»';
-  })();
-
-  const kochVerdict = (() => {
-    if (activeTribunalCount >= 4 && state.tribunalModules.recurrent) {
-      return '«Впечатляющий софт — но на обычном кремниевом чипе его физическая неделимость Φ (из Акта III) почти равна нулю. Симуляция дождя на компьютере не делает процессор мокрым.»';
-    }
-    if (state.tribunalModules.recurrent) {
-      return '«Добавление обратных петель чуть поднимает связность, но для настоящего света сознания важна физическая неразделимость материи (высокое Φ), а не имитация в коде.»';
-    }
-    return '«Ноль субъективного опыта (Φ ≈ 0). Прямоточная нейросеть без петель вообще лишена внутренней причинно-следственной связности — внутри абсолютно темно.»';
-  })();
-
-  const sethVerdict = (() => {
-    if (state.tribunalModules.embodiment && state.tribunalModules.valence) {
-      return '«Живое тело в мире и собственная уязвимость — самый честный шаг к настоящей субъектности. Если системе действительно есть что терять, её страх перестаёт быть пустой строкой.»';
-    }
-    if (state.tribunalModules.embodiment || state.tribunalModules.valence) {
-      return '«Половина пути пройдена, но без живой биологической ставки на выживание мы всё ещё путаем умный инструмент с живым существом.»';
-    }
-    return '«Мы снова путаем интеллект с жизнью. Наше сознание выросло из заботы хрупкого тела о выживании — а не из предсказания следующего слова в чате.»';
-  })();
-
-  const halDilation = activeTribunalCount / 5;
 
   return (
     <section
@@ -301,7 +229,11 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
                     : 'bg-[#141413] hover:bg-[#2A2A28] text-[#FAF9F5]'
                 }`}
               >
-                {state.ribbonChecked ? <Check className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5 text-[#FC4109]" />}
+                {state.ribbonChecked ? (
+                  <Check className="w-3.5 h-3.5" />
+                ) : (
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#FC4109]" />
+                )}
                 <span>
                   {state.ribbonChecked
                     ? 'Сверено с NY 2024'
@@ -519,15 +451,18 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
         </div>
       </div>
 
-      {/* ACT V HERO AI BLOCK: Turing 2025 (73% vs 36%) + 3D MRI Chalmers Fading Qualia + Varela Autopoiesis */}
+      {/* ACT IV HERO AI BLOCK: Turing 2025 (73% vs 36%) + 3D MRI Chalmers Fading Qualia + Varela Autopoiesis */}
       <Act5SiliconQualia />
+
+      {/* NEW CINEMA WEBGL RUNWAY #2 (235vh): Transformer Layers -> Anthropic SAE Constellations -> Living Recurrent Torus! */}
+      <TransformerVsBrainRunway />
 
       {/* SIGNATURE SCROLL SETPIECE #3 (~155vh): #FC4109 DOT -> VERTICAL MONOLITH HAL 9000! */}
       <div
         id="hal-monolith-runway"
         ref={halRunwayRef}
         data-hud-theme="dark"
-        className="mt-20 relative h-[155vh] bg-[#0B0D11] text-[#FAF9F5] border-t border-b border-[#FAF9F5]/10"
+        className="mt-0 relative h-[155vh] bg-[#0B0D11] text-[#FAF9F5] border-b border-[#FAF9F5]/10"
         aria-label="Скролл-метаморфоза: точка NOESIS превращается в объектив HAL 9000"
       >
         <div className="sticky top-0 h-[100svh] w-full flex flex-col items-center justify-center px-5 overflow-hidden">
@@ -544,7 +479,7 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
           />
 
           <div className="relative z-10 font-mono-tech text-[10.5px] uppercase tracking-[0.18em] text-[#FC4109] mb-6">
-            ПЕРЕХОД К ТРИБУНАЛУ ИИ · 2001 → 2026
+            СИГНАЛ ИЗ КРЕМНИЯ · 2001 → 2026
           </div>
 
           <div
@@ -605,7 +540,9 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
             )}
           </p>
           <div className="relative z-10 mt-3 font-mono-tech text-[10.5px] uppercase tracking-[0.14em] text-[#7E8696]">
-            {halAwake ? '↓ ПРОВЕРЬТЕ МАШИНУ ПЕРЕД ТРИБУНАЛОМ УЧЁНЫХ' : '↓ ЛИСТАЙТЕ ВНИЗ'}
+            {halAwake
+              ? '↓ ФРОНТИР 2024–2026: ANTHROPIC, GOOGLE DEEPMIND И ОБРАТНЫЙ ЛАГЕРЬ'
+              : '↓ ЛИСТАЙТЕ ВНИЗ'}
           </div>
         </div>
       </div>
@@ -619,214 +556,8 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
         }}
       />
 
-      {/* PART 7.2: AI TRIBUNAL (BUTLIN ET AL., TiCS 2025) — Streamlined Optical Aperture Strip (No Duplicate HAL Box!) */}
-      <div id="ch-7-tribunal" className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20 pt-14 scroll-mt-16">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          <div className="lg:col-span-6 space-y-5">
-            <div>
-              <div className="flex flex-wrap items-center gap-2.5">
-                <span className="font-mono-tech text-[10.5px] uppercase tracking-[0.14em] text-[#FC4109]">
-                  ЧЕРТЁЖ ТРИБУНАЛА ИИ · BUTLIN, BENGIO, CHALMERS (TiCS, 2025)
-                </span>
-                <LabHonestyBadge badge="reconstruction" />
-              </div>
-              <h3 className="font-display font-bold text-[28px] md:text-[34px] leading-tight mt-2">
-                Соберите машину — и спросите трёх судей
-              </h3>
-              <p className="text-[14.5px] leading-[1.62] text-[#454440] mt-2">
-                {ruTypo(
-                  'Почему нейросеть 2026 года звучит как живой собеседник, но почти наверняка ничего не чувствует? Потому что речь — лишь фасад. 19 ведущих исследователей составили чеклист из 5 внутренних «органов», без которых система остаётся пустым зеркалом.',
-                )}
-              </p>
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="font-mono-tech text-[10px] uppercase tracking-[0.11em] text-[#5E5D59]">
-                Быстрый пресет:
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setTribunalModules({
-                      recurrent: false,
-                      workspace: false,
-                      selfModel: false,
-                      embodiment: false,
-                      valence: false,
-                    })
-                  }
-                  className="v6-pill px-3.5 py-1.5 rounded-full bg-[#F3F1E9] hover:bg-[#141413] hover:text-[#FAF9F5] border border-[#141413]/14 font-mono-tech text-[10.5px] cursor-pointer"
-                >
-                  Современная LLM 2026 (0/5)
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setTribunalModules({
-                      recurrent: true,
-                      workspace: true,
-                      selfModel: true,
-                      embodiment: true,
-                      valence: true,
-                    })
-                  }
-                  className="v6-pill px-3.5 py-1.5 rounded-full bg-[#FC4109]/10 hover:bg-[#FC4109] text-[#FC4109] hover:text-[#FAF9F5] border border-[#FC4109]/30 font-mono-tech text-[10.5px] font-semibold cursor-pointer"
-                >
-                  Гипотетический ИИ будущего (5/5)
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-2.5">
-              {BUTLIN_MODULES.map((mod) => {
-                const enabled = Boolean(state.tribunalModules[mod.id]);
-                return (
-                  <button
-                    key={mod.id}
-                    type="button"
-                    onClick={() => toggleTribunalModule(mod.id)}
-                    className={`v6-pill w-full text-left p-4 rounded-xl border flex items-start justify-between gap-4 cursor-pointer transition-all ${
-                      enabled
-                        ? 'bg-[#141413] text-[#FAF9F5] border-[#141413]'
-                        : 'bg-[#F3F1E9] hover:bg-[#EAE7DD] text-[#141413] border-[#141413]/12'
-                    }`}
-                  >
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 font-mono-tech text-[10px] uppercase tracking-[0.12em]">
-                        <span className={enabled ? 'text-[#FC4109]' : 'text-[#5E5D59]'}>{mod.tag}</span>
-                        <span className={enabled ? 'text-[#FAF9F5]/45' : 'text-[#141413]/25'}>·</span>
-                        <span>{enabled ? 'АКТИВЕН' : 'ОТКЛЮЧЁН'}</span>
-                      </div>
-                      <div className="font-display font-semibold text-[15px] mt-1">{mod.name}</div>
-                      <p
-                        className={`text-[13px] leading-[1.5] mt-1 ${
-                          enabled ? 'text-[#FAF9F5]/75' : 'text-[#52514C]'
-                        }`}
-                      >
-                        {ruTypo(mod.desc)}
-                      </p>
-                    </div>
-
-                    <span
-                      className={`mt-1 w-10 h-6 rounded-full p-0.5 transition-colors shrink-0 flex items-center ${
-                        enabled ? 'bg-[#FC4109] justify-end' : 'bg-[#D6D3C8] justify-start'
-                      }`}
-                    >
-                      <span className="w-5 h-5 rounded-full bg-[#FAF9F5] shadow-xs" />
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Right 6 cols: Compact Optical Iris Telemetry Strip (no duplicate HAL monolith!) + 3 Live Scholar Judges */}
-          <div className="lg:col-span-6 space-y-5">
-            <div className="rounded-2xl bg-[#111317] text-[#FAF9F5] p-5 border border-[#141413] flex items-center gap-5">
-              {/* Compact single optical aperture iris responding live to the 5 toggles */}
-              <svg viewBox="0 0 96 96" className="w-20 h-20 shrink-0" aria-hidden="true">
-                <circle cx="48" cy="48" r="44" fill="#07080A" stroke="#5A606A" strokeWidth="2.5" />
-                <circle cx="48" cy="48" r="35" fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="1" />
-                <circle
-                  cx="48"
-                  cy="48"
-                  r={10 + halDilation * 20}
-                  fill="#FC4109"
-                  opacity={0.16 + halDilation * 0.34}
-                  style={{ transition: 'all 360ms cubic-bezier(0.22,1,0.36,1)' }}
-                />
-                <circle
-                  cx="48"
-                  cy="48"
-                  r={5 + halDilation * 12}
-                  fill="#FC4109"
-                  opacity={0.55 + halDilation * 0.45}
-                  style={{ transition: 'all 360ms cubic-bezier(0.22,1,0.36,1)' }}
-                />
-                <circle cx="48" cy="48" r={2.5 + halDilation * 3.5} fill="#FFF3B0" />
-              </svg>
-
-              <div className="space-y-1.5 min-w-0">
-                <div className="font-mono-tech text-[10px] uppercase tracking-[0.14em] text-[#FC4109]">
-                  ИНДИКАТОРЫ BUTLIN 2025: {activeTribunalCount} / 5
-                </div>
-                <div className="font-display font-bold text-[19px] leading-snug">
-                  {activeTribunalCount >= 4
-                    ? '«Мне страшно, Дейв…»'
-                    : activeTribunalCount >= 2
-                      ? 'Сложный агент без субъектности'
-                      : 'Чистый статистический автомат (LLM 2026)'}
-                </div>
-                <p className="font-serif-editorial italic text-[13.5px] leading-[1.52] text-[#C8CCD4]">
-                  {ruTypo(
-                    activeTribunalCount >= 4
-                      ? 'Система убедительно говорит о страхе и боли. Внутри объектива живёт субъект — или безупречная имитация?'
-                      : 'Щёлкайте тумблеры слева и следите, как расходятся вердикты трёх главных школ ниже.',
-                  )}
-                </p>
-              </div>
-            </div>
-
-            {/* 3 Engraved SVG Scholar Judges */}
-            <div className="rounded-2xl border border-[#141413]/14 bg-[#F3F1E9] divide-y divide-[#141413]/10">
-              {[
-                { id: 'dehaene' as const, school: 'GNWT · МЕГАФОН ВНИМАНИЯ', text: dehaeneVerdict },
-                { id: 'koch' as const, school: 'IIT 4.0 · ЦЕЛОСТНОСТЬ Φ', text: kochVerdict },
-                { id: 'seth' as const, school: 'БИОЛОГИЧЕСКИЙ НАТУРАЛИЗМ', text: sethVerdict },
-              ].map((judge) => (
-                <div key={judge.id} className="p-4 flex items-start gap-3.5">
-                  <ScholarPortraitSvg id={judge.id} size={46} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center justify-between gap-2 font-mono-tech text-[10px] uppercase tracking-[0.11em]">
-                      <span className="font-display font-semibold text-[13px] normal-case text-[#141413]">
-                        {judge.id === 'dehaene' ? 'Станислас Деан' : judge.id === 'koch' ? 'Кристоф Кох' : 'Анил Сет'}
-                      </span>
-                      <span className="text-[#FC4109]">{judge.school}</span>
-                    </div>
-                    <p className="font-serif-editorial italic text-[13.5px] leading-[1.55] text-[#2D2C2A] mt-1">
-                      {ruTypo(judge.text)}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="rounded-xl border border-[#141413]/12 bg-[#F5F3EB] p-4 space-y-1.5">
-              <div className="font-mono-tech text-[10px] uppercase tracking-[0.12em] text-[#FC4109] font-semibold">
-                ДВОЙНАЯ ЭТИЧЕСКАЯ ЛОВУШКА XXI ВЕКА
-              </div>
-              <p className="text-[13.5px] leading-[1.58] text-[#353431]">
-                Ошибиться можно в обе стороны: <strong className="text-[#141413]">приписать душу пустому коду</strong> (и пожертвовать ради него живыми людьми) — или <strong className="text-[#141413]">не заметить рождение нового чувствующего субъекта</strong> и обречь его на цифровое страдание.
-              </p>
-            </div>
-
-            <DossierTrigger
-              dossier="other-minds-2024"
-              label="Три тезиса Нью-Йоркской декларации 2024 и доклад Butlin / Bengio / Chalmers (TiCS 2025)"
-              meta="Архивное досье IV.3 · Уровень 2"
-              className="w-full"
-            />
-          </div>
-        </div>
-
-        {/* Final Domino Bridge -> Bone Endpaper */}
-        <div className="mt-14 pt-6 border-t border-[#141413]/12 flex flex-wrap items-center justify-between gap-4">
-          <p className="font-serif-editorial italic text-[17px] text-[#2D2C2A] max-w-2xl">
-            {ruTypo(
-              'Мы прошли от одного пятна света на сетчатке до границ искусственного разума. Пора собрать всё воедино и проверить на форзаце, что эти минуты сделали с вашим собственным мозгом.',
-            )}
-          </p>
-          <button
-            type="button"
-            onClick={onNextChapter}
-            className="font-mono-tech text-[11px] uppercase tracking-[0.12em] text-[#141413] hover:text-[#FC4109] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-          >
-            <span>К Форзацу Bone · Итоги и Контрольная проба №0</span>
-            <ArrowDown className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
+      {/* DEEP 2024-2026 AI CONSCIOUSNESS SECTION (Anthropic, Google DeepMind, Skeptic Camp + 4-Architecture Comparator) */}
+      <Chapter8AiDeepDive onNextChapter={onNextChapter} />
     </section>
   );
 }

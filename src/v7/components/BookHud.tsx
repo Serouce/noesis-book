@@ -125,7 +125,7 @@ export function BookHud({
             className={`h-9 px-3.5 rounded-full border backdrop-blur-md inline-flex items-center gap-2 cursor-pointer shrink-0 transition-transform duration-150 active:scale-[0.97] ${pillCls}`}
           >
             <span className="font-display font-bold text-[12.5px] tracking-[0.08em]">NOESIS</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-[#FC4109]" />
+            <span className="noesis-live-dot w-1.5 h-1.5 rounded-full bg-[#FC4109]" />
           </button>
 
           <button

@@ -118,7 +118,7 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
             <span className="w-2 h-2 rounded-full bg-[#FC4109]" />
             <span>NOESIS · АКТ I · ИНТЕРАКТИВНАЯ КНИГА О СОЗНАНИИ</span>
           </span>
-          <span>ТАБЛ. 00 · ПРОВЕРКА ОПТИКИ · стр. 01</span>
+          <span>КРЕЙГ МУНИ · 1957 · ПРОВЕРКА ОПТИКИ</span>
         </div>
 
         {/* Main Asymmetric Book Spread — items-start guarantees 0.0px button shift before/during/after click! */}
@@ -159,11 +159,7 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
               >
                 <Eye className={`w-4 h-4 ${showingKey ? 'text-[#FAF9F5]' : 'text-[#FC4109]'}`} />
                 <span>
-                  {showingKey
-                    ? 'Проявка исходного снимка…'
-                    : state.mooneyExposed
-                      ? 'Проявить ещё раз'
-                      : 'Зажми или нажми — проявить снимок'}
+                  {showingKey ? 'Проявка…' : 'Проявить'}
                 </span>
               </button>
             </div>
@@ -214,7 +210,7 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
               footnoteRight={<span className="font-mono-tech text-[10.5px]">1 : 1</span>}
               bodyClassName="p-4 sm:p-5"
             >
-              <div className="relative aspect-square w-full overflow-hidden rounded-xl border border-[#141413]/16 bg-[#141413]">
+              <div className="noesis-spotlight-card relative aspect-square w-full overflow-hidden rounded-xl border border-[#141413]/16 bg-[#141413]">
                 <img
                   src={assetUrl('/v7/mooney-blob.png')}
                   alt="Контрастный чёрно-белый оттиск иллюзии Муни"
