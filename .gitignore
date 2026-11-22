@@ -2,6 +2,7 @@
 node_modules/
 dist/
 *.tsbuildinfo
+.netlify/
 
 # Local env & OS junk
 .env
