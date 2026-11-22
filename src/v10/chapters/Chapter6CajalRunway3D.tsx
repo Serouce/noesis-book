@@ -69,55 +69,55 @@ export function Chapter6CajalRunway3D() {
       className="relative h-[220vh] bg-[#0B0D11] text-[#FAF9F5] border-b border-[#FAF9F5]/10"
       aria-label="Органический 3D-полёт ×1000 в лес нейронов Кахаля"
     >
-      <div className="sticky top-0 min-h-[100svh] lg:h-[100svh] w-full overflow-hidden flex flex-col justify-between px-5 md:px-12 lg:px-20 pt-24 pb-10">
-        <div className="max-w-[1240px] mx-auto w-full flex flex-wrap items-center justify-between gap-2 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#9EA6B6] relative z-20">
+      <div className="sticky top-0 h-[100svh] w-full overflow-hidden flex flex-col justify-between px-4 sm:px-5 md:px-12 lg:px-20 pt-16 pb-5 sm:pt-20 lg:pt-24 lg:pb-10">
+        <div className="max-w-[1240px] mx-auto w-full flex flex-wrap items-center justify-between gap-2 font-mono-tech text-[9.5px] sm:text-[11px] uppercase tracking-[0.12em] sm:tracking-[0.14em] text-[#9EA6B6] relative z-20">
           <span className="text-[#FC4109] font-semibold">{active.kicker}</span>
-          <span ref={scaleRef}>МАСШТАБ: 10 СМ → 3 ММ · ВХОД В КОРУ</span>
+          <span ref={scaleRef} className="truncate">МАСШТАБ: 10 СМ → 3 ММ</span>
         </div>
 
-        <div className="max-w-[1240px] mx-auto w-full flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center my-4">
-          <div className="lg:col-span-5 space-y-5 relative z-20">
-            <h2 className="text-[clamp(26px,3.6vw,46px)] leading-[1.08] tracking-[-0.03em]">
+        <div className="max-w-[1240px] mx-auto w-full flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-6 lg:gap-8 items-center my-2 lg:my-4">
+          <div className="order-2 lg:order-1 lg:col-span-5 space-y-2.5 sm:space-y-4 lg:space-y-5 relative z-20">
+            <h2 className="text-[21px] sm:text-[28px] lg:text-[clamp(26px,3.6vw,46px)] leading-[1.08] tracking-[-0.03em]">
               <span className="font-display font-bold block text-[#FAF9F5]">{ruTypo(active.title)}</span>
             </h2>
-            <p className="font-serif-editorial italic text-[17px] md:text-[18.5px] leading-[1.58] text-[#D4DCE8]">
+            <p className="font-serif-editorial italic text-[14px] sm:text-[16.5px] lg:text-[18.5px] leading-[1.48] lg:leading-[1.58] text-[#D4DCE8]">
               {ruTypo(active.body)}
             </p>
 
-            <div className="flex flex-wrap gap-2 font-mono-tech text-[10px] uppercase tracking-[0.1em]">
-              <span className="px-3 py-1 rounded-full bg-[#12264B] text-[#B8D4FF] border border-[#60A5FA]/50 font-medium">
-                ● Слой I · Крона прогнозов
+            <div className="flex flex-wrap gap-1.5 lg:gap-2 font-mono-tech text-[9px] lg:text-[10px] uppercase tracking-[0.08em] lg:tracking-[0.1em]">
+              <span className="px-2.5 py-1 rounded-full bg-[#12264B] text-[#B8D4FF] border border-[#60A5FA]/50 font-medium">
+                ● Слой I · Крона
               </span>
-              <span className="px-3 py-1 rounded-full bg-[#3A1710] text-[#FFB89E] border border-[#FC4109]/55 font-medium">
-                ● Узел Ca²⁺ · Выключатель наркоза
+              <span className="px-2.5 py-1 rounded-full bg-[#3A1710] text-[#FFB89E] border border-[#FC4109]/55 font-medium">
+                ● Узел Ca²⁺ · Наркоз
               </span>
             </div>
 
-            <div className="flex items-center gap-3 pt-1">
-              <div className="w-36 h-[3px] rounded-full bg-[#FAF9F5]/16 overflow-hidden">
+            <div className="flex items-center gap-3 pt-0.5">
+              <div className="w-28 lg:w-36 h-[3px] rounded-full bg-[#FAF9F5]/16 overflow-hidden">
                 <div
                   ref={barRef}
                   className="h-full w-full origin-left bg-[#FC4109]"
                   style={{ transform: 'scaleX(0)' }}
                 />
               </div>
-              <span className="font-mono-tech text-[10px] uppercase tracking-[0.11em] text-[#9EA6B6]">
-                Листайте вниз · 3D-лес Кахаля ×1000
+              <span className="font-mono-tech text-[9.5px] lg:text-[10px] uppercase tracking-[0.11em] text-[#9EA6B6]">
+                Листайте вниз · ×1000
               </span>
             </div>
           </div>
 
-          <div className="lg:col-span-7 relative aspect-[16/11] w-full max-h-[520px] rounded-2xl border border-[#FAF9F5]/14 bg-[#07090D] overflow-hidden shadow-[0_32px_90px_rgba(0,0,0,0.65)]">
+          <div className="order-1 lg:order-2 lg:col-span-7 relative h-[225px] sm:h-[320px] lg:h-auto lg:aspect-[16/11] w-full max-h-[520px] rounded-2xl border border-[#FAF9F5]/14 bg-[#07090D] overflow-hidden shadow-[0_32px_90px_rgba(0,0,0,0.65)]">
             <OrganicCajalForest3D progress={progress} className="w-full h-full" />
 
             {/* Anatomically accurate horizontal optical leader pointing directly to the glowing Ca²⁺ nexus at mid-trunk! */}
             <div
-              className="pointer-events-none absolute top-[43%] right-4 flex items-center gap-0 transition-opacity duration-300"
+              className="pointer-events-none absolute top-[43%] right-3 sm:right-4 flex items-center gap-0 transition-opacity duration-300"
               style={{ opacity: progress > 0.52 ? 1 : 0 }}
             >
               <span className="w-14 h-[1px] bg-gradient-to-r from-[#FC4109] to-[#FC4109]/40 hidden sm:block" />
-              <div className="px-3 py-1.5 rounded-full bg-[#0B0D11]/92 border border-[#FC4109]/55 font-mono-tech text-[10px] uppercase tracking-[0.1em] text-[#FFB89E] font-semibold shadow-sm whitespace-nowrap">
-                ● УЗЕЛ Ca²⁺ · LARKUM (CELL 2020)
+              <div className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-[#0B0D11]/92 border border-[#FC4109]/55 font-mono-tech text-[9px] sm:text-[10px] uppercase tracking-[0.09em] text-[#FFB89E] font-semibold shadow-sm whitespace-nowrap">
+                ● УЗЕЛ Ca²⁺ · LARKUM
               </div>
             </div>
           </div>

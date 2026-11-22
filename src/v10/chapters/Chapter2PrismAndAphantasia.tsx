@@ -79,17 +79,17 @@ export function Chapter2PrismAndAphantasia() {
 
             <div className="lg:col-span-7 space-y-3">
               <div className="relative rounded-2xl overflow-hidden border border-[#141413]/18 shadow-[0_24px_64px_rgba(11,13,17,0.18)] bg-[#0B0D12]">
-                <OpticalPrismCanvas mode={prismMode} mix={mixPct / 100} className="w-full h-[320px] sm:h-[370px]" />
-                <div className="pointer-events-none absolute top-3.5 left-4 right-4 flex items-center justify-between font-mono-tech text-[10px] uppercase tracking-[0.13em] text-[#C8D0DC]">
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#FC4109]" />
-                    <span>
+                <OpticalPrismCanvas mode={prismMode} mix={mixPct / 100} className="w-full h-[240px] sm:h-[340px] lg:h-[370px]" />
+                <div className="pointer-events-none absolute top-3 left-3.5 right-3.5 sm:top-3.5 sm:left-4 sm:right-4 flex items-center justify-between gap-2 font-mono-tech text-[9.5px] sm:text-[10px] uppercase tracking-[0.11em] sm:tracking-[0.13em] text-[#C8D0DC]">
+                  <span className="inline-flex items-center gap-1.5 truncate">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#FC4109] shrink-0" />
+                    <span className="truncate">
                       {prismMode === 'magenta'
                         ? 'СВЕДЕНИЕ 660 НМ (L) + 440 НМ (S)'
                         : `ФОКУС СПЕКТРА · ~${nmApprox} НМ`}
                     </span>
                   </span>
-                  <span className="text-[#FAF9F5]/72">ОПТИЧЕСКАЯ ДИСПЕРСИЯ</span>
+                  <span className="hidden sm:inline text-[#FAF9F5]/72 shrink-0">ОПТИЧЕСКАЯ ДИСПЕРСИЯ</span>
                 </div>
               </div>
 

@@ -370,9 +370,14 @@ export function TransformerVsBrainCanvas({
 
     const updateLayoutOffset = (rw: number, rh: number) => {
       const isWide = rw / rh > 1.15;
-      stage.position.x = isWide ? 2.38 : 0;
-      stage.position.y = isWide ? 0.04 : 0;
-      stage.scale.setScalar(isWide ? 0.84 : 0.74);
+      if (isWide) {
+        stage.position.set(2.38, 0.04, 0);
+        stage.scale.setScalar(0.84);
+      } else {
+        // Portrait Mobile: lift the 3D Transformer/SAE/Torus cleanly into the upper 45% sky!
+        stage.position.set(0, 1.24, 0);
+        stage.scale.setScalar(0.62);
+      }
     };
     updateLayoutOffset(w, h);
 

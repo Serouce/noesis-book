@@ -269,8 +269,8 @@ export function Chapter8AiDeepDive({ onNextChapter }: Chapter8AiDeepDiveProps) {
           </p>
         </div>
 
-        {/* 4 Clean Architecture Selector Cards (1-line aligned headers + darker legible mono contrast) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* 4 Clean Architecture Selector Cards (Crisp 2x2 grid on phones, 4-col row on desktop!) */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
           {ARCHITECTURES.map((arch) => {
             const isSelected = arch.id === active.id;
             return (
@@ -278,23 +278,25 @@ export function Chapter8AiDeepDive({ onNextChapter }: Chapter8AiDeepDiveProps) {
                 key={arch.id}
                 type="button"
                 onClick={() => setSelectedId(arch.id)}
-                className={`v6-pill text-left p-3.5 rounded-2xl border cursor-pointer transition-all ${
+                className={`v6-pill text-left p-3 sm:p-3.5 rounded-2xl border cursor-pointer transition-all ${
                   isSelected
                     ? 'bg-[#141413] text-[#FAF9F5] border-[#141413] shadow-[0_14px_34px_rgba(20,20,19,0.16)]'
                     : 'bg-[#F3F1E9] hover:bg-[#EAE7DC] text-[#141413] border-[#141413]/14'
                 }`}
               >
-                <div className="flex items-center justify-between gap-2 font-mono-tech text-[10px] uppercase tracking-[0.11em]">
+                <div className="flex items-center justify-between gap-1.5 font-mono-tech text-[9.5px] sm:text-[10px] uppercase tracking-[0.09em] sm:tracking-[0.11em]">
                   <span className={`shrink-0 font-semibold ${isSelected ? 'text-[#FC4109]' : 'text-[#4A4945]'}`}>
                     {arch.code}
                   </span>
-                  <span className={`truncate ${isSelected ? 'text-[#FAF9F5]/75' : 'text-[#52514C]'}`}>
+                  <span className={`hidden sm:inline truncate ${isSelected ? 'text-[#FAF9F5]/75' : 'text-[#52514C]'}`}>
                     {arch.shortTag}
                   </span>
                 </div>
-                <div className="font-display font-bold text-[15.5px] mt-1.5 leading-snug">{arch.label}</div>
+                <div className="font-display font-bold text-[14px] sm:text-[15.5px] mt-1.5 leading-snug">
+                  {arch.label}
+                </div>
                 <p
-                  className={`text-[12px] leading-[1.45] mt-1 ${
+                  className={`hidden sm:block text-[12px] leading-[1.45] mt-1 ${
                     isSelected ? 'text-[#FAF9F5]/78' : 'text-[#4A4945]'
                   }`}
                 >
@@ -308,9 +310,9 @@ export function Chapter8AiDeepDive({ onNextChapter }: Chapter8AiDeepDiveProps) {
         {/* Active Architecture Qualitative Profile + Live Two-Camp Scientific Duel */}
         <div data-no-reveal="true" className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
           {/* Left 5 cols: Optical Complexity Iris + 4 Qualitative Segmented Indicators (NO pseudo-percentages!) */}
-          <div className="lg:col-span-5 rounded-2xl bg-[#111317] text-[#FAF9F5] p-5 border border-[#141413] flex flex-col justify-between gap-5">
-            <div className="flex items-center gap-4">
-              <svg viewBox="0 0 96 96" className="w-16 h-16 shrink-0" aria-hidden="true">
+          <div className="lg:col-span-5 rounded-2xl bg-[#111317] text-[#FAF9F5] p-4 sm:p-5 border border-[#141413] flex flex-col justify-between gap-4 sm:gap-5">
+            <div className="flex items-center gap-3.5 sm:gap-4">
+              <svg viewBox="0 0 96 96" className="w-14 h-14 sm:w-16 sm:h-16 shrink-0" aria-hidden="true">
                 <circle cx="48" cy="48" r="44" fill="#07080A" stroke="#5A606A" strokeWidth="2.5" />
                 <circle cx="48" cy="48" r="35" fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="1" />
                 <circle
@@ -332,21 +334,21 @@ export function Chapter8AiDeepDive({ onNextChapter }: Chapter8AiDeepDiveProps) {
                 <circle cx="48" cy="48" r={2.4 + active.aperture * 3.0} fill="#FFF3B0" />
               </svg>
               <div className="min-w-0">
-                <div className="font-mono-tech text-[10px] uppercase tracking-[0.14em] text-[#FC4109]">
+                <div className="font-mono-tech text-[9.5px] sm:text-[10px] uppercase tracking-[0.14em] text-[#FC4109]">
                   ПРОФИЛЬ · {active.label}
                 </div>
-                <div className="font-display font-bold text-[17px] leading-snug mt-0.5">
+                <div className="font-display font-bold text-[15.5px] sm:text-[17px] leading-snug mt-0.5">
                   {ruTypo(active.statusHeadline)}
                 </div>
               </div>
             </div>
 
-            {/* 4 Honest Qualitative 4-Step Segmented Indicators */}
+            {/* 4 Honest Qualitative 4-Step Segmented Indicators (Uniform 2-line stack on phone, crisp 1-line row on sm+!) */}
             <div className="space-y-3">
               {active.indicators.map((bar) => (
                 <div key={bar.label} className="space-y-1.5">
-                  <div className="flex items-center justify-between gap-2 font-mono-tech text-[10.5px]">
-                    <span className="text-[#CBD3DF] truncate">{bar.label}</span>
+                  <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-0.5 sm:gap-2 font-mono-tech text-[10px] sm:text-[10.5px]">
+                    <span className="text-[#9EA9BB] sm:text-[#CBD3DF]">{bar.label}</span>
                     <span
                       className="shrink-0 font-semibold"
                       style={{ color: bar.level === 0 ? '#8E98A8' : bar.simulated ? '#E5C67A' : '#FAF9F5' }}

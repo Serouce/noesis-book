@@ -204,10 +204,8 @@ export function Chapter1WhatIsConsciousness({
             </div>
           </div>
 
-          {/* Slot for Coordinator's WebGL Scene #1 ("Мельница Лейбница") */}
-          {leibnizSceneSlot ? (
-            <div className="w-full">{leibnizSceneSlot}</div>
-          ) : (
+          {/* Slot for Coordinator's WebGL Scene #1 ("Мельница Лейбница") rendered edge-to-edge below! */}
+          {!leibnizSceneSlot && (
             <NoesisInstrumentFrame
               code="СЦЕНА 01 · МЕЛЬНИЦА ЛЕЙБНИЦА (1714 → НАШИ ДНИ)"
               badge="scroll-optics"
@@ -253,7 +251,11 @@ export function Chapter1WhatIsConsciousness({
             </NoesisInstrumentFrame>
           )}
         </section>
+      </div>
 
+      {leibnizSceneSlot && <div className="w-full mt-8 md:mt-10 mb-20 md:mb-24">{leibnizSceneSlot}</div>}
+
+      <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20 space-y-20 md:space-y-24">
         {/* STEP 3 · THOMAS NAGEL (1974) + 3-CARD CONFUSION CLARIFIER */}
         <section aria-labelledby="step-nagel" className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start pt-10 border-t border-[#141413]/10">
           <div className="lg:col-span-5 space-y-5">

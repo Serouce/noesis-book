@@ -128,19 +128,21 @@ export function NoesisInstrumentFrame({
         +
       </span>
 
-      {/* Top 36px Swiss telemetry rail */}
+      {/* Top compact Swiss telemetry rail (clean single/tight row on phones!) */}
       <div
-        className={`min-h-[38px] px-5 sm:px-6 py-2 border-b ${railBorderCls} flex flex-wrap items-center justify-between gap-2`}
+        className={`min-h-[34px] sm:min-h-[38px] px-3.5 sm:px-6 py-1.5 sm:py-2 border-b ${railBorderCls} flex items-center justify-between gap-2`}
       >
-        <div className="flex flex-wrap items-center gap-2.5">
-          <span className={`font-mono-tech text-[10px] uppercase tracking-[0.14em] whitespace-nowrap ${codeColor}`}>
+        <div className="flex items-center gap-2 min-w-0">
+          <span
+            className={`font-mono-tech text-[9px] sm:text-[10px] uppercase tracking-[0.11em] sm:tracking-[0.14em] truncate ${codeColor}`}
+          >
             {code}
           </span>
           <LabHonestyBadge badge={badge} dark={isDark} />
         </div>
         {telemetry && (
           <span
-            className={`font-mono-tech text-[10px] uppercase tracking-[0.1em] whitespace-nowrap ${
+            className={`hidden sm:inline font-mono-tech text-[10px] uppercase tracking-[0.1em] whitespace-nowrap shrink-0 ${
               isDark ? 'text-[#FAF9F5]/62' : 'text-[#5E5D59]'
             }`}
           >
@@ -150,19 +152,19 @@ export function NoesisInstrumentFrame({
       </div>
 
       {/* Main instrument viewport */}
-      <div className={`p-5 sm:p-6 md:p-7 ${bodyClassName}`}>{children}</div>
+      <div className={`p-3.5 sm:p-6 md:p-7 ${bodyClassName}`}>{children}</div>
 
       {/* Optional colophon / calibration strip */}
       {(footnote || footnoteRight) && (
         <div
-          className={`px-5 sm:px-6 py-2.5 border-t ${railBorderCls} flex flex-wrap items-center justify-between gap-2 text-[11px] ${
+          className={`px-3.5 sm:px-6 py-2 sm:py-2.5 border-t ${railBorderCls} flex items-center justify-between gap-2 text-[10px] sm:text-[11px] ${
             isDark ? 'text-[#FAF9F5]/56 bg-[#0C0F14]/50' : 'text-[#5E5D59] bg-[#FAF9F5]/45'
           }`}
         >
-          <span className="font-mono-tech tracking-[0.04em]">
+          <span className="font-mono-tech tracking-[0.03em] truncate">
             {footnote ? ruTypo(footnote) : ''}
           </span>
-          {footnoteRight && <div className="flex items-center gap-2">{footnoteRight}</div>}
+          {footnoteRight && <div className="flex items-center gap-2 shrink-0">{footnoteRight}</div>}
         </div>
       )}
     </div>

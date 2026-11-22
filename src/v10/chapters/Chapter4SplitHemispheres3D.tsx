@@ -74,66 +74,66 @@ export function Chapter4SplitHemispheres3D() {
       className="relative bg-[#FAF9F5] text-[#141413] border-b border-[#141413]/10"
       aria-label="Глава 04 — Туннель Эго и 3D-рассечение полушарий"
     >
-      {/* FULL-SCREEN 240vh 3D PBR SPLIT-BRAIN RUNWAY */}
+      {/* FULL-SCREEN 240vh 3D PBR SPLIT-BRAIN RUNWAY (fits 100% cleanly inside 390×844 phone!) */}
       <div ref={runwayRef} className="relative h-[240vh] border-b border-[#141413]/10">
-        <div className="sticky top-0 min-h-[100svh] lg:h-[100svh] w-full flex flex-col justify-between px-5 md:px-12 lg:px-20 pt-24 pb-10">
-          <div className="max-w-[1240px] mx-auto w-full flex flex-wrap items-center justify-between gap-2 font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#5E5D59]">
+        <div className="sticky top-0 h-[100svh] w-full flex flex-col justify-between px-4 sm:px-5 md:px-12 lg:px-20 pt-16 pb-4 sm:pt-20 lg:pt-24 lg:pb-10 overflow-hidden">
+          <div className="max-w-[1240px] mx-auto w-full flex flex-wrap items-center justify-between gap-2 font-mono-tech text-[9.5px] sm:text-[11px] uppercase tracking-[0.12em] sm:tracking-[0.14em] text-[#5E5D59]">
             <span className="text-[#FC4109] font-semibold">{beat.kicker}</span>
-            <span>ГЛАВА 04 · РАСКОЛОТЫЙ ШТУРВАЛ · стр. 56</span>
+            <span className="hidden sm:inline">ГЛАВА 04 · РАСКОЛОТЫЙ ШТУРВАЛ · стр. 56</span>
           </div>
 
-          <div className="max-w-[1240px] mx-auto w-full flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center my-4">
-            <div className="lg:col-span-5 space-y-5">
-              <h2 className="text-[clamp(24px,3.1vw,40px)] leading-[1.08] tracking-[-0.03em]">
+          <div className="max-w-[1240px] mx-auto w-full flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-6 lg:gap-8 items-center my-2 lg:my-4">
+            <div className="order-2 lg:order-1 lg:col-span-5 space-y-2.5 sm:space-y-4 lg:space-y-5">
+              <h2 className="text-[21px] sm:text-[28px] lg:text-[clamp(26px,3.1vw,40px)] leading-[1.08] tracking-[-0.03em]">
                 <span className="font-display font-bold block text-[#141413]">{ruTypo(beat.title)}</span>
               </h2>
-              <p className="font-serif-editorial italic text-[17px] md:text-[19px] leading-[1.56] text-[#353431]">
+              <p className="font-serif-editorial italic text-[14px] sm:text-[16.5px] lg:text-[19px] leading-[1.46] lg:leading-[1.56] text-[#353431]">
                 {ruTypo(beat.body)}
               </p>
 
               {/* Live Hemisphere Status Pills */}
-              <div className="grid grid-cols-2 gap-2.5 pt-1 font-mono-tech text-[10px]">
-                <div className="p-3 rounded-xl bg-[#F3F1E9] border border-[#004EDF]/30">
-                  <div className="text-[#004EDF] font-bold">● ЛЕВОЕ ПОЛУШАРИЕ</div>
-                  <div className="font-sans-ui text-[12px] text-[#3B3A37] mt-1">
+              <div className="grid grid-cols-2 gap-2 lg:gap-2.5 pt-0.5 font-mono-tech text-[9.5px] lg:text-[10px]">
+                <div className="p-2.5 lg:p-3 rounded-xl bg-[#F3F1E9] border border-[#004EDF]/30">
+                  <div className="text-[#004EDF] font-bold">● ЛЕВОЕ</div>
+                  <div className="font-sans-ui text-[11px] lg:text-[12px] text-[#3B3A37] mt-0.5 lg:mt-1 leading-snug">
                     {beatIdx < 2 ? 'Речь + логика в связке' : 'Видит лапку → сочиняет историю о курятнике'}
                   </div>
                 </div>
-                <div className="p-3 rounded-xl bg-[#F3F1E9] border border-[#FC4109]/30">
-                  <div className="text-[#FC4109] font-bold">● ПРАВОЕ ПОЛУШАРИЕ</div>
-                  <div className="font-sans-ui text-[12px] text-[#3B3A37] mt-1">
+                <div className="p-2.5 lg:p-3 rounded-xl bg-[#F3F1E9] border border-[#FC4109]/30">
+                  <div className="text-[#FC4109] font-bold">● ПРАВОЕ</div>
+                  <div className="font-sans-ui text-[11px] lg:text-[12px] text-[#3B3A37] mt-0.5 lg:mt-1 leading-snug">
                     {beatIdx < 2 ? 'Образы и левая рука' : 'Видит метель → молча тянется к лопате'}
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 pt-1">
-                <div className="w-36 h-[3px] rounded-full bg-[#141413]/14 overflow-hidden">
+              <div className="flex items-center gap-3 pt-0.5">
+                <div className="w-28 lg:w-36 h-[3px] rounded-full bg-[#141413]/14 overflow-hidden">
                   <div
                     ref={barRef}
                     className="h-full w-full origin-left bg-[#FC4109]"
                     style={{ transform: 'scaleX(0)' }}
                   />
                 </div>
-                <span className="font-mono-tech text-[10px] uppercase tracking-[0.11em] text-[#5E5D59]">
-                  {beatIdx === 2 ? 'Мозолистое тело рассечено' : 'Листайте вниз · 3D-разъезд полушарий'}
+                <span className="font-mono-tech text-[9.5px] lg:text-[10px] uppercase tracking-[0.11em] text-[#5E5D59]">
+                  {beatIdx === 2 ? 'Мозолистое тело рассечено' : 'Листайте вниз · 3D-разъезд'}
                 </span>
               </div>
             </div>
 
-            {/* Full-presence Hi-Res PBR 3D Split-Brain Stage */}
-            <div className="lg:col-span-7">
+            {/* Full-presence Hi-Res PBR 3D Split-Brain Stage (top on phone so it's ALWAYS in view!) */}
+            <div className="order-1 lg:order-2 lg:col-span-7">
               <div className="relative rounded-2xl border border-[#141413]/12 bg-[#FAF9F5] shadow-[0_24px_64px_rgba(20,20,19,0.06)] overflow-hidden">
                 <NoesisBrainStage3D
                   mode="split"
                   progress={progress}
-                  className="w-full h-[380px] sm:h-[450px] lg:h-[500px]"
-                  caption="МРТ-АТЛАС ICBM152 · ВИД СВЕРХУ-СЗАДИ · РАССЕЧЕНИЕ МОЗОЛИСТОГО ТЕЛА"
+                  className="w-full h-[230px] sm:h-[320px] lg:h-[500px]"
+                  caption="МРТ ICBM152 · СВЕРХУ-СЗАДИ"
                 />
                 {/* Whisper-thin Leica optical midline cut axis visible once hemispheres part cleanly */}
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute top-12 bottom-16 left-1/2 -translate-x-1/2 border-l border-dashed border-[#FC4109]/35 transition-opacity duration-500"
+                  className="pointer-events-none absolute top-8 bottom-12 lg:top-12 lg:bottom-16 left-1/2 -translate-x-1/2 border-l border-dashed border-[#FC4109]/35 transition-opacity duration-500"
                   style={{ opacity: progress > 0.58 ? 1 : 0 }}
                 />
               </div>

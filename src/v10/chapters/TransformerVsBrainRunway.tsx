@@ -68,47 +68,55 @@ export function TransformerVsBrainRunway() {
       <div className="sticky top-0 h-[100svh] w-full overflow-hidden">
         <TransformerVsBrainCanvas progress={progress} className="absolute inset-0 w-full h-full" />
 
-        {/* Strong protective left + top/bottom optical scrims so typography NEVER touches WebGL particles */}
+        {/* Desktop: left protective scrim; Mobile portrait: clean bottom-up scrim so 3D sculpture sits above & text below! */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0"
+          className="pointer-events-none absolute inset-0 hidden lg:block"
           style={{
             background:
               'linear-gradient(90deg, rgba(11,13,17,0.97) 0%, rgba(11,13,17,0.90) 37%, rgba(11,13,17,0.22) 54%, rgba(11,13,17,0.0) 68%), linear-gradient(180deg, rgba(11,13,17,0.95) 0%, rgba(11,13,17,0.0) 18%, rgba(11,13,17,0.0) 82%, rgba(11,13,17,0.96) 100%)',
           }}
         />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 lg:hidden"
+          style={{
+            background:
+              'linear-gradient(180deg, rgba(11,13,17,0.88) 0%, rgba(11,13,17,0.0) 15%, rgba(11,13,17,0.0) 43%, rgba(11,13,17,0.88) 60%, rgba(11,13,17,0.98) 100%)',
+          }}
+        />
 
-        <div className="relative z-10 h-full max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20 pt-24 pb-12 flex flex-col justify-between">
-          <div className="flex flex-wrap items-center justify-between gap-2 font-mono-tech text-[10.5px] uppercase tracking-[0.16em] text-[#A8B1C2]">
+        <div className="relative z-10 h-full max-w-[1240px] mx-auto px-4 sm:px-5 md:px-12 lg:px-20 pt-16 pb-6 sm:pt-20 lg:pt-24 lg:pb-12 flex flex-col justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2 font-mono-tech text-[9.5px] sm:text-[10.5px] uppercase tracking-[0.13em] sm:tracking-[0.16em] text-[#A8B1C2]">
             <span className="text-[#FC4109] font-semibold">{beat.kicker}</span>
-            <span>ТРАНСФОРМЕР ⇄ ПЕТЛЯ · 4 200 ТОЧЕК</span>
+            <span className="hidden sm:inline">ТРАНСФОРМЕР ⇄ ПЕТЛЯ · 4 200 ТОЧЕК</span>
           </div>
 
-          <div className="max-w-[490px] space-y-5">
-            <h3 className="text-[clamp(28px,4.1vw,52px)] leading-[1.06] tracking-[-0.03em]">
+          <div className="max-w-[490px] space-y-3 lg:space-y-5 mt-auto mb-5 lg:my-auto">
+            <h3 className="text-[25px] sm:text-[32px] lg:text-[clamp(30px,4.1vw,52px)] leading-[1.06] tracking-[-0.03em]">
               <span className="font-display font-bold block text-[#FAF9F5]">{ruTypo(beat.title)}</span>
             </h3>
-            <p className="font-serif-editorial italic text-[17px] md:text-[19.5px] leading-[1.54] text-[#DDE3EE]">
+            <p className="font-serif-editorial italic text-[14.5px] sm:text-[17px] lg:text-[19.5px] leading-[1.5] lg:leading-[1.54] text-[#DDE3EE]">
               {ruTypo(beat.body)}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-40 h-[3px] rounded-full bg-[#FAF9F5]/18 overflow-hidden">
+              <div className="w-28 sm:w-40 h-[3px] rounded-full bg-[#FAF9F5]/18 overflow-hidden">
                 <div
                   ref={barRef}
                   className="h-full w-full origin-left bg-[#FC4109]"
                   style={{ transform: 'scaleX(0)' }}
                 />
               </div>
-              <span className="font-mono-tech text-[10px] uppercase tracking-[0.14em] text-[#9EA6B6]">
+              <span className="font-mono-tech text-[9.5px] sm:text-[10px] uppercase tracking-[0.12em] text-[#9EA6B6]">
                 {beatIdx === 2
                   ? 'К объективу HAL 9000 и спору лабораторий ↓'
-                  : 'Листайте вниз · трансформация архитектуры'}
+                  : 'Листайте вниз · трансформация'}
               </span>
             </div>
-            <span className="font-mono-tech text-[10px] uppercase tracking-[0.14em] text-[#7D8796]">
+            <span className="hidden sm:inline font-mono-tech text-[10px] uppercase tracking-[0.14em] text-[#7D8796]">
               ANTHROPIC · GOOGLE DEEPMIND · BUTLIN ET AL. (2024–2026)
             </span>
           </div>

@@ -310,8 +310,16 @@ export function LeibnizMillCanvas({ progress, className = 'w-full h-full' }: Lei
     disposables.push(glowTex, glowMat);
 
     const updateLayoutOffset = (rw: number, rh: number) => {
-      // Shift the glowing 3D sculpture into the right half on desktop so typography on the left stays razor-clear!
-      stage.position.x = rw / rh > 1.15 ? 1.55 : 0;
+      const aspect = rw / rh;
+      if (aspect > 1.15) {
+        // Desktop: glowing 3D sculpture in right half, crisp typography on left!
+        stage.position.set(1.55, 0, 0);
+        stage.scale.setScalar(1);
+      } else {
+        // Portrait Mobile: frame ALL 4 cog-rings 100% inside 390px width with generous black air under top kicker!
+        stage.position.set(0, 0.44, 0);
+        stage.scale.setScalar(0.37);
+      }
     };
     updateLayoutOffset(w, h);
 

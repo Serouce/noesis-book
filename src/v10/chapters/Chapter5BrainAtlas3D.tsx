@@ -103,23 +103,23 @@ export function Chapter5BrainAtlas3D() {
       data-hud-theme="dark"
       aria-label="Глава 05 — 3D-полёт вокруг мозга: 69 миллиардов, SCAN, COGITATE 2025 и Высший Таламус"
     >
-      {/* FULL-SCREEN 320vh CONTINUOUS 3D PBR CHOREOGRAPHY */}
+      {/* FULL-SCREEN 320vh CONTINUOUS 3D PBR CHOREOGRAPHY (100% phone-viewport safe!) */}
       <div ref={runwayRef} className="relative h-[320vh]">
-        <div className="sticky top-0 min-h-[100svh] lg:h-[100svh] w-full flex flex-col justify-between px-5 md:px-12 lg:px-20 pt-20 pb-7">
+        <div className="sticky top-0 h-[100svh] w-full flex flex-col justify-between px-4 sm:px-5 md:px-12 lg:px-20 pt-16 pb-3 sm:pt-20 lg:pb-7 overflow-hidden">
           {/* Top Folio Header */}
-          <div className="max-w-[1240px] mx-auto w-full flex flex-wrap items-center justify-between gap-2 font-mono-tech text-[10.5px] uppercase tracking-[0.14em] text-[#9EA6B6]">
+          <div className="max-w-[1240px] mx-auto w-full flex flex-wrap items-center justify-between gap-2 font-mono-tech text-[9.5px] sm:text-[10.5px] uppercase tracking-[0.12em] sm:tracking-[0.14em] text-[#9EA6B6]">
             <span className="text-[#FC4109] font-semibold">
               {effectiveIdx === 3 && !betMade
                 ? '3D-ПОЛЁТ · ГЛАВА 05 · КАДР 4/4 · ЗАПЕЧАТАННЫЙ ВЕРДИКТ'
                 : activeStage.kicker}
             </span>
-            <span>АКТ III · ВСКРЫТИЕ · стр. 72</span>
+            <span className="hidden sm:inline">АКТ III · ВСКРЫТИЕ · стр. 72</span>
           </div>
 
-          <div className="max-w-[1240px] mx-auto w-full flex-1 grid grid-cols-1 lg:grid-cols-12 gap-7 items-center my-2">
-            {/* Left 5 cols: Editorial Story + Spoiler-free COGITATE Bet */}
-            <div className="lg:col-span-5 space-y-3.5">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FAF9F5]/8 border border-[#FAF9F5]/14 font-mono-tech text-[10px] uppercase tracking-[0.12em] text-[#CBD3DF]">
+          <div className="max-w-[1240px] mx-auto w-full flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 lg:gap-7 content-center lg:items-center my-1.5 lg:my-2">
+            {/* Left 5 cols (bottom on phone so 3D brain is ALWAYS visible at top!): Editorial Story + Spoiler-free COGITATE Bet */}
+            <div className="order-2 lg:order-1 lg:col-span-5 space-y-2 lg:space-y-3.5">
+              <div className="hidden sm:inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FAF9F5]/8 border border-[#FAF9F5]/14 font-mono-tech text-[10px] uppercase tracking-[0.12em] text-[#CBD3DF]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#FC4109]" />
                 <span>
                   {effectiveIdx === 3 && !betMade
@@ -128,7 +128,7 @@ export function Chapter5BrainAtlas3D() {
                 </span>
               </div>
 
-              <h2 className="text-[clamp(24px,3.2vw,42px)] leading-[1.06] tracking-[-0.03em] text-[#FAF9F5]">
+              <h2 className="text-[19px] sm:text-[26px] lg:text-[clamp(24px,3.2vw,42px)] leading-[1.08] lg:leading-[1.06] tracking-[-0.03em] text-[#FAF9F5]">
                 <span className="font-display font-bold block">
                   {effectiveIdx === 3 && !betMade
                     ? 'Сделайте ставку — кто победил в дуэли 2025 года?'
@@ -136,7 +136,7 @@ export function Chapter5BrainAtlas3D() {
                 </span>
               </h2>
 
-              <p className="font-serif-editorial italic text-[15.5px] md:text-[17px] leading-[1.54] text-[#D0D7E3]">
+              <p className="font-serif-editorial italic text-[13.5px] sm:text-[15.5px] lg:text-[17px] leading-[1.45] lg:leading-[1.54] text-[#D0D7E3]">
                 {effectiveIdx === 3 && !betMade
                   ? ruTypo(
                       'Перед тем как вскрыть результаты Nature и Science (апрель 2025), зафиксируйте вашу интуицию: где прячется главный субстрат сознания?',
@@ -146,8 +146,8 @@ export function Chapter5BrainAtlas3D() {
 
               {/* Compact 1-click COGITATE Bet right inside Stages 3-4! */}
               {effectiveIdx >= 2 && (
-                <div className="space-y-2 pt-1">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="space-y-1.5 pt-0.5">
+                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                     {(
                       [
                         { id: 'iit', label: 'Затылок (IIT)' },
@@ -161,79 +161,81 @@ export function Chapter5BrainAtlas3D() {
                           key={opt.id}
                           type="button"
                           onClick={() => handleBet(opt.id)}
-                          className={`v6-pill px-3 py-2.5 rounded-xl border text-[12.5px] font-medium inline-flex items-center justify-center gap-1.5 cursor-pointer ${
+                          className={`v6-pill px-2 sm:px-3 py-2 sm:py-2.5 rounded-xl border text-[11px] sm:text-[12.5px] font-medium inline-flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer ${
                             chosen
                               ? 'bg-[#FC4109] text-[#FAF9F5] border-[#FC4109]'
                               : 'bg-[#181D27] hover:bg-[#222938] text-[#E2E8F0] border-[#FAF9F5]/14'
                           }`}
                         >
-                          {chosen ? <Check className="w-3.5 h-3.5" /> : <Lock className="w-3 h-3 opacity-60" />}
-                          <span>{opt.label}</span>
+                          {chosen ? <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> : <Lock className="w-2.5 h-2.5 sm:w-3 sm:h-3 opacity-60 shrink-0" />}
+                          <span className="truncate">{opt.label}</span>
                         </button>
                       );
                     })}
                   </div>
                   {betMade && (
-                    <div className="text-[11.5px] font-mono-tech text-[#E5C67A]">
-                      ● Ставка записана в Паспорт · Вердикт Nature &amp; Science 2025 открыт
+                    <div className="text-[10.5px] sm:text-[11.5px] font-mono-tech text-[#E5C67A]">
+                      ● Ставка в Паспорте · Вердикт 2025 открыт
                     </div>
                   )}
                 </div>
               )}
 
               {/* Scroll progress & Dossier link */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                <div className="flex items-center gap-3">
-                  <div className="w-32 h-[3px] rounded-full bg-[#FAF9F5]/16 overflow-hidden">
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-24 sm:w-32 h-[3px] rounded-full bg-[#FAF9F5]/16 overflow-hidden">
                     <div
                       ref={barRef}
                       className="h-full w-full origin-left bg-[#FC4109]"
                       style={{ transform: 'scaleX(0)' }}
                     />
                   </div>
-                  <span className="font-mono-tech text-[10px] uppercase tracking-[0.11em] text-[#9EA6B6]">
+                  <span className="font-mono-tech text-[9.5px] sm:text-[10px] uppercase tracking-[0.11em] text-[#9EA6B6]">
                     {effectiveIdx === 3 && betMade
                       ? 'Кадр 4 / 4 · финал'
-                      : `Кадр ${effectiveIdx + 1} / 4 · листайте вниз`}
+                      : `Кадр ${effectiveIdx + 1} / 4`}
                   </span>
                 </div>
-                {betMade ? (
-                  <DossierTrigger
-                    dossier="cogitate-2025"
-                    label="Досье COGITATE + Таламус (2025)"
-                    meta="Досье III.2 · Уровень 2"
-                    dark
-                  />
-                ) : effectiveIdx === 1 ? (
-                  <DossierTrigger
-                    dossier="scan-parkinson-2026"
-                    label="Сеть SCAN и Паркинсон (Nature 2023/2026)"
-                    meta="Досье III.1б · Уровень 2"
-                    dark
-                  />
-                ) : null}
+                <div className="hidden sm:block">
+                  {betMade ? (
+                    <DossierTrigger
+                      dossier="cogitate-2025"
+                      label="Досье COGITATE + Таламус (2025)"
+                      meta="Досье III.2 · Уровень 2"
+                      dark
+                    />
+                  ) : effectiveIdx === 1 ? (
+                    <DossierTrigger
+                      dossier="scan-parkinson-2026"
+                      label="Сеть SCAN и Паркинсон (Nature 2023/2026)"
+                      meta="Досье III.1б · Уровень 2"
+                      dark
+                    />
+                  ) : null}
+                </div>
               </div>
             </div>
 
-            {/* Right 7 cols: Full-Presence 122k-Triangle Anatomical 3D MRI Brain */}
-            <div className="lg:col-span-7 space-y-3">
+            {/* Right 7 cols (top on phone!): Full-Presence 122k-Triangle Anatomical 3D MRI Brain */}
+            <div className="order-1 lg:order-2 lg:col-span-7 space-y-2 lg:space-y-3">
               <div className="rounded-2xl border border-[#FAF9F5]/12 bg-[#090B10] shadow-[0_30px_80px_rgba(0,0,0,0.55)] overflow-hidden">
                 <NoesisBrainStage3D
                   mode="atlas"
                   dark
                   progress={effectiveIdx === 3 && !betMade ? 0.68 : progress}
                   focusMode={manualFocus}
-                  className="w-full h-[380px] sm:h-[440px] lg:h-[480px]"
-                  caption="МРТ-АТЛАС ICBM152 · SUIT · CIT168 · ПЕРЕТАЩИТЕ ДЛЯ ВРАЩЕНИЯ"
+                  className="w-full h-[268px] sm:h-[330px] lg:h-[480px]"
+                  caption="МРТ ICBM152 · SUIT · CIT168"
                 />
               </div>
 
-              {/* Single-row crisp Swiss Quick-Camera Pills (zero orphan wrap!) */}
-              <div className="flex flex-wrap lg:flex-nowrap items-center gap-1.5 font-mono-tech text-[9.5px] uppercase">
+              {/* Single-row horizontally scrollable Quick-Camera Pills on phone, full row on desktop */}
+              <div className="flex flex-nowrap overflow-x-auto no-scrollbar lg:overflow-visible items-center gap-1.5 font-mono-tech text-[9.5px] uppercase pb-0.5">
                 {[
                   { id: 0, lbl: 'Авто' },
-                  { id: 1, lbl: '1. Мозжечок 69 млрд' },
-                  { id: 2, lbl: '2. Сеть SCAN' },
+                  { id: 1, lbl: '1. Мозжечок' },
+                  { id: 2, lbl: '2. SCAN' },
                   { id: 3, lbl: '3. Затылок IIT' },
                   { id: 4, lbl: '4. Лоб GNWT' },
                   ...(betMade ? [{ id: 5, lbl: '5. Таламус' }] : []),
@@ -242,7 +244,7 @@ export function Chapter5BrainAtlas3D() {
                     key={b.id}
                     type="button"
                     onClick={() => setManualFocus(b.id)}
-                    className={`v6-pill px-2.5 py-1.5 rounded-full border whitespace-nowrap cursor-pointer ${
+                    className={`v6-pill px-2.5 py-1.5 rounded-full border whitespace-nowrap shrink-0 cursor-pointer ${
                       manualFocus === b.id
                         ? 'bg-[#FAF9F5] text-[#141413] border-[#FAF9F5] font-semibold'
                         : 'bg-[#161B24] text-[#B8C1D0] border-[#FAF9F5]/14 hover:bg-[#222938]'

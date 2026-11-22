@@ -367,7 +367,7 @@ export function Chapter1MaryRoom({
             <img
               src={maryStillLifeSrc}
               alt=""
-              className="w-full h-full object-cover object-bottom select-none"
+              className="w-full h-full object-cover object-[66%_100%] md:object-bottom select-none"
               style={{ filter: 'grayscale(1) contrast(1.06) brightness(0.98)' }}
             />
           </div>
@@ -383,7 +383,7 @@ export function Chapter1MaryRoom({
             <img
               src={maryStillLifeSrc}
               alt="Хрустальная призма, алая роза и оптическая линза"
-              className="w-full h-full object-cover object-bottom select-none"
+              className="w-full h-full object-cover object-[66%_100%] md:object-bottom select-none"
               style={{ filter: 'saturate(1.16) contrast(1.03)' }}
             />
           </div>
@@ -468,40 +468,40 @@ export function Chapter1MaryRoom({
             }}
           />
 
-          <div className="relative z-30 max-w-[1360px] mx-auto px-5 md:px-12 lg:px-20 pt-20 md:pt-24">
+          <div className="relative z-30 max-w-[1360px] mx-auto px-4 sm:px-5 md:px-12 lg:px-20 pt-16 sm:pt-20 md:pt-24">
             <div className="max-w-2xl lg:max-w-[740px]">
-              <div className="font-mono-tech text-[11px] md:text-[12px] tracking-[0.06em] uppercase transition-colors duration-200 text-[#5E5D59] group-data-[colored=true]/mary:text-[#FAF9F5]/85">
+              <div className="font-mono-tech text-[10px] sm:text-[11px] md:text-[12px] tracking-[0.06em] uppercase transition-colors duration-200 text-[#5E5D59] group-data-[colored=true]/mary:text-[#FAF9F5]/85">
                 {beat.kicker}
               </div>
 
-              <h3 className="mt-3 text-[clamp(26px,3.6vw,52px)] leading-[1.09] tracking-[-0.026em] transition-colors duration-200 text-[#141413] group-data-[colored=true]/mary:text-[#FAF9F5]">
+              <h3 className="mt-2 sm:mt-3 text-[24px] sm:text-[clamp(28px,3.6vw,52px)] leading-[1.08] tracking-[-0.026em] transition-colors duration-200 text-[#141413] group-data-[colored=true]/mary:text-[#FAF9F5]">
                 <span className="font-display font-bold block">{beat.headlineMain}</span>
-                <span className="font-serif-editorial italic font-normal block mt-1 text-[#3B3A37] group-data-[colored=true]/mary:text-[#FFE4D6]">
+                <span className="font-serif-editorial italic font-normal block mt-0.5 sm:mt-1 text-[#3B3A37] group-data-[colored=true]/mary:text-[#FFE4D6]">
                   {beat.headlineAccent}
                 </span>
               </h3>
 
-              <p className="mt-3.5 max-w-lg text-[14.5px] md:text-[15.5px] leading-[1.58] transition-colors duration-200 text-[#3B3A37] group-data-[colored=true]/mary:text-[#FAF9F5]/92">
+              <p className="mt-2.5 sm:mt-3.5 max-w-lg text-[13.5px] sm:text-[15px] md:text-[15.5px] leading-[1.52] sm:leading-[1.58] transition-colors duration-200 text-[#3B3A37] group-data-[colored=true]/mary:text-[#FAF9F5]/92">
                 {beat.note}
               </p>
             </div>
           </div>
 
-          <div className="absolute bottom-5 md:bottom-7 inset-x-0 z-30">
-            <div className="max-w-[1360px] mx-auto px-5 md:px-12 lg:px-20 flex flex-wrap items-end justify-between gap-4">
-              <div className="inline-flex flex-wrap items-center gap-4 md:gap-6 px-4 py-2.5 rounded-2xl bg-[#FAF9F5]/92 backdrop-blur-md border border-[#141413]/12 text-[#141413] shadow-[0_8px_28px_rgba(20,20,19,0.08)]">
+          <div className="absolute bottom-4 sm:bottom-5 md:bottom-7 inset-x-0 z-30">
+            <div className="max-w-[1360px] mx-auto px-4 sm:px-5 md:px-12 lg:px-20 flex flex-wrap items-end justify-between gap-2.5 sm:gap-4">
+              <div className="inline-flex flex-wrap items-center gap-3 sm:gap-4 md:gap-6 px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-[#FAF9F5]/92 backdrop-blur-md border border-[#141413]/12 text-[#141413] shadow-[0_8px_28px_rgba(20,20,19,0.08)]">
                 <div>
-                  <div className="font-mono-tech text-[10px] uppercase tracking-[0.12em] text-[#5E5D59]">
+                  <div className="font-mono-tech text-[9px] sm:text-[10px] uppercase tracking-[0.11em] text-[#5E5D59]">
                     Длина волны
                   </div>
-                  <div className="font-mono-tech text-[13px] font-semibold">650 нм · 461 ТГц</div>
+                  <div className="font-mono-tech text-[11.5px] sm:text-[13px] font-semibold">650 нм · 461 ТГц</div>
                 </div>
-                <div className="h-6 w-[1px] bg-[#141413]/12" />
+                <div className="h-5 sm:h-6 w-[1px] bg-[#141413]/12" />
                 <div>
-                  <div className="font-mono-tech text-[10px] uppercase tracking-[0.12em] text-[#5E5D59]">
-                    Колбочки сетчатки
+                  <div className="font-mono-tech text-[9px] sm:text-[10px] uppercase tracking-[0.11em] text-[#5E5D59]">
+                    Колбочки
                   </div>
-                  <div className="font-mono-tech text-[13px] font-semibold">
+                  <div className="font-mono-tech text-[11.5px] sm:text-[13px] font-semibold">
                     L: {DEFAULT_650.lCone}% · M: {DEFAULT_650.mCone}%
                   </div>
                 </div>
@@ -531,9 +531,10 @@ export function Chapter1MaryRoom({
                 <button
                   type="button"
                   onClick={() => openDossier('qualia-metamerism')}
-                  className="v6-pill h-10 px-4 rounded-full bg-[#FAF9F5]/94 hover:bg-[#FAF9F5] text-[#141413] border border-[#141413]/15 shadow-[0_8px_24px_rgba(20,20,19,0.10)] backdrop-blur-md inline-flex items-center gap-2 text-[13px] font-medium cursor-pointer"
+                  className="v6-pill h-9 sm:h-10 px-3.5 sm:px-4 rounded-full bg-[#FAF9F5]/94 hover:bg-[#FAF9F5] text-[#141413] border border-[#141413]/15 shadow-[0_8px_24px_rgba(20,20,19,0.10)] backdrop-blur-md inline-flex items-center gap-1.5 sm:gap-2 text-[12px] sm:text-[13px] font-medium cursor-pointer"
                 >
-                  <span>Досье: почему цвета нет в свете</span>
+                  <span className="sm:hidden">Досье: цвет и свет</span>
+                  <span className="hidden sm:inline">Досье: почему цвета нет в свете</span>
                   <ArrowUpRight className="w-3.5 h-3.5 text-[#004EDF]" />
                 </button>
               </div>

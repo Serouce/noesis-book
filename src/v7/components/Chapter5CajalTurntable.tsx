@@ -444,14 +444,14 @@ export function Chapter5CajalTurntable({ onNextChapter: _onNextChapter }: Chapte
             <span>
               <strong className="text-[#141413]">Как читать прибор:</strong>{' '}
               <strong className="text-[#004EDF]">игла на диске</strong> = нижняя антенна (вход мира), а{' '}
-              <strong className="text-[#FC4109]">волна на осциллографе</strong> = внутренний опыт. Всё наглядно работает и без звука; при желании включите синтезатор справа.
+              <strong className="text-[#FC4109]">волна на осциллографе</strong> = внутренний опыт. Всё наглядно работает и без звука; при желании включите синтезатор.
             </span>
           </div>
 
           <button
             type="button"
             onClick={() => setSoundEnabled((prev) => !prev)}
-            className={`v6-pill h-9 px-4 rounded-full border font-mono-tech text-[10.5px] uppercase tracking-[0.08em] inline-flex items-center gap-2 shrink-0 cursor-pointer ${
+            className={`v6-pill h-9 px-4 rounded-full border font-mono-tech text-[10.5px] uppercase tracking-[0.08em] inline-flex items-center justify-center gap-2 shrink-0 cursor-pointer ${
               soundEnabled
                 ? 'bg-[#141413] text-[#FAF9F5] border-[#141413]'
                 : 'bg-[#FAF9F5] hover:bg-[#FC4109]/10 text-[#141413] border-[#FC4109]/55 shadow-[0_2px_10px_rgba(252,65,9,0.14)]'
@@ -462,18 +462,21 @@ export function Chapter5CajalTurntable({ onNextChapter: _onNextChapter }: Chapte
           </button>
         </div>
 
-        {/* 5 CLEAR MODE CARDS (Now includes Deep Sleep NREM!) */}
-        <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+        {/* 5 CLEAR MODE CARDS (Sleek 2x2 + full-width Propofol finale on phones!) */}
+        <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-2.5">
           {MODES.map((m) => {
             const active = m.id === mode.id;
+            const isPropofol = m.id === 'propofol';
             return (
               <button
                 key={m.id}
                 type="button"
                 onClick={() => handleSelectMode(m.id)}
-                className={`v6-pill text-left px-3.5 py-3 rounded-xl border cursor-pointer transition-all ${
+                className={`v6-pill text-left px-3 sm:px-3.5 py-2.5 sm:py-3 rounded-xl border cursor-pointer transition-all ${
+                  isPropofol ? 'col-span-2 sm:col-span-1' : ''
+                } ${
                   active
-                    ? m.id === 'propofol'
+                    ? isPropofol
                       ? 'bg-[#FC4109] text-[#FAF9F5] border-[#FC4109] shadow-[0_10px_28px_rgba(252,65,9,0.28)]'
                       : 'bg-[#141413] text-[#FAF9F5] border-[#141413]'
                     : 'bg-[#F3F1E9] hover:bg-[#E9E6DC] text-[#141413] border-[#141413]/14'

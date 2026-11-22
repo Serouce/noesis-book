@@ -337,8 +337,35 @@ export function NoesisBrainStage3D({
   const pulseStartRef = useRef(-999);
   const lastPulseKeyRef = useRef(pulseKey);
   const resetViewRef = useRef<(() => void) | null>(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
+  const canvasDomRef = useRef<HTMLCanvasElement | null>(null);
   const dragOriginRef = useRef<{ progress: number; focusMode: number } | null>(null);
   const isPointerDownRef = useRef(false);
+
+  // On mobile/touch screens, keep vertical page scroll 100% free (touch-action: pan-y) until the user taps "3D-обзор"!
+  const [isTouchViewport, setIsTouchViewport] = useState(() =>
+    typeof window !== 'undefined'
+      ? window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 1024
+      : false,
+  );
+  const [touchOrbitEnabled, setTouchOrbitEnabled] = useState(false);
+
+  useEffect(() => {
+    const updateTouch = () => {
+      const coarse = window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 1024;
+      setIsTouchViewport(coarse);
+    };
+    window.addEventListener('resize', updateTouch, { passive: true });
+    return () => window.removeEventListener('resize', updateTouch);
+  }, []);
+
+  useEffect(() => {
+    const ctrl = controlsRef.current;
+    const dom = canvasDomRef.current;
+    const allowOrbit = !isTouchViewport || touchOrbitEnabled;
+    if (ctrl) ctrl.enabled = allowOrbit;
+    if (dom) dom.style.touchAction = allowOrbit ? 'none' : 'pan-y';
+  }, [isTouchViewport, touchOrbitEnabled, status]);
 
   // Auto-release manual orbit when user scrolls meaningfully or switches camera pills,
   // so scroll choreography (Split-Brain separation, SCAN, COGITATE, Thalamus) ALWAYS rotates back into crystal-clear view!
@@ -454,6 +481,11 @@ export function NoesisBrainStage3D({
     controls.dampingFactor = 0.07;
     controls.rotateSpeed = 0.6;
     controls.target.set(0, -0.05, 0);
+    const initialAllowOrbit = !(window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 1024);
+    controls.enabled = initialAllowOrbit;
+    canvas.style.touchAction = initialAllowOrbit ? 'none' : 'pan-y';
+    controlsRef.current = controls;
+    canvasDomRef.current = canvas;
 
     const onStartDrag = () => {
       isPointerDownRef.current = true;
@@ -876,6 +908,8 @@ export function NoesisBrainStage3D({
       renderer.dispose();
       if (canvas.parentElement === container) container.removeChild(canvas);
       resetViewRef.current = null;
+      controlsRef.current = null;
+      canvasDomRef.current = null;
     };
   }, [inNear, mode, dark]);
 
@@ -906,31 +940,55 @@ export function NoesisBrainStage3D({
         </div>
       )}
 
-      <div className="pointer-events-none absolute bottom-3 left-3.5 right-3.5 flex items-center justify-between gap-2">
+      <div className="pointer-events-none absolute bottom-2.5 sm:bottom-3 left-2.5 sm:left-3.5 right-2.5 sm:right-3.5 flex items-center justify-between gap-2">
         <span
-          className={`font-mono-tech text-[9.5px] uppercase tracking-[0.11em] px-2.5 py-1 rounded-full ${
+          className={`font-mono-tech text-[8.5px] sm:text-[9.5px] uppercase tracking-[0.09em] sm:tracking-[0.11em] px-2 sm:px-2.5 py-1 rounded-full truncate max-w-[66%] sm:max-w-[78%] ${
             dark
-              ? 'bg-[#0B0E14]/75 text-[#A4AEBE] border border-[#FAF9F5]/12'
-              : 'bg-[#FAF9F5]/88 text-[#5E5D59] border border-[#141413]/12'
+              ? 'bg-[#0B0E14]/78 text-[#A4AEBE] border border-[#FAF9F5]/12'
+              : 'bg-[#FAF9F5]/90 text-[#5E5D59] border border-[#141413]/12'
           }`}
         >
-          {caption ?? '3D МРТ ICBM152 · 122K ТРЕУГ. · ПЕРЕТАЩИТЕ ДЛЯ ВРАЩЕНИЯ'}
+          {caption ?? '3D МРТ ICBM152 · 122K ТРЕУГ.'}
         </span>
 
-        {userDragged && (
-          <button
-            type="button"
-            onClick={() => resetViewRef.current?.()}
-            className={`pointer-events-auto v6-pill px-3 py-1 rounded-full font-mono-tech text-[9.5px] uppercase tracking-[0.1em] inline-flex items-center gap-1 cursor-pointer ${
-              dark
-                ? 'bg-[#1A202C]/90 text-[#FAF9F5] border border-[#FAF9F5]/18 hover:bg-[#252D3D]'
-                : 'bg-[#FAF9F5]/95 text-[#141413] border border-[#141413]/18 hover:bg-[#ECE9DF]'
-            }`}
-          >
-            <RotateCcw className="w-2.5 h-2.5" />
-            <span>Авторакурс</span>
-          </button>
-        )}
+        <div className="pointer-events-auto flex items-center gap-1.5 shrink-0">
+          {isTouchViewport && (
+            <button
+              type="button"
+              onClick={() => {
+                setTouchOrbitEnabled((prev) => {
+                  const next = !prev;
+                  if (!next) setUserDragged(false);
+                  return next;
+                });
+              }}
+              className={`v6-pill px-3 py-1.5 rounded-full font-mono-tech text-[9px] uppercase tracking-[0.09em] inline-flex items-center gap-1 cursor-pointer border ${
+                touchOrbitEnabled
+                  ? 'bg-[#FC4109] text-[#FAF9F5] border-[#FC4109] font-semibold'
+                  : dark
+                    ? 'bg-[#1A202C]/90 text-[#FAF9F5] border-[#FAF9F5]/20'
+                    : 'bg-[#FAF9F5]/95 text-[#141413] border-[#141413]/18'
+              }`}
+            >
+              <span>{touchOrbitEnabled ? '3D вкл ✓' : 'Вращать 3D'}</span>
+            </button>
+          )}
+
+          {userDragged && (
+            <button
+              type="button"
+              onClick={() => resetViewRef.current?.()}
+              className={`v6-pill px-2.5 sm:px-3 py-1 rounded-full font-mono-tech text-[9px] sm:text-[9.5px] uppercase tracking-[0.09em] inline-flex items-center gap-1 cursor-pointer ${
+                dark
+                  ? 'bg-[#1A202C]/90 text-[#FAF9F5] border border-[#FAF9F5]/18 hover:bg-[#252D3D]'
+                  : 'bg-[#FAF9F5]/95 text-[#141413] border border-[#141413]/18 hover:bg-[#ECE9DF]'
+              }`}
+            >
+              <RotateCcw className="w-2.5 h-2.5" />
+              <span>Авторакурс</span>
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
