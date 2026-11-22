@@ -172,6 +172,15 @@ export function Chapter8BoneEndpaper({
   const [inlineReveal, setInlineReveal] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const footerRef = useRef<HTMLElement | null>(null);
+  const shareTimerRef = useRef<number | null>(null);
+  const inlineRevealTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (shareTimerRef.current !== null) window.clearTimeout(shareTimerRef.current);
+      if (inlineRevealTimerRef.current !== null) window.clearTimeout(inlineRevealTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const el = footerRef.current;
@@ -189,7 +198,7 @@ export function Chapter8BoneEndpaper({
     const intro = state.mooneyExposed
       ? `Я прошёл интерактивную книгу о сознании NOESIS:`
       : `Я проверил свою картину сознания в книге NOESIS:`;
-    const text = `${intro} верно поставил ${icuStats.correct}/3 диагнозов в реанимации и получил штамп «${consistency.stampTitle}». Проверь свой мозг без спойлеров: ${cleanBaseUrl}`;
+    const text = `${intro} верно поставил ${icuStats.correct}/3 диагнозов в реанимации и получил штамп «${consistency.stampTitle}». Проверьте свой мозг без спойлеров: ${cleanBaseUrl}`;
 
     let ok = false;
     try {
@@ -218,7 +227,11 @@ export function Chapter8BoneEndpaper({
     }
 
     setShareStatus(ok ? 'copied' : 'error');
-    window.setTimeout(() => setShareStatus('idle'), 2800);
+    if (shareTimerRef.current !== null) window.clearTimeout(shareTimerRef.current);
+    shareTimerRef.current = window.setTimeout(() => {
+      shareTimerRef.current = null;
+      setShareStatus('idle');
+    }, 2800);
   };
 
   const handleInlineMooneyReveal = () => {
@@ -226,7 +239,11 @@ export function Chapter8BoneEndpaper({
     if (!state.mooneyExposed) {
       setMooneyResult(1.2);
     }
-    window.setTimeout(() => setInlineReveal(false), 1200);
+    if (inlineRevealTimerRef.current !== null) window.clearTimeout(inlineRevealTimerRef.current);
+    inlineRevealTimerRef.current = window.setTimeout(() => {
+      inlineRevealTimerRef.current = null;
+      setInlineReveal(false);
+    }, 1200);
   };
 
   const marySummary =
@@ -253,7 +270,7 @@ export function Chapter8BoneEndpaper({
     <section
       id="ch-8"
       className="relative bg-[#FAF9F5] text-[#141413]"
-      aria-label="Глава 08 — Синтез, Форзац и Контрольная проба №0"
+      aria-label="Глава 08 — Синтез, Форзац и Контрольная проба № 00"
     >
       {/* PART 8.1: SYNTHESIS SPREAD */}
       <div className="max-w-[1240px] mx-auto px-5 md:px-12 lg:px-20 pt-24 pb-16 md:pt-28 md:pb-20 border-b border-[#141413]/10">
@@ -305,7 +322,7 @@ export function Chapter8BoneEndpaper({
       <div className="max-w-[1160px] mx-auto px-5 md:px-12 lg:px-20 py-16 md:py-24 border-b border-[#141413]/10">
         <div className="text-center max-w-2xl mx-auto space-y-3">
           <div className="font-mono-tech text-[11px] uppercase tracking-[0.14em] text-[#FC4109] font-semibold">
-            ЭКСЛИБРИС · КОНТРОЛЬНАЯ ПРОБА № 0
+            ЭКСЛИБРИС · КОНТРОЛЬНАЯ ПРОБА № 00
           </div>
           <h3 className="text-[clamp(28px,4vw,46px)] leading-[1.08] tracking-[-0.03em]">
             <span className="font-display font-bold">Ваш паспорт исследователя</span>
@@ -326,7 +343,11 @@ export function Chapter8BoneEndpaper({
           >
             {/* FRONT FACE: BONE EXPLORER PASSPORT */}
             <div
-              className="rounded-[24px] bg-[#EFECE2] border border-[#141413]/18 p-6 md:p-10 shadow-[0_28px_72px_rgba(20,20,19,0.10)] [backface-visibility:hidden]"
+              aria-hidden={flipped}
+              inert={flipped}
+              className={`rounded-[24px] bg-[#EFECE2] border border-[#141413]/18 p-5 sm:p-6 md:p-10 shadow-[0_28px_72px_rgba(20,20,19,0.10)] [backface-visibility:hidden] ${
+                flipped ? 'pointer-events-none' : ''
+              }`}
               style={{
                 backgroundImage:
                   'radial-gradient(circle at 85% 15%, rgba(255,255,255,0.55) 0%, rgba(239,236,226,0) 60%)',
@@ -412,7 +433,11 @@ export function Chapter8BoneEndpaper({
                   <div className="font-mono-tech text-[9.5px] uppercase tracking-[0.11em] text-[#5E5D59]">
                     Акт IV · Реанимация
                   </div>
-                  <div className="font-display font-bold text-[19px] mt-1 text-[#0D7A5F]">
+                  <div
+                    className={`font-display font-bold text-[19px] mt-1 ${
+                      icuStats.correct > 0 ? 'text-[#0D7A5F]' : 'text-[#5E5D59]'
+                    }`}
+                  >
                     {icuStats.correct} / {icuStats.total} верных
                   </div>
                 </button>
@@ -460,15 +485,35 @@ export function Chapter8BoneEndpaper({
                 </button>
               </div>
 
-              {/* Precondition-Masked Honest Editorial Consistency Stamp */}
-              <div className="mt-6 rounded-xl bg-[#FAF9F5] border border-[#141413]/14 p-5 flex items-start gap-4">
-                <ScholarPortraitSvg
-                  id={consistency.author}
-                  size={54}
-                  gesture={consistency.isContradiction ? 'slash' : 'eyebrow'}
-                />
+              {/* Precondition-Masked Honest Editorial Consistency Stamp (full-width commentary on mobile!) */}
+              <div className="mt-5 sm:mt-6 rounded-xl bg-[#FAF9F5] border border-[#141413]/14 p-4 sm:p-5 space-y-3 sm:space-y-0 sm:flex sm:items-start sm:gap-4">
+                <div className="flex items-center gap-3.5 sm:block shrink-0">
+                  <ScholarPortraitSvg
+                    id={consistency.author}
+                    size={52}
+                    gesture={consistency.isContradiction ? 'slash' : 'eyebrow'}
+                  />
+                  <div className="sm:hidden min-w-0 flex-1 space-y-1">
+                    <span
+                      className={`inline-block px-2.5 py-0.5 rounded border font-mono-tech text-[10px] uppercase tracking-[0.12em] font-bold ${
+                        consistency.isIncomplete
+                          ? 'border-[#5E5D59] text-[#5E5D59] bg-[#EAE7DD]'
+                          : consistency.isContradiction
+                            ? 'border-[#FC4109] text-[#FC4109] bg-[#FC4109]/8'
+                            : consistency.isPolemic
+                              ? 'border-[#004EDF] text-[#004EDF] bg-[#004EDF]/8'
+                              : 'border-[#0D7A5F] text-[#0D7A5F] bg-[#0D7A5F]/8'
+                      }`}
+                    >
+                      {consistency.stampTitle}
+                    </span>
+                    <div className="font-mono-tech text-[10px] text-[#5E5D59]">
+                      {consistency.stampSubtitle}
+                    </div>
+                  </div>
+                </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="hidden sm:flex flex-wrap items-center justify-between gap-2">
                     <span
                       className={`inline-block px-2.5 py-0.5 rounded border font-mono-tech text-[10.5px] uppercase tracking-[0.14em] font-bold ${
                         consistency.isIncomplete
@@ -486,27 +531,27 @@ export function Chapter8BoneEndpaper({
                       {consistency.stampSubtitle}
                     </span>
                   </div>
-                  <p className="font-serif-editorial italic text-[14.5px] leading-[1.58] text-[#282725] mt-2.5">
+                  <p className="font-serif-editorial italic text-[14.5px] leading-[1.58] text-[#282725] sm:mt-2.5">
                     «{ruTypo(consistency.commentary)}»
                   </p>
                 </div>
               </div>
 
               {/* Flip & Honest Share CTA */}
-              <div className="mt-6 pt-5 border-t border-[#141413]/12 flex flex-wrap items-center justify-between gap-3">
+              <div className="mt-5 sm:mt-6 pt-5 border-t border-[#141413]/12 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-3">
                 <button
                   type="button"
                   onClick={() => setFlipped(true)}
-                  className="v6-pill h-12 px-6 rounded-full bg-[#FC4109] hover:bg-[#E43806] text-[#FAF9F5] font-sans-ui text-[14px] font-medium inline-flex items-center gap-2.5 shadow-[0_12px_30px_rgba(252,65,9,0.28)] cursor-pointer"
+                  className="v6-pill min-h-[48px] px-5 sm:px-6 py-2.5 rounded-full bg-[#FC4109] hover:bg-[#E43806] text-[#FAF9F5] font-sans-ui text-[13.5px] sm:text-[14px] font-medium inline-flex items-center justify-center gap-2.5 shadow-[0_12px_30px_rgba(252,65,9,0.28)] cursor-pointer"
                 >
-                  <RotateCw className="w-4 h-4" />
-                  <span>Перевернуть карточку · Контрольная проба №0</span>
+                  <RotateCw className="w-4 h-4 shrink-0" />
+                  <span>Перевернуть карточку · Контрольная проба № 00</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={handleShareSpoilerFree}
-                  className="v6-pill h-11 px-4 rounded-full bg-[#FAF9F5] hover:bg-[#E4E0D4] text-[#141413] border border-[#141413]/16 font-sans-ui text-[13px] font-medium inline-flex items-center gap-2 cursor-pointer"
+                  className="v6-pill h-11 px-4 rounded-full bg-[#FAF9F5] hover:bg-[#E4E0D4] text-[#141413] border border-[#141413]/16 font-sans-ui text-[13px] font-medium inline-flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {shareStatus === 'copied' ? (
                     <Check className="w-4 h-4 text-[#0D7A5F]" />
@@ -524,19 +569,25 @@ export function Chapter8BoneEndpaper({
               </div>
             </div>
 
-            {/* BACK FACE: CONTROL PROBE #0 */}
-            <div className="absolute inset-0 rounded-[24px] bg-[#141413] text-[#FAF9F5] border border-[#141413] p-6 md:p-10 shadow-[0_28px_72px_rgba(20,20,19,0.20)] [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col justify-between">
-              <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#FAF9F5]/14 font-mono-tech text-[10px] uppercase tracking-[0.16em] text-[#9EA4B0]">
-                <span className="inline-flex items-center gap-2.5">
-                  <span className="text-[#FC4109] font-semibold">ОБОРОТ · КОНТРОЛЬНАЯ ПРОБА № 0</span>
+            {/* BACK FACE: CONTROL PROBE #00 */}
+            <div
+              aria-hidden={!flipped}
+              inert={!flipped}
+              className={`absolute inset-0 rounded-[24px] bg-[#141413] text-[#FAF9F5] border border-[#141413] p-5 sm:p-6 md:p-10 shadow-[0_28px_72px_rgba(20,20,19,0.20)] [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col justify-between ${
+                !flipped ? 'pointer-events-none' : ''
+              }`}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-[#FAF9F5]/14 font-mono-tech text-[10px] uppercase tracking-[0.14em] text-[#9EA4B0]">
+                <span className="inline-flex flex-wrap items-center gap-2">
+                  <span className="text-[#FC4109] font-semibold">ОБОРОТ · КОНТРОЛЬНАЯ ПРОБА № 00</span>
                   <LabHonestyBadge badge="self-test" dark />
                 </span>
                 <span>0% ИЗМЕНЁННЫХ ПИКСЕЛЕЙ</span>
               </div>
 
-              <div className="my-5 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+              <div className="my-4 sm:my-5 grid grid-cols-1 md:grid-cols-12 gap-5 sm:gap-6 items-center">
                 <div className="md:col-span-5">
-                  <div className="relative aspect-square w-full max-w-[240px] mx-auto rounded-xl overflow-hidden border border-[#FAF9F5]/20 bg-[#141413]">
+                  <div className="relative aspect-square w-full max-w-[220px] sm:max-w-[240px] mx-auto rounded-xl overflow-hidden border border-[#FAF9F5]/20 bg-[#141413]">
                     <img
                       src={assetUrl('/v7/mooney-blob.png')}
                       alt="Та самая неизменённая клякса Муни с первой секунды книги"
@@ -554,27 +605,27 @@ export function Chapter8BoneEndpaper({
                   </div>
                 </div>
 
-                <div className="md:col-span-7 space-y-4">
+                <div className="md:col-span-7 space-y-3 sm:space-y-4">
                   <div className="font-mono-tech text-[11px] uppercase tracking-[0.12em] text-[#FC4109]">
                     ЭХО ПЕРВОЙ СЕКУНДЫ
                   </div>
-                  <h3 className="font-display font-bold text-[24px] md:text-[28px] leading-tight">
+                  <h3 className="font-display font-bold text-[22px] sm:text-[24px] md:text-[28px] leading-tight">
                     {state.mooneyExposed
                       ? 'Попробуйте прямо сейчас снова увидеть просто шум.'
                       : 'Вы пропустили первый оттиск — проявите его прямо здесь!'}
                   </h3>
-                  <p className="font-serif-editorial italic text-[16px] leading-[1.6] text-[#DCE0E8]">
+                  <p className="font-serif-editorial italic text-[15px] sm:text-[16px] leading-[1.6] text-[#DCE0E8]">
                     {ruTypo(
                       state.mooneyExposed
                         ? 'В начале этой книги вы смотрели на этот снимок и видели только хаос чёрно-белых пятен. Сейчас на экране — тот же самый файл, пиксель в пиксель. Но ваш мозг больше никогда не вернётся в прежнее состояние: он навсегда записал этот приор.'
-                        : 'Посмотрите на пятна слева — пока это просто чёрно-белый хаос. Нажмите кнопку ниже на секунду, и ваш мозг за долю секунды навсегда перестроит восприятие этого кадра.',
+                        : 'Посмотрите на эти пятна — пока это просто чёрно-белый хаос. Нажмите кнопку ниже на секунду, и ваш мозг за долю секунды навсегда перестроит восприятие этого кадра.',
                     )}
                   </p>
                   {!state.mooneyExposed && (
                     <button
                       type="button"
                       onClick={handleInlineMooneyReveal}
-                      className="v6-pill h-10 px-4 rounded-full bg-[#FC4109] hover:bg-[#E43806] text-[#FAF9F5] font-sans-ui text-[13px] font-medium inline-flex items-center gap-2 cursor-pointer"
+                      className="v6-pill h-10 px-4 rounded-full bg-[#FC4109] hover:bg-[#E43806] text-[#FAF9F5] font-sans-ui text-[13px] font-medium inline-flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto"
                     >
                       <Eye className="w-4 h-4" />
                       <span>Проявить снимок прямо здесь</span>
@@ -583,11 +634,11 @@ export function Chapter8BoneEndpaper({
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-[#FAF9F5]/14 flex flex-wrap items-center justify-between gap-3">
+              <div className="pt-4 border-t border-[#FAF9F5]/14 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-2.5 sm:gap-3">
                 <button
                   type="button"
                   onClick={() => setFlipped(false)}
-                  className="v6-pill h-10 px-5 rounded-full bg-[#FAF9F5] hover:bg-[#E6E3D8] text-[#141413] font-sans-ui text-[13px] font-medium inline-flex items-center gap-2 cursor-pointer"
+                  className="v6-pill h-11 sm:h-10 px-5 rounded-full bg-[#FAF9F5] hover:bg-[#E6E3D8] text-[#141413] font-sans-ui text-[13px] font-medium inline-flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <RotateCw className="w-3.5 h-3.5" />
                   <span>Вернуться к Паспорту</span>
@@ -596,7 +647,7 @@ export function Chapter8BoneEndpaper({
                 <button
                   type="button"
                   onClick={handleShareSpoilerFree}
-                  className="v6-pill h-10 px-5 rounded-full bg-[#FC4109] hover:bg-[#E43806] text-[#FAF9F5] font-sans-ui text-[13px] font-medium inline-flex items-center gap-2 cursor-pointer"
+                  className="v6-pill h-11 sm:h-10 px-5 rounded-full bg-[#FC4109] hover:bg-[#E43806] text-[#FAF9F5] font-sans-ui text-[13px] font-medium inline-flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {shareStatus === 'copied' ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
                   <span>

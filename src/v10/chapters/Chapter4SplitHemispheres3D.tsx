@@ -76,7 +76,7 @@ export function Chapter4SplitHemispheres3D() {
     >
       {/* FULL-SCREEN 240vh 3D PBR SPLIT-BRAIN RUNWAY (fits 100% cleanly inside 390×844 phone!) */}
       <div ref={runwayRef} className="relative h-[240vh] border-b border-[#141413]/10">
-        <div className="sticky top-0 h-[100svh] w-full flex flex-col justify-between px-4 sm:px-5 md:px-12 lg:px-20 pt-16 pb-4 sm:pt-20 lg:pt-24 lg:pb-10 overflow-hidden">
+        <div className="sticky top-0 h-[100svh] w-full flex flex-col justify-between px-4 sm:px-5 md:px-12 lg:px-20 pt-[70px] pb-4 sm:pt-20 lg:pt-24 lg:pb-10 overflow-hidden">
           <div className="max-w-[1240px] mx-auto w-full flex flex-wrap items-center justify-between gap-2 font-mono-tech text-[9.5px] sm:text-[11px] uppercase tracking-[0.12em] sm:tracking-[0.14em] text-[#5E5D59]">
             <span className="text-[#FC4109] font-semibold">{beat.kicker}</span>
             <span className="hidden sm:inline">ГЛАВА 04 · РАСКОЛОТЫЙ ШТУРВАЛ · стр. 56</span>

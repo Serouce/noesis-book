@@ -32,13 +32,13 @@ export function TransformerVsBrainCanvas({
     if (!el) return;
     const nearObs = new IntersectionObserver(
       ([e]) => setInNear(e.isIntersecting),
-      { rootMargin: '120px 0px 120px 0px', threshold: 0 },
+      { rootMargin: '24px 0px 24px 0px', threshold: 0 },
     );
     const visObs = new IntersectionObserver(
       ([e]) => {
         visRef.current = e.isIntersecting;
       },
-      { rootMargin: '60px 0px 60px 0px', threshold: 0 },
+      { rootMargin: '20px 0px 20px 0px', threshold: 0 },
     );
     nearObs.observe(el);
     visObs.observe(el);
@@ -63,7 +63,8 @@ export function TransformerVsBrainCanvas({
       return;
     }
 
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+    const isCompactDevice = w < 768;
+    const dpr = Math.min(window.devicePixelRatio || 1, isCompactDevice ? 1.5 : 1.75);
     renderer.setPixelRatio(dpr);
     renderer.setSize(w, h, false);
     renderer.setClearColor(0x000000, 0);
@@ -74,6 +75,17 @@ export function TransformerVsBrainCanvas({
     canvas.style.display = 'block';
     container.appendChild(canvas);
 
+    let contextLost = false;
+    const onLost = (e: Event) => {
+      e.preventDefault();
+      contextLost = true;
+    };
+    const onRestored = () => {
+      contextLost = false;
+    };
+    canvas.addEventListener('webglcontextlost', onLost, false);
+    canvas.addEventListener('webglcontextrestored', onRestored, false);
+
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(44, w / h, 0.1, 45);
     camera.position.set(0, 0.35, 7.6);
@@ -81,7 +93,7 @@ export function TransformerVsBrainCanvas({
     const stage = new THREE.Group();
     scene.add(stage);
 
-    const COUNT = 4200;
+    const COUNT = isCompactDevice ? 2400 : 4200;
     const posLayers = new Float32Array(COUNT * 3);
     const posClusters = new Float32Array(COUNT * 3);
     const posTorus = new Float32Array(COUNT * 3);
@@ -160,6 +172,7 @@ export function TransformerVsBrainCanvas({
         uTime: { value: 0 },
         uProgress: { value: 0 },
         uPixelRatio: { value: dpr },
+        uPointScale: { value: 1.0 },
       },
       vertexShader: /* glsl */ `
         attribute vec3 aPosCluster;
@@ -171,6 +184,7 @@ export function TransformerVsBrainCanvas({
         uniform float uTime;
         uniform float uProgress;
         uniform float uPixelRatio;
+        uniform float uPointScale;
 
         varying float vPulse;
         varying float vPassWave;
@@ -212,8 +226,8 @@ export function TransformerVsBrainCanvas({
           gl_Position = projectionMatrix * mv;
 
           float activeEnergy = mix(mix(0.28 + passWave * 1.25, 0.72 + 0.28 * sin(uTime * 2.4 + aSeed * 20.0), p1), loopPulse, p2);
-          float baseSz = mix(16.0, 31.0, pow(aSeed, 1.32)) * (0.84 + activeEnergy * 0.44);
-          gl_PointSize = clamp((baseSz * uPixelRatio) / max(-mv.z, 1.2), 2.4, 14.2);
+          float baseSz = mix(16.0, 31.0, pow(aSeed, 1.32)) * (0.84 + activeEnergy * 0.44) * uPointScale;
+          gl_PointSize = clamp((baseSz * uPixelRatio) / max(-mv.z, 1.2), 2.1, 14.2 * uPointScale);
 
           vPulse = activeEnergy;
           vPassWave = passWave;
@@ -369,14 +383,23 @@ export function TransformerVsBrainCanvas({
     stage.add(torusRings);
 
     const updateLayoutOffset = (rw: number, rh: number) => {
-      const isWide = rw / rh > 1.15;
-      if (isWide) {
-        stage.position.set(2.38, 0.04, 0);
-        stage.scale.setScalar(0.84);
+      const aspect = rw / rh;
+      if (rw >= 1024) {
+        // Matches Tailwind `lg:` desktop split!
+        const desktopScale = aspect < 1.25 ? 0.72 : 0.84;
+        stage.position.set(aspect < 1.25 ? 1.95 : 2.38, 0.04, 0);
+        stage.scale.setScalar(desktopScale);
+        mat.uniforms.uPointScale.value = 1.0;
+      } else if (aspect > 1.2) {
+        // Landscape phone / compact tablet (< 1024px)
+        stage.position.set(1.05, 0.55, 0);
+        stage.scale.setScalar(0.54);
+        mat.uniforms.uPointScale.value = 0.80;
       } else {
-        // Portrait Mobile: lift the 3D Transformer/SAE/Torus cleanly into the upper 45% sky!
-        stage.position.set(0, 1.24, 0);
-        stage.scale.setScalar(0.62);
+        // Portrait Mobile (360-430px): keep all 6 Transformer layers 100% inside viewport width in upper sky!
+        stage.position.set(0, 1.22, 0);
+        stage.scale.setScalar(0.52);
+        mat.uniforms.uPointScale.value = 0.72;
       }
     };
     updateLayoutOffset(w, h);
@@ -398,7 +421,7 @@ export function TransformerVsBrainCanvas({
 
     const tick = () => {
       rafId = requestAnimationFrame(tick);
-      if (!visRef.current) return;
+      if (!visRef.current || contextLost) return;
 
       const t = performance.now() * 0.001 - t0;
       const p = THREE.MathUtils.clamp(progRef.current, 0, 1);
@@ -446,6 +469,8 @@ export function TransformerVsBrainCanvas({
     return () => {
       cancelAnimationFrame(rafId);
       resizeObs.disconnect();
+      canvas.removeEventListener('webglcontextlost', onLost);
+      canvas.removeEventListener('webglcontextrestored', onRestored);
       disposables.forEach((d) => d.dispose());
       renderer.dispose();
       if (canvas.parentElement === container) container.removeChild(canvas);

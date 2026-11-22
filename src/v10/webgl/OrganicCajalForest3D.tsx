@@ -55,13 +55,13 @@ export function OrganicCajalForest3D({ progress, className = 'w-full h-full' }: 
     if (!el) return;
     const nearObs = new IntersectionObserver(
       ([e]) => setInNear(e.isIntersecting),
-      { rootMargin: '120px 0px 120px 0px', threshold: 0 },
+      { rootMargin: '24px 0px 24px 0px', threshold: 0 },
     );
     const visObs = new IntersectionObserver(
       ([e]) => {
         visRef.current = e.isIntersecting;
       },
-      { rootMargin: '60px 0px 60px 0px', threshold: 0 },
+      { rootMargin: '20px 0px 20px 0px', threshold: 0 },
     );
     nearObs.observe(el);
     visObs.observe(el);
@@ -98,6 +98,17 @@ export function OrganicCajalForest3D({ progress, className = 'w-full h-full' }: 
     canvas.style.height = '100%';
     canvas.style.display = 'block';
     container.appendChild(canvas);
+
+    let contextLost = false;
+    const onLost = (e: Event) => {
+      e.preventDefault();
+      contextLost = true;
+    };
+    const onRestored = () => {
+      contextLost = false;
+    };
+    canvas.addEventListener('webglcontextlost', onLost, false);
+    canvas.addEventListener('webglcontextrestored', onRestored, false);
 
     const scene = new THREE.Scene();
     scene.fog = new THREE.FogExp2('#0B0D11', 0.115);
@@ -269,7 +280,7 @@ export function OrganicCajalForest3D({ progress, className = 'w-full h-full' }: 
     });
     somataInst.instanceMatrix.needsUpdate = true;
     scene.add(somataInst);
-    disposables.push(organicSomaGeo, organicSomaMat);
+    disposables.push(organicSomaGeo, organicSomaMat, somataInst);
 
     // === 2. MONUMENTAL SCULPTURAL HERO LAYER V LARKUM PYRAMIDAL NEURON ===
     const heroGroup = new THREE.Group();
@@ -493,7 +504,7 @@ export function OrganicCajalForest3D({ progress, className = 'w-full h-full' }: 
 
     const tick = () => {
       rafId = requestAnimationFrame(tick);
-      if (!visRef.current) return;
+      if (!visRef.current || contextLost) return;
 
       const t = performance.now() * 0.001 - t0;
       const p = THREE.MathUtils.clamp(progRef.current, 0, 1);
@@ -534,6 +545,8 @@ export function OrganicCajalForest3D({ progress, className = 'w-full h-full' }: 
     return () => {
       cancelAnimationFrame(rafId);
       resizeObs.disconnect();
+      canvas.removeEventListener('webglcontextlost', onLost);
+      canvas.removeEventListener('webglcontextrestored', onRestored);
       disposables.forEach((d) => d.dispose());
       renderer.dispose();
       if (canvas.parentElement === container) container.removeChild(canvas);

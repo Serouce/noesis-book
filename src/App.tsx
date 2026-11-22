@@ -1,4 +1,5 @@
 import {
+  Component,
   lazy,
   Suspense,
   useCallback,
@@ -7,6 +8,8 @@ import {
   useRef,
   useState,
   type ComponentType,
+  type ErrorInfo,
+  type ReactNode,
 } from 'react';
 import Lenis from 'lenis';
 import gsap from 'gsap';
@@ -58,6 +61,62 @@ function ActLoadingPaper() {
   );
 }
 
+interface ActErrorBoundaryProps {
+  actId: ActId;
+  onErrorRecover: () => void;
+  children: ReactNode;
+}
+
+interface ActErrorBoundaryState {
+  hasError: boolean;
+}
+
+class ActErrorBoundary extends Component<ActErrorBoundaryProps, ActErrorBoundaryState> {
+  state: ActErrorBoundaryState = { hasError: false };
+
+  static getDerivedStateFromError(): ActErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  componentDidCatch(_error: Error, _info: ErrorInfo) {
+    this.props.onErrorRecover();
+  }
+
+  componentDidUpdate(prevProps: ActErrorBoundaryProps) {
+    if (prevProps.actId !== this.props.actId && this.state.hasError) {
+      this.setState({ hasError: false });
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-[#FAF9F5] text-[#141413] flex items-center justify-center px-6">
+          <div className="max-w-md text-center space-y-4">
+            <div className="font-mono-tech text-[10.5px] uppercase tracking-[0.16em] text-[#FC4109]">
+              ОШИБКА ЗАГРУЗКИ АКТА
+            </div>
+            <h2 className="font-serif-display text-[26px] leading-tight">
+              Не удалось подгрузить главу
+            </h2>
+            <p className="text-[14.5px] leading-[1.6] text-[#5E5D59]">
+              Возможно, оборвалось соединение с сетью. Обновите страницу, чтобы продолжить чтение с этого места.
+            </p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="v6-pill h-11 px-6 rounded-full bg-[#141413] hover:bg-[#FC4109] text-[#FAF9F5] font-sans-ui text-[13.5px] font-medium cursor-pointer"
+            >
+              Обновить страницу
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function ActMountSignal({
   actId,
   onReady,
@@ -81,6 +140,7 @@ function NoesisBookShell() {
   const [dossierOpen, setDossierOpen] = useState(false);
   const [isCurtainVisible, setIsCurtainVisible] = useState(false);
   const [transitionTargetAct, setTransitionTargetAct] = useState<ActId | null>(null);
+  const [mountedSeq, setMountedSeq] = useState(0);
 
   const [hudTheme, setHudTheme] = useState<'light' | 'dark'>('light');
   const [immersiveCanvas, setImmersiveCanvas] = useState(false);
@@ -89,15 +149,40 @@ function NoesisBookShell() {
 
   const lenisRef = useRef<Lenis | null>(null);
   const mainRef = useRef<HTMLElement | null>(null);
-  useEditorialChoreography(mainRef, activeAct);
+  useEditorialChoreography(mainRef, `${activeAct}-${mountedSeq}`);
   const ch1DarkRef = useRef(false);
   const pendingSectionRef = useRef<string | null>(initialRoute.section);
   const activeActRef = useRef<ActId>(activeAct);
   activeActRef.current = activeAct;
   const prefetchedActsRef = useRef<Record<string, boolean>>({});
   const transitionTimerRef = useRef<number | null>(null);
+  const revealTimerRef = useRef<number | null>(null);
+  const mountRaf1Ref = useRef<number | null>(null);
+  const mountRaf2Ref = useRef<number | null>(null);
+  const transitionSeqRef = useRef(0);
   const isTransitioningRef = useRef(false);
   const lastMetricsRef = useRef<{ y: number; h: number }>({ y: -1, h: -1 });
+
+  const clearTransitionTimers = useCallback(() => {
+    if (transitionTimerRef.current !== null) {
+      window.clearTimeout(transitionTimerRef.current);
+      transitionTimerRef.current = null;
+    }
+    if (revealTimerRef.current !== null) {
+      window.clearTimeout(revealTimerRef.current);
+      revealTimerRef.current = null;
+    }
+    if (mountRaf1Ref.current !== null) {
+      cancelAnimationFrame(mountRaf1Ref.current);
+      mountRaf1Ref.current = null;
+    }
+    if (mountRaf2Ref.current !== null) {
+      cancelAnimationFrame(mountRaf2Ref.current);
+      mountRaf2Ref.current = null;
+    }
+  }, []);
+
+  useEffect(() => () => clearTransitionTimers(), [clearTransitionTimers]);
 
   // Zero-Reflow HUD sync: only measures DOM rects when scrollY or documentHeight actually changed (or forced!)
   const syncHudFromViewport = useCallback((force = false) => {
@@ -215,6 +300,7 @@ function NoesisBookShell() {
     lenis.on('scroll', onScroll);
 
     const onNativeScroll = () => {
+      if (lenis.isScrolling) return;
       ScrollTrigger.update();
       syncHudFromViewport(false);
     };
@@ -281,11 +367,39 @@ function NoesisBookShell() {
     markActVisited(activeAct);
   }, [activeAct, markActVisited]);
 
+  const indexOpenRef = useRef(indexOpen);
+  indexOpenRef.current = indexOpen;
+  const dossierOpenRef = useRef(dossierOpen);
+  dossierOpenRef.current = dossierOpen;
+
+  const recoverFromActError = useCallback(() => {
+    clearTransitionTimers();
+    isTransitioningRef.current = false;
+    setIsCurtainVisible(false);
+    setTransitionTargetAct(null);
+    if (!indexOpenRef.current && !dossierOpenRef.current) {
+      lenisRef.current?.start();
+    }
+  }, [clearTransitionTimers]);
+
   // 4-Phase Safe Act Transition (Lock & Curtain -> Unmount & Purge -> Hard Scroll & HUD Reset -> Lazy Mount, 2x rAF & Reveal)
   const switchAct = useCallback(
     (targetAct: ActId, targetSection?: string, updateHash = true) => {
-      // Same-act local section jump
+      const seq = ++transitionSeqRef.current;
+
+      // Same-act local section jump (also cleanly cancels any in-flight Act transition!)
       if (targetAct === activeActRef.current) {
+        if (isTransitioningRef.current || transitionTimerRef.current !== null || revealTimerRef.current !== null) {
+          clearTransitionTimers();
+          isTransitioningRef.current = false;
+          setIsCurtainVisible(false);
+          setTransitionTargetAct(null);
+          pendingSectionRef.current = null;
+          if (!indexOpenRef.current && !dossierOpenRef.current) {
+            lenisRef.current?.start();
+          }
+        }
+
         if (updateHash) {
           const desiredHash = buildHashUrl(targetAct, targetSection ?? null);
           if (window.location.hash !== desiredHash) {
@@ -296,24 +410,24 @@ function NoesisBookShell() {
           const el = document.getElementById(targetSection);
           if (el) {
             if (lenisRef.current) {
-              lenisRef.current.scrollTo(el, { offset: 0, duration: 0.95 });
+              lenisRef.current.scrollTo(el, { offset: 0, duration: 1.35 });
             } else {
               el.scrollIntoView({ behavior: 'smooth' });
             }
           }
         } else if (lenisRef.current) {
-          lenisRef.current.scrollTo(0, { duration: 0.85 });
+          lenisRef.current.scrollTo(0, { duration: 1.15 });
         } else {
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }
         return;
       }
 
-      if (transitionTimerRef.current !== null) {
-        window.clearTimeout(transitionTimerRef.current);
-      }
+      clearTransitionTimers();
 
-      // Phase 1: Lock & Leica Aperture Shutter Curtain with Target Act Title Stamp
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // Phase 1: Lock & Ceremonial Leica Aperture Shutter Curtain with Target Act Title Stamp
       isTransitioningRef.current = true;
       setTransitionTargetAct(targetAct);
       setIsCurtainVisible(true);
@@ -328,7 +442,11 @@ function NoesisBookShell() {
         }
       }
 
+      // 540ms > 500ms CSS shutter close, guaranteeing DOM swap happens strictly behind an opaque closed shutter
       transitionTimerRef.current = window.setTimeout(() => {
+        transitionTimerRef.current = null;
+        if (transitionSeqRef.current !== seq) return;
+
         // Phase 2: Unmount & Purge GSAP ScrollTriggers cleanly BEFORE switching React tree
         ScrollTrigger.getAll().forEach((st) => st.kill(true));
         ch1DarkRef.current = false;
@@ -348,25 +466,25 @@ function NoesisBookShell() {
         pendingSectionRef.current = targetSection ?? null;
         setActiveChapterId(targetSection ?? getActMeta(targetAct).chapters[0].id);
         setActiveAct(targetAct);
-      }, 280);
+      }, prefersReduced ? 40 : 540);
     },
-    [],
+    [clearTransitionTimers],
   );
-
-  const indexOpenRef = useRef(indexOpen);
-  indexOpenRef.current = indexOpen;
-  const dossierOpenRef = useRef(dossierOpen);
-  dossierOpenRef.current = dossierOpen;
 
   // Phase 4: Called deterministically AFTER lazy Act component finishes mounting inside Suspense!
   const handleActMounted = useCallback(
     (_mountedAct: ActId) => {
-      let raf1 = 0;
-      let raf2 = 0;
-      let revealTimer = 0;
+      const seq = transitionSeqRef.current;
+      setMountedSeq((n) => n + 1);
 
-      raf1 = requestAnimationFrame(() => {
-        raf2 = requestAnimationFrame(() => {
+      mountRaf1Ref.current = requestAnimationFrame(() => {
+        mountRaf1Ref.current = null;
+        if (transitionSeqRef.current !== seq) return;
+
+        mountRaf2Ref.current = requestAnimationFrame(() => {
+          mountRaf2Ref.current = null;
+          if (transitionSeqRef.current !== seq) return;
+
           const pendingSec = pendingSectionRef.current;
           if (pendingSec) {
             const targetEl = document.getElementById(pendingSec);
@@ -388,7 +506,10 @@ function NoesisBookShell() {
           ScrollTrigger.refresh(true);
           syncHudFromViewport(true);
 
-          revealTimer = window.setTimeout(() => {
+          const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          revealTimerRef.current = window.setTimeout(() => {
+            revealTimerRef.current = null;
+            if (transitionSeqRef.current !== seq) return;
             isTransitioningRef.current = false;
             setIsCurtainVisible(false);
             if (!indexOpenRef.current && !dossierOpenRef.current) {
@@ -396,14 +517,23 @@ function NoesisBookShell() {
             }
             ScrollTrigger.refresh();
             syncHudFromViewport(true);
-          }, 190);
+          }, prefersReduced ? 40 : 520);
         });
       });
 
       return () => {
-        cancelAnimationFrame(raf1);
-        cancelAnimationFrame(raf2);
-        window.clearTimeout(revealTimer);
+        if (mountRaf1Ref.current !== null) {
+          cancelAnimationFrame(mountRaf1Ref.current);
+          mountRaf1Ref.current = null;
+        }
+        if (mountRaf2Ref.current !== null) {
+          cancelAnimationFrame(mountRaf2Ref.current);
+          mountRaf2Ref.current = null;
+        }
+        if (revealTimerRef.current !== null) {
+          window.clearTimeout(revealTimerRef.current);
+          revealTimerRef.current = null;
+        }
       };
     },
     [syncHudFromViewport],
@@ -442,7 +572,7 @@ function NoesisBookShell() {
     const target = document.getElementById(targetId);
     if (!target) return;
     if (lenisRef.current) {
-      lenisRef.current.scrollTo(target, { offset: 0, duration: 1.0 });
+      lenisRef.current.scrollTo(target, { offset: 0, duration: 1.35 });
     } else {
       target.scrollIntoView({ behavior: 'smooth' });
     }
@@ -450,7 +580,7 @@ function NoesisBookShell() {
 
   const handleScrollTop = useCallback(() => {
     if (lenisRef.current) {
-      lenisRef.current.scrollTo(0, { duration: 0.9 });
+      lenisRef.current.scrollTo(0, { duration: 1.15 });
     } else {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -478,11 +608,16 @@ function NoesisBookShell() {
         <div
           aria-hidden="true"
           data-open={isCurtainVisible ? 'true' : 'false'}
-          className={`noesis-shutter-curtain fixed inset-0 z-[70] pointer-events-none flex flex-col items-center justify-center px-6 ${
+          className={`noesis-shutter-curtain fixed inset-0 z-[70] flex flex-col items-center justify-center px-6 ${
+            isCurtainVisible ? 'pointer-events-auto' : 'pointer-events-none'
+          } ${
             isShutterDark ? 'bg-[#0B0D11] text-[#FAF9F5]' : 'bg-[#FAF9F5] text-[#141413]'
           }`}
         >
-          <div className="text-center space-y-4 max-w-lg">
+          <div
+            key={shutterMeta.id}
+            className="noesis-shutter-stamp text-center space-y-4 max-w-lg"
+          >
             <div className="font-mono-tech text-[11px] uppercase tracking-[0.22em] text-[#FC4109] font-semibold">
               {shutterMeta.code}
             </div>
@@ -490,9 +625,20 @@ function NoesisBookShell() {
               {shutterMeta.title}
             </div>
             <div
-              key={shutterMeta.id}
-              className="noesis-shutter-line mx-auto w-24 h-[2px] bg-[#FC4109] origin-center"
-            />
+              className={`font-serif-editorial italic text-[14px] sm:text-[15.5px] leading-[1.5] ${
+                isShutterDark ? 'text-[#B8C1D0]' : 'text-[#4B4A46]'
+              }`}
+            >
+              {shutterMeta.subtitle}
+            </div>
+            <div className="noesis-shutter-line mx-auto w-28 h-[2px] bg-[#FC4109] origin-center" />
+            <div
+              className={`font-mono-tech text-[10px] uppercase tracking-[0.16em] ${
+                isShutterDark ? 'text-[#7E8796]' : 'text-[#7A7872]'
+              }`}
+            >
+              {shutterMeta.durationLabel}
+            </div>
           </div>
         </div>
 
@@ -511,17 +657,19 @@ function NoesisBookShell() {
         />
 
         <main ref={mainRef}>
-          <Suspense fallback={<ActLoadingPaper />}>
-            <ActiveActComponent
-              key={activeAct}
-              onNavigateLocal={handleNavigateLocal}
-              onSwitchAct={(actId, secId) => switchAct(actId, secId)}
-              onCh1HudTheme={handleCh1HudTheme}
-              onScrollTop={handleScrollTop}
-              visitedActs={state.visitedActs}
-            />
-            <ActMountSignal key={`sig-${activeAct}`} actId={activeAct} onReady={handleActMounted} />
-          </Suspense>
+          <ActErrorBoundary actId={activeAct} onErrorRecover={recoverFromActError}>
+            <Suspense fallback={<ActLoadingPaper />}>
+              <ActiveActComponent
+                key={activeAct}
+                onNavigateLocal={handleNavigateLocal}
+                onSwitchAct={(actId, secId) => switchAct(actId, secId)}
+                onCh1HudTheme={handleCh1HudTheme}
+                onScrollTop={handleScrollTop}
+                visitedActs={state.visitedActs}
+              />
+              <ActMountSignal key={`sig-${activeAct}`} actId={activeAct} onReady={handleActMounted} />
+            </Suspense>
+          </ActErrorBoundary>
         </main>
 
         {/* 5-Act Atlas Index Drawer */}

@@ -40,7 +40,7 @@ export function LabHonestyBadge({
         }`}
       >
         <span className="w-1.5 h-1.5 rounded-full bg-[#FC4109]" aria-hidden="true" />
-        ОПЫТ НА ТЕБЕ
+        ОПЫТ НА СЕБЕ
       </span>
     );
   }
@@ -128,13 +128,13 @@ export function NoesisInstrumentFrame({
         +
       </span>
 
-      {/* Top compact Swiss telemetry rail (clean single/tight row on phones!) */}
+      {/* Top compact Swiss telemetry rail (clean wrapping on narrow phones, single row on sm+) */}
       <div
-        className={`min-h-[34px] sm:min-h-[38px] px-3.5 sm:px-6 py-1.5 sm:py-2 border-b ${railBorderCls} flex items-center justify-between gap-2`}
+        className={`min-h-[36px] sm:min-h-[38px] px-4 sm:px-6 py-2 border-b ${railBorderCls} flex items-center justify-between gap-2`}
       >
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-x-2 gap-y-1 min-w-0">
           <span
-            className={`font-mono-tech text-[9px] sm:text-[10px] uppercase tracking-[0.11em] sm:tracking-[0.14em] truncate ${codeColor}`}
+            className={`font-mono-tech text-[9.5px] sm:text-[10px] uppercase tracking-[0.11em] sm:tracking-[0.14em] sm:truncate ${codeColor}`}
           >
             {code}
           </span>

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ArrowDown, ChevronDown, Eye, Moon, Sparkles, Zap } from 'lucide-react';
 import { useExplorer } from '../../v7/context/ExplorerContext';
 import { ScholarMarginDuel } from '../../v7/components/ScholarMarginalia';
@@ -82,6 +82,23 @@ export function Chapter1WhatIsConsciousness({
 }: Chapter1WhatIsConsciousnessProps) {
   const { setCh1Explored } = useExplorer();
   const [openCardId, setOpenCardId] = useState<ConfusionCard['id']>('intelligence');
+  const cardsRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const el = cardsRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setCh1Explored(true);
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.25 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [setCh1Explored]);
 
   const handleSelectCard = (id: ConfusionCard['id']) => {
     setOpenCardId(id);
@@ -138,7 +155,7 @@ export function Chapter1WhatIsConsciousness({
             </p>
             <p className="text-[16px] leading-[1.7] text-[#42413D]">
               {ruTypo(
-                'Но есть вещь, которую не в силах подделать ни один демон: сам факт, что прямо сейчас кто-то переживает эту иллюзию. Если тебе кажется, что ты чувствуешь горечь кофе или укол сомнения — само это «кажется» уже абсолютно реально. Сознание — не гипотеза из учебника, а единственная данность, с которой мы знакомы изнутри.',
+                'Но есть вещь, которую не в силах подделать ни один демон: сам факт, что прямо сейчас кто-то переживает эту иллюзию. Если вам кажется, что вы чувствуете горечь кофе или укол сомнения — само это «кажется» уже абсолютно реально. Сознание — не гипотеза из учебника, а единственная данность, с которой мы знакомы изнутри.',
               )}
             </p>
           </div>
@@ -192,7 +209,7 @@ export function Chapter1WhatIsConsciousness({
                 СТУПЕНЬ 02 · МЕЛЬНИЦА ЛЕЙБНИЦА (1714)
               </div>
               <h3 id="step-leibniz" className="font-serif-editorial text-[28px] md:text-[34px] leading-[1.14] tracking-[-0.02em]">
-                {ruTypo('Войди внутрь механизма — и не найдёшь ни одной мысли')}
+                {ruTypo('Войдите внутрь механизма — и не найдёте ни одной мысли')}
               </h3>
             </div>
             <div className="lg:col-span-6 text-[16px] leading-[1.68] text-[#353431]">
@@ -289,7 +306,7 @@ export function Chapter1WhatIsConsciousness({
           </div>
 
           {/* Right 7 cols: Clean 3-Card Accordion / Clarifier (NOT a quiz!) */}
-          <div className="lg:col-span-7">
+          <div ref={cardsRef} className="lg:col-span-7">
             <NoesisInstrumentFrame
               code="НАВИГАТОР ПОНЯТИЙ · 3 ГЛАВНЫЕ ПОДМЕНЫ"
               badge="reconstruction"

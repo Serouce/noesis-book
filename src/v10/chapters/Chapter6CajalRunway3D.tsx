@@ -112,7 +112,7 @@ export function Chapter6CajalRunway3D() {
 
             {/* Anatomically accurate horizontal optical leader pointing directly to the glowing Ca²⁺ nexus at mid-trunk! */}
             <div
-              className="pointer-events-none absolute top-[43%] right-3 sm:right-4 flex items-center gap-0 transition-opacity duration-300"
+              className="pointer-events-none absolute top-3 right-3 sm:top-[43%] sm:right-4 flex items-center gap-0 transition-opacity duration-300"
               style={{ opacity: progress > 0.52 ? 1 : 0 }}
             >
               <span className="w-14 h-[1px] bg-gradient-to-r from-[#FC4109] to-[#FC4109]/40 hidden sm:block" />

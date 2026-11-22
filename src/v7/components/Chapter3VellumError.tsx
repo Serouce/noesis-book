@@ -207,7 +207,7 @@ export function Chapter3VellumError({ onNextChapter }: Chapter3VellumErrorProps)
         <div ref={stageCardRef} className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           <div className="lg:col-span-8 flex flex-col">
             <NoesisInstrumentFrame
-              code="ПРИБОР II.2 · ОПТИКА ПРЕДСКАЗАНИЯ «DREI GLÄSER»"
+              code="ПРИБОР II.2 · «DREI GLÄSER»"
               badge="reconstruction"
               telemetry={`ПРИОР: ${priorWeight}%`}
               surface="vellum"
@@ -262,6 +262,14 @@ export function Chapter3VellumError({ onNextChapter }: Chapter3VellumErrorProps)
                     <span>Жест B: Три средних («Drei Gläser»)</span>
                   </button>
                 </div>
+              </div>
+
+              {/* Mobile-only compact status bar OUTSIDE the 35mm photo so face & hand stay 100% unobstructed */}
+              <div className="sm:hidden flex flex-wrap items-center justify-between gap-1.5 font-mono-tech text-[9.5px] uppercase tracking-[0.09em]">
+                <span className="text-[#5E5D59]">35ММ · POV КАДР</span>
+                <span className={`px-2 py-0.5 rounded font-semibold ${statusBadge.cls}`}>
+                  {statusBadge.text}
+                </span>
               </div>
 
               {/* 35MM LEICA MONOCHROM NOIR POV FRAME */}
@@ -334,8 +342,8 @@ export function Chapter3VellumError({ onNextChapter }: Chapter3VellumErrorProps)
                   />
                 )}
 
-                {/* Top telemetry inside frame */}
-                <div className="pointer-events-none absolute top-3 inset-x-3.5 z-20 flex flex-wrap items-center justify-between gap-2 font-mono-tech text-[9.5px] uppercase tracking-[0.12em]">
+                {/* Top telemetry inside frame (desktop/tablet only; mobile uses dedicated bar above photo) */}
+                <div className="pointer-events-none hidden sm:flex absolute top-3 inset-x-3.5 z-20 flex-wrap items-center justify-between gap-2 font-mono-tech text-[9.5px] uppercase tracking-[0.12em]">
                   <span className="px-2 py-0.5 rounded bg-[#141413]/78 text-[#FAF9F5]/90 backdrop-blur-xs">
                     35ММ · POV КАДР · «DREI GLÄSER»
                   </span>
@@ -548,7 +556,7 @@ export function Chapter3VellumError({ onNextChapter }: Chapter3VellumErrorProps)
 
             <div className="rounded-2xl border border-[#141413]/12 bg-[#FAF9F5] p-5 space-y-2.5">
               <div className="font-mono-tech text-[10px] uppercase tracking-[0.13em] text-[#004EDF] font-semibold">
-                ПОПРОБУЙТЕ ДВА КРАЯ ПОЛЗУНКА СЛЕВА
+                ПОПРОБУЙТЕ ДВА КРАЯ ПОЛЗУНКА ПРИОРА
               </div>
               <ul className="text-[13.5px] leading-[1.58] text-[#3B3A37] space-y-2">
                 <li>

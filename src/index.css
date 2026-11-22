@@ -305,14 +305,25 @@ input[type='range'].v6-wavelength-slider::-webkit-slider-thumb:hover {
   box-shadow: 0 18px 44px rgba(20, 20, 19, 0.06);
 }
 
-/* Leica Aperture Shutter Act Transition (Clip-Path Curtain + Editorial Title Stamp) */
+/* Leica Aperture Shutter Act Transition (Ceremonial Criterion-grade Clip-Path Curtain + Title Stamp) */
 @keyframes shutterLineGrow {
-  from {
+  0% {
     transform: scaleX(0);
-    opacity: 0.4;
+    opacity: 0.25;
   }
-  to {
+  100% {
     transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+@keyframes shutterStampRise {
+  0% {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
     opacity: 1;
   }
 }
@@ -321,17 +332,24 @@ input[type='range'].v6-wavelength-slider::-webkit-slider-thumb:hover {
   clip-path: inset(0 0 100% 0);
   opacity: 0;
   transition:
-    clip-path 420ms cubic-bezier(0.76, 0, 0.24, 1),
-    opacity 220ms ease;
+    clip-path 540ms cubic-bezier(0.76, 0, 0.24, 1),
+    opacity 180ms ease 380ms;
 }
 
 .noesis-shutter-curtain[data-open='true'] {
   clip-path: inset(0 0 0 0);
   opacity: 1;
+  transition:
+    clip-path 500ms cubic-bezier(0.76, 0, 0.24, 1),
+    opacity 150ms ease 0ms;
+}
+
+.noesis-shutter-stamp {
+  animation: shutterStampRise 520ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .noesis-shutter-line {
-  animation: shutterLineGrow 380ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: shutterLineGrow 760ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes noesisDotPulse {
@@ -366,6 +384,7 @@ input[type='range'].v6-wavelength-slider::-webkit-slider-thumb:hover {
   .v7-brow-raise,
   .v7-glass-clink,
   .noesis-live-dot,
+  .noesis-shutter-stamp,
   .noesis-shutter-line {
     animation: none;
   }

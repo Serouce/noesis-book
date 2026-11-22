@@ -27,14 +27,17 @@ export function BookIndexDrawer({
       setConfirmReset(false);
       return;
     }
-    const prevOverflow = document.body.style.overflow;
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
     document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', onKey);
     return () => {
-      document.body.style.overflow = prevOverflow;
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
       window.removeEventListener('keydown', onKey);
     };
   }, [open, onClose]);
@@ -63,8 +66,8 @@ export function BookIndexDrawer({
           {/* Top Book Header */}
           <div className="flex items-start justify-between gap-4 pb-5 border-b border-[#141413]/12">
             <div>
-              <div className="font-mono-tech text-[10.5px] uppercase tracking-[0.14em] text-[#FC4109]">
-                NOESIS v10 · SHOWREEL EDITION · 2026
+              <div className="font-mono-tech text-[10px] uppercase tracking-[0.13em] text-[#FC4109]">
+                NOESIS · ИЗДАНИЕ 2026
               </div>
               <h2 className="font-serif-editorial text-2xl md:text-[28px] mt-1.5 leading-tight">
                 Четыре акта книги
@@ -123,7 +126,7 @@ export function BookIndexDrawer({
                             onNavigate(act.id, ch.id);
                             onClose();
                           }}
-                          className={`w-full text-left py-3 px-2.5 -mx-2.5 rounded-lg transition-colors cursor-pointer flex items-start justify-between gap-3 ${
+                          className={`w-full text-left py-3 px-3 rounded-lg transition-colors cursor-pointer flex items-start justify-between gap-3 ${
                             isActive
                               ? 'bg-[#141413] text-[#FAF9F5]'
                               : 'hover:bg-[#F0EEE6] text-[#141413]'

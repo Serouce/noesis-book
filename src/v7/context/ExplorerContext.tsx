@@ -638,12 +638,13 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
     if (state.maryBet === null) missingAnchors.push('Комната Мэри (Акт II)');
     if (state.cogitateBet === null) missingAnchors.push('пари COGITATE (Акт III)');
     if (!state.ribbonChecked) missingAnchors.push('красная закладка NY 2024 (Акт IV)');
+    if (state.aiVerdict === null) missingAnchors.push('позиция по ИИ (Акт IV)');
 
     if (missingAnchors.length > 0) {
       return {
         author: 'seth',
         stampTitle: 'ЧАСТИЧНЫЙ ПРОТОКОЛ',
-        stampSubtitle: `Не хватает опоры: ${missingAnchors.length} из 3`,
+        stampSubtitle: `Не хватает опоры: ${missingAnchors.length} из 4`,
         commentary: `Чтобы честно сверить вашу философию на непротиворечивость, не хватает ставки в разделах: ${missingAnchors.join(', ')}. Сейчас явных противоречий нет, но часть ключевых вопросов осталась без ответа.`,
         isContradiction: false,
         isIncomplete: true,

@@ -68,14 +68,14 @@ const MODES: ModeSpec[] = [
   {
     id: 'psilocybin',
     label: 'Псилоцибин',
-    shortExplain: 'Психоделик · рецепторы 5-HT2A',
+    shortExplain: 'Психоделик · рецепторы 5‑HT2A',
     badge: 'ГИПЕРСВЯЗНОСТЬ',
     complexityLabel: 'СВЕРХВЫСОКАЯ СЛОЖНОСТЬ',
     needleDown: true,
     shaftIntact: true,
     headline: 'Верхние фильтры ослабевают — мозг сбрасывает шаблоны',
     description:
-      'Молекула псилоцибина (классический психоделик) связывается с серотониновыми рецепторами 5-HT2A на верхней антенне этого нейрона. Привычные прогнозы (приоры) слабеют, и далёкие зоны коры начинают перекликаться напрямую (Ort et al., 2023; Siegel et al., Nature 2024).',
+      'Молекула псилоцибина (классический психоделик) связывается с серотониновыми рецепторами 5‑HT2A на верхней антенне этого нейрона. Привычные прогнозы (приоры) слабеют, и далёкие зоны коры начинают перекликаться напрямую (Ort et al., 2023; Siegel et al., Nature 2024).',
     accent: '#C84319',
   },
   {
@@ -507,8 +507,8 @@ export function Chapter5CajalTurntable({ onNextChapter: _onNextChapter }: Chapte
         {/* LIVE PROPOFOL 2.2s INFUSION COUNTDOWN BANNER (Muted-First Drama!) */}
         {(isPropofolInfusing || isPropofolSnapping) && (
           <div className="mt-4 rounded-xl bg-[#141413] text-[#FAF9F5] border border-[#FC4109]/50 px-5 py-3 flex flex-wrap items-center justify-between gap-4 animate-[fadeScaleIn_180ms_ease]">
-            <div className="flex items-center gap-3 font-mono-tech text-[11.5px] uppercase tracking-[0.12em]">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#FC4109] animate-ping" />
+            <div className="flex items-center gap-3 font-mono-tech text-[11px] sm:text-[11.5px] uppercase tracking-[0.11em] sm:tracking-[0.12em]">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#FC4109] animate-ping shrink-0" />
               <span>
                 {isPropofolSnapping
                   ? 'РАЗРЫВ Ca²⁺-КАНАЛА — ОБРЫВ ПРЯМО ПОСРЕДИ НОТЫ!'

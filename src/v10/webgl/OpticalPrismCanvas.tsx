@@ -70,6 +70,17 @@ export function OpticalPrismCanvas({ mode, mix, className = 'w-full h-[320px] sm
     canvas.style.display = 'block';
     container.appendChild(canvas);
 
+    let contextLost = false;
+    const onLost = (e: Event) => {
+      e.preventDefault();
+      contextLost = true;
+    };
+    const onRestored = () => {
+      contextLost = false;
+    };
+    canvas.addEventListener('webglcontextlost', onLost, false);
+    canvas.addEventListener('webglcontextrestored', onRestored, false);
+
     const scene = new THREE.Scene();
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
@@ -235,7 +246,7 @@ export function OpticalPrismCanvas({ mode, mix, className = 'w-full h-[320px] sm
 
     const tick = () => {
       rafId = requestAnimationFrame(tick);
-      if (!stateRef.current.visible) return;
+      if (!stateRef.current.visible || contextLost) return;
       mat.uniforms.uTime.value = performance.now() * 0.001 - t0;
       mat.uniforms.uMode.value = stateRef.current.mode === 'magenta' ? 1 : 0;
       mat.uniforms.uMix.value = stateRef.current.mix;
@@ -246,6 +257,8 @@ export function OpticalPrismCanvas({ mode, mix, className = 'w-full h-[320px] sm
     return () => {
       cancelAnimationFrame(rafId);
       resizeObs.disconnect();
+      canvas.removeEventListener('webglcontextlost', onLost);
+      canvas.removeEventListener('webglcontextrestored', onRestored);
       geo.dispose();
       mat.dispose();
       renderer.dispose();

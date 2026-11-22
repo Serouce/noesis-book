@@ -534,8 +534,9 @@ export function Chapter6IcuJournal({
                     key={lbl}
                     x="4"
                     y={40 + ch * 44}
-                    fill="#A8B4C6"
-                    fontSize="10"
+                    fill="#B6C2D4"
+                    fontSize="12"
+                    fontWeight="600"
                     fontFamily="JetBrains Mono Variable, monospace"
                   >
                     {lbl}
@@ -618,7 +619,7 @@ export function Chapter6IcuJournal({
                     <p className="text-[12.5px] text-[#7D8796]">
                       {isZapped
                         ? 'Изучите 5 каналов ЭЭГ выше: эхо замерло локально («подушка») или разлетелось сложным перезвоном («оркестр»)? При желании нажмите «Проверить сжатие ZIP».'
-                        : 'Сначала подайте магнитный импульс слева, чтобы увидеть 5-канальное эхо.'}
+                        : 'Сначала подайте магнитный импульс (ZAP), чтобы увидеть 5-канальное эхо.'}
                     </p>
                   )}
                 </div>

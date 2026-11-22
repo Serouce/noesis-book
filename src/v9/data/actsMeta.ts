@@ -41,7 +41,7 @@ export const ACTS_META: ActMeta[] = [
         title: 'Порог: необратимый щелчок',
         shortTitle: 'Проявка',
         folio: 'стр. 01',
-        mechanic: 'Контактная экспозиция Муни · опыт на тебе',
+        mechanic: 'Контактная экспозиция Муни · опыт на себе',
         experimentKey: 'plate-00',
       },
       {

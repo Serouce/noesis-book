@@ -19,6 +19,7 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
   const [scanCount, setScanCount] = useState(0);
 
   const pointerDownAtRef = useRef<number>(0);
+  const lastPointerUpAtRef = useRef<number>(0);
   const flashTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -33,6 +34,20 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
     if (!state.mooneyExposed) {
       setMooneyResult(1.0);
     }
+  };
+
+  const triggerTimedFlash = () => {
+    setHolding(false);
+    setScanCount((c) => c + 1);
+    setFlashActive(true);
+    if (flashTimerRef.current !== null) {
+      window.clearTimeout(flashTimerRef.current);
+    }
+    flashTimerRef.current = window.setTimeout(() => {
+      setFlashActive(false);
+      flashTimerRef.current = null;
+      recordReveal();
+    }, FLASH_DURATION_MS);
   };
 
   const revealStart = (e: PointerEvent<HTMLElement>) => {
@@ -61,7 +76,9 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
       // Ignore release errors
     }
     if (!holding) return;
-    const heldMs = performance.now() - pointerDownAtRef.current;
+    const now = performance.now();
+    const heldMs = now - pointerDownAtRef.current;
+    lastPointerUpAtRef.current = now;
     setHolding(false);
 
     if (heldMs < SHORT_CLICK_THRESHOLD_MS) {
@@ -90,17 +107,14 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
     setHolding(false);
   };
 
+  const handleButtonClickFallback = () => {
+    // Handles assistive tech / synthetic click without preceding pointerup
+    if (performance.now() - lastPointerUpAtRef.current < 400) return;
+    triggerTimedFlash();
+  };
+
   const handleKeyboardActivate = () => {
-    setScanCount((c) => c + 1);
-    setFlashActive(true);
-    if (flashTimerRef.current !== null) {
-      window.clearTimeout(flashTimerRef.current);
-    }
-    flashTimerRef.current = window.setTimeout(() => {
-      setFlashActive(false);
-      flashTimerRef.current = null;
-      recordReveal();
-    }, FLASH_DURATION_MS);
+    triggerTimedFlash();
   };
 
   const showingKey = holding || flashActive;
@@ -156,10 +170,9 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
                 role="button"
                 tabIndex={0}
                 aria-label="Нажмите на оттиск, чтобы проявить исходный снимок"
-                onPointerDown={revealStart}
-                onPointerUp={revealEnd}
-                onPointerCancel={revealCancel}
+                onClick={triggerTimedFlash}
                 onKeyDown={(e) => {
+                  if (e.repeat) return;
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     handleKeyboardActivate();
@@ -176,7 +189,8 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
 
                 <img
                   src={assetUrl('/v7/mooney-key.jpg')}
-                  alt="Проявленный монохромный снимок кота"
+                  alt={showingKey ? 'Проявленный монохромный исходный снимок' : ''}
+                  aria-hidden={!showingKey}
                   className="absolute inset-0 w-full h-full object-cover select-none"
                   style={{
                     opacity: showingKey ? 1 : 0,
@@ -224,10 +238,12 @@ export function Plate00Mooney({ onContinueToCh1 }: Plate00MooneyProps) {
             <div className="flex justify-center sm:justify-start">
               <button
                 type="button"
+                onClick={handleButtonClickFallback}
                 onPointerDown={revealStart}
                 onPointerUp={revealEnd}
                 onPointerCancel={revealCancel}
                 onKeyDown={(e) => {
+                  if (e.repeat) return;
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     handleKeyboardActivate();

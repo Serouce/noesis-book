@@ -72,7 +72,8 @@ export function LeibnizMillCanvas({ progress, className = 'w-full h-full' }: Lei
       return;
     }
 
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+    const isCompactDevice = w < 768;
+    const dpr = Math.min(window.devicePixelRatio || 1, isCompactDevice ? 1.5 : 1.75);
     renderer.setPixelRatio(dpr);
     renderer.setSize(w, h, false);
     renderer.setClearColor(0x000000, 0);
@@ -83,6 +84,17 @@ export function LeibnizMillCanvas({ progress, className = 'w-full h-full' }: Lei
     canvas.style.display = 'block';
     container.appendChild(canvas);
 
+    let contextLost = false;
+    const onLost = (e: Event) => {
+      e.preventDefault();
+      contextLost = true;
+    };
+    const onRestored = () => {
+      contextLost = false;
+    };
+    canvas.addEventListener('webglcontextlost', onLost, false);
+    canvas.addEventListener('webglcontextrestored', onRestored, false);
+
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 45);
     camera.position.set(0, 0, 7.6);
@@ -90,12 +102,13 @@ export function LeibnizMillCanvas({ progress, className = 'w-full h-full' }: Lei
     const stage = new THREE.Group();
     scene.add(stage);
 
-    const COUNT = 4200;
+    const COUNT = isCompactDevice ? 2400 : 4200;
     const posChaos = new Float32Array(COUNT * 3);
     const posMill = new Float32Array(COUNT * 3);
     const posFocus = new Float32Array(COUNT * 3);
     const aSeed = new Float32Array(COUNT);
     const aRing = new Float32Array(COUNT);
+    const aRingMeta = new Float32Array(COUNT * 2);
 
     let s = 17140826;
     const rnd = () => {
@@ -119,20 +132,19 @@ export function LeibnizMillCanvas({ progress, className = 'w-full h-full' }: Lei
       posChaos[i * 3 + 1] = rad * Math.sin(v) * Math.sin(u) * 0.78;
       posChaos[i * 3 + 2] = rad * Math.cos(v) * 1.1;
 
-      // State B: 4 Crisp Interlocking Mechanical Gear Rings of Leibniz's Mill
+      // State B: 4 Crisp Interlocking Mechanical Gear Rings (flat local XY; shader applies Rz then Rx(tilt) + zOff!)
       const ringId = i % 4;
       const spec = ringSpecs[ringId];
       aRing[i] = ringId;
+      aRingMeta[i * 2] = spec.tilt;
+      aRingMeta[i * 2 + 1] = spec.zOff;
       const ang = (i / (COUNT / 4)) * Math.PI * 2 + rnd() * 0.06;
       const toothPhase = (ang * spec.teeth) % (Math.PI * 2);
       const toothWave = toothPhase < Math.PI * 0.9 ? 0.16 : 0.0;
       const rM = spec.r + toothWave + (rnd() - 0.5) * 0.09;
-      const mx = Math.cos(ang) * rM;
-      const my = Math.sin(ang) * rM * Math.cos(spec.tilt);
-      const mz = Math.sin(ang) * rM * Math.sin(spec.tilt) + spec.zOff;
-      posMill[i * 3] = mx;
-      posMill[i * 3 + 1] = my;
-      posMill[i * 3 + 2] = mz;
+      posMill[i * 3] = Math.cos(ang) * rM;
+      posMill[i * 3 + 1] = Math.sin(ang) * rM;
+      posMill[i * 3 + 2] = 0;
 
       // State C: Coherent First-Person Inner Light Sphere / Iris Aperture
       const phi = Math.acos(1 - (2 * (i + 0.5)) / COUNT);
@@ -151,22 +163,26 @@ export function LeibnizMillCanvas({ progress, className = 'w-full h-full' }: Lei
     geo.setAttribute('aPosFocus', new THREE.BufferAttribute(posFocus, 3));
     geo.setAttribute('aSeed', new THREE.BufferAttribute(aSeed, 1));
     geo.setAttribute('aRing', new THREE.BufferAttribute(aRing, 1));
+    geo.setAttribute('aRingMeta', new THREE.BufferAttribute(aRingMeta, 2));
 
     const mat = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
         uProgress: { value: 0 },
         uPixelRatio: { value: dpr },
+        uPointScale: { value: 1.0 },
       },
       vertexShader: /* glsl */ `
         attribute vec3 aPosMill;
         attribute vec3 aPosFocus;
         attribute float aSeed;
         attribute float aRing;
+        attribute vec2 aRingMeta;
 
         uniform float uTime;
         uniform float uProgress;
         uniform float uPixelRatio;
+        uniform float uPointScale;
 
         varying float vGlow;
         varying float vPhaseMill;
@@ -174,19 +190,22 @@ export function LeibnizMillCanvas({ progress, className = 'w-full h-full' }: Lei
         varying float vSeed;
         varying float vRing;
 
+        // Column-major GLSL counter-clockwise rotation (+a matches Three.js Euler XYZ rotation!)
         mat2 rot2(float a) {
           float c = cos(a), s = sin(a);
-          return mat2(c, -s, s, c);
+          return mat2(c, s, -s, c);
         }
 
         void main() {
           float p1 = smoothstep(0.06, 0.46, uProgress);
           float p2 = smoothstep(0.56, 0.94, uProgress);
 
-          // Mechanical counter-rotation of Leibniz's interlocking cog rings
+          // Mechanical counter-rotation coplanar with THREE.Line gear rings (Rz -> Rx(tilt) -> +zOff)
           vec3 mill = aPosMill;
           float dir = mod(aRing, 2.0) < 0.5 ? 1.0 : -1.0;
           mill.xy = rot2(uTime * 0.28 * dir / (1.0 + aRing * 0.22)) * mill.xy;
+          mill.yz = rot2(aRingMeta.x) * mill.yz;
+          mill.z += aRingMeta.y;
 
           // Gentle physical drift in Chaos state
           vec3 chaos = position;
@@ -201,8 +220,8 @@ export function LeibnizMillCanvas({ progress, className = 'w-full h-full' }: Lei
           vec4 mv = modelViewMatrix * vec4(pos, 1.0);
           gl_Position = projectionMatrix * mv;
 
-          float baseSz = mix(18.0, 32.0, pow(aSeed, 1.4));
-          gl_PointSize = clamp((baseSz * uPixelRatio) / max(-mv.z, 1.2), 2.8, 13.5);
+          float baseSz = mix(18.0, 32.0, pow(aSeed, 1.4)) * uPointScale;
+          gl_PointSize = clamp((baseSz * uPixelRatio) / max(-mv.z, 1.2), 2.2, 13.5 * uPointScale);
           vGlow = 0.62 + 0.38 * sin(uTime * 2.8 + aSeed * 25.0);
           vPhaseMill = p1 * (1.0 - p2);
           vPhaseFocus = p2;
@@ -311,14 +330,22 @@ export function LeibnizMillCanvas({ progress, className = 'w-full h-full' }: Lei
 
     const updateLayoutOffset = (rw: number, rh: number) => {
       const aspect = rw / rh;
-      if (aspect > 1.15) {
-        // Desktop: glowing 3D sculpture in right half, crisp typography on left!
-        stage.position.set(1.55, 0, 0);
-        stage.scale.setScalar(1);
+      if (rw >= 1024) {
+        // Matches Tailwind `lg:` desktop split: typography left, luminous 3D sculpture right!
+        const desktopScale = aspect < 1.25 ? 0.84 : 1.0;
+        stage.position.set(aspect < 1.25 ? 1.32 : 1.55, 0, 0);
+        stage.scale.setScalar(desktopScale);
+        mat.uniforms.uPointScale.value = 1.0;
+      } else if (aspect > 1.2) {
+        // Landscape phone / compact tablet (< 1024px): keep sculpture centered in upper-right clear zone
+        stage.position.set(0.85, 0.35, 0);
+        stage.scale.setScalar(0.58);
+        mat.uniforms.uPointScale.value = 0.82;
       } else {
         // Portrait Mobile: frame ALL 4 cog-rings 100% inside 390px width with generous black air under top kicker!
         stage.position.set(0, 0.44, 0);
         stage.scale.setScalar(0.37);
+        mat.uniforms.uPointScale.value = 0.68;
       }
     };
     updateLayoutOffset(w, h);
@@ -340,7 +367,7 @@ export function LeibnizMillCanvas({ progress, className = 'w-full h-full' }: Lei
 
     const tick = () => {
       rafId = requestAnimationFrame(tick);
-      if (!visRef.current) return;
+      if (!visRef.current || contextLost) return;
 
       const t = performance.now() * 0.001 - t0;
       const p = THREE.MathUtils.clamp(progRef.current, 0, 1);
@@ -381,6 +408,8 @@ export function LeibnizMillCanvas({ progress, className = 'w-full h-full' }: Lei
     return () => {
       cancelAnimationFrame(rafId);
       resizeObs.disconnect();
+      canvas.removeEventListener('webglcontextlost', onLost);
+      canvas.removeEventListener('webglcontextrestored', onRestored);
       disposables.forEach((d) => d.dispose());
       renderer.dispose();
       if (canvas.parentElement === container) container.removeChild(canvas);

@@ -349,6 +349,8 @@ export function NoesisBrainStage3D({
       : false,
   );
   const [touchOrbitEnabled, setTouchOrbitEnabled] = useState(false);
+  const allowOrbitRef = useRef(false);
+  allowOrbitRef.current = !isTouchViewport || touchOrbitEnabled;
 
   useEffect(() => {
     const updateTouch = () => {
@@ -359,13 +361,22 @@ export function NoesisBrainStage3D({
     return () => window.removeEventListener('resize', updateTouch);
   }, []);
 
+  // Reset manual touch-orbit & drag flags when leaving mount window so re-entry stays 100% synced & scroll-safe
+  useEffect(() => {
+    if (!inNear) {
+      setTouchOrbitEnabled(false);
+      setUserDragged(false);
+      dragOriginRef.current = null;
+    }
+  }, [inNear]);
+
   useEffect(() => {
     const ctrl = controlsRef.current;
     const dom = canvasDomRef.current;
     const allowOrbit = !isTouchViewport || touchOrbitEnabled;
     if (ctrl) ctrl.enabled = allowOrbit;
     if (dom) dom.style.touchAction = allowOrbit ? 'none' : 'pan-y';
-  }, [isTouchViewport, touchOrbitEnabled, status]);
+  }, [isTouchViewport, touchOrbitEnabled, status, inNear]);
 
   // Auto-release manual orbit when user scrolls meaningfully or switches camera pills,
   // so scroll choreography (Split-Brain separation, SCAN, COGITATE, Thalamus) ALWAYS rotates back into crystal-clear view!
@@ -386,17 +397,17 @@ export function NoesisBrainStage3D({
     }
   }, [pulseKey]);
 
-  // Strict +/-100px mount window keeps <= 1 WebGL context alive at chapter boundaries
+  // Strict +/-24px mount window guarantees <= 1 active WebGL context across chapter boundaries
   useEffect(() => {
     const el = hostRef.current;
     if (!el) return;
     const nearObs = new IntersectionObserver(
       ([e]) => setInNear(e.isIntersecting),
-      { rootMargin: '120px 0px 120px 0px', threshold: 0 },
+      { rootMargin: '24px 0px 24px 0px', threshold: 0 },
     );
     const visObs = new IntersectionObserver(
       ([e]) => setVisible(e.isIntersecting),
-      { rootMargin: '60px 0px 60px 0px', threshold: 0 },
+      { rootMargin: '20px 0px 20px 0px', threshold: 0 },
     );
     nearObs.observe(el);
     visObs.observe(el);
@@ -458,8 +469,9 @@ export function NoesisBrainStage3D({
 
     // True Studio IBL Softbox Environment via PMREMGenerator (Museum Sculpture Lighting!)
     const pmrem = new THREE.PMREMGenerator(renderer);
-    const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-    scene.environment = envTex;
+    const roomEnv = new RoomEnvironment();
+    const envRt = pmrem.fromScene(roomEnv, 0.04);
+    scene.environment = envRt.texture;
 
     // Three-point Leica gallery lighting
     const hemi = new THREE.HemisphereLight(dark ? '#9BB8E8' : '#FFFDF8', dark ? '#111622' : '#B8B1A3', dark ? 0.55 : 0.85);
@@ -481,7 +493,7 @@ export function NoesisBrainStage3D({
     controls.dampingFactor = 0.07;
     controls.rotateSpeed = 0.6;
     controls.target.set(0, -0.05, 0);
-    const initialAllowOrbit = !(window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 1024);
+    const initialAllowOrbit = allowOrbitRef.current;
     controls.enabled = initialAllowOrbit;
     canvas.style.touchAction = initialAllowOrbit ? 'none' : 'pan-y';
     controlsRef.current = controls;
@@ -903,7 +915,8 @@ export function NoesisBrainStage3D({
       cutLineMat.dispose();
       tractGeos.forEach((g) => g.dispose());
       tractMats.forEach((m) => m.dispose());
-      envTex.dispose();
+      envRt.dispose();
+      roomEnv.dispose();
       pmrem.dispose();
       renderer.dispose();
       if (canvas.parentElement === container) container.removeChild(canvas);

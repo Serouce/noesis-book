@@ -58,7 +58,7 @@ const VIVIDNESS_LEVELS: VividnessLevel[] = [
     label: '1 · Едва уловимый след',
     archetype: 'Гипофантазия (на грани темноты)',
     population: '~10% людей',
-    pupilDeltaPct: -2,
+    pupilDeltaPct: -1,
     explain:
       'Мелькает едва различимый серый намёк на круглый контур, почти без цвета и объёма — и тут же растворяется.',
     imgFilter: 'grayscale(0.95) contrast(0.75) blur(3.5px) brightness(0.62)',
@@ -69,7 +69,7 @@ const VIVIDNESS_LEVELS: VividnessLevel[] = [
     label: '2 · Туманный силуэт',
     archetype: 'Слабое зрительное воображение',
     population: '~20% людей',
-    pupilDeltaPct: -5,
+    pupilDeltaPct: -2,
     explain:
       'Силуэт яблока узнаваем, проступает приглушённый тёмно-красный тон, но детали кожуры и тень остаются размытыми.',
     imgFilter: 'saturate(0.42) blur(2.2px) contrast(0.9)',
@@ -80,7 +80,7 @@ const VIVIDNESS_LEVELS: VividnessLevel[] = [
     label: '3 · Ясный полупрозрачный образ',
     archetype: 'Типичное зрительное воображение',
     population: '~45% людей',
-    pupilDeltaPct: -9,
+    pupilDeltaPct: -4,
     explain:
       'Отчётливое красное яблоко с черенком — вы легко удерживаете его в уме, хотя чувствуете, что оно чуть мягче реальной фотографии.',
     imgFilter: 'saturate(0.78) blur(0.9px)',
@@ -91,7 +91,7 @@ const VIVIDNESS_LEVELS: VividnessLevel[] = [
     label: '4 · Чёткий цветной образ',
     archetype: 'Яркое зрительное воображение',
     population: '~15% людей',
-    pupilDeltaPct: -12,
+    pupilDeltaPct: -5,
     explain:
       'Насыщенный цвет, объём и блик света на кожуре; можно мысленно повернуть яблоко в руке и разглядеть черенок.',
     imgFilter: 'saturate(0.96) blur(0.25px)',
@@ -102,7 +102,7 @@ const VIVIDNESS_LEVELS: VividnessLevel[] = [
     label: '5 · Как живая фотография',
     archetype: 'Гиперфантазия (эффект присутствия)',
     population: '~3–5% людей',
-    pupilDeltaPct: -14,
+    pupilDeltaPct: -6,
     explain:
       'Ослепительно резкий внутренний снимок — видны крапинки на кожуре, тень на бумаге и ощущение веса. Почти как открытые глаза.',
     imgFilter: 'saturate(1.06) contrast(1.03)',
@@ -144,8 +144,8 @@ export function Act2AphantasiaLab() {
   const activeLevel = VIVIDNESS_LEVELS[previewScore] ?? VIVIDNESS_LEVELS[3];
   const isSaved = state.aphantasiaScore !== null;
 
-  // Map relative pupillary constriction (0% -> -14%) to SVG radius (15px baseline -> 7.5px constricted)
-  const pupilRadius = 15 + (activeLevel.pupilDeltaPct / 14) * 7.5;
+  // Map realistic relative pupillary constriction (0% -> -6%, Kay et al., eLife 2022) to legible SVG radius (15px -> 7.5px)
+  const pupilRadius = 15 + (activeLevel.pupilDeltaPct / 6) * 7.5;
 
   return (
     <section
@@ -390,7 +390,7 @@ export function Act2AphantasiaLab() {
                         {ruTypo(
                           appleRevealed
                             ? activeLevel.explain
-                            : 'Запустите 5-секундный таймер слева или нажмите «Я уже представил · Открыть шкалу» на шторке, чтобы выбрать уровень от 0 до 5 без зрительной подсказки.',
+                            : 'Запустите 5-секундный таймер или нажмите «Я уже представил · Открыть шкалу» на шторке, чтобы выбрать уровень от 0 до 5 без зрительной подсказки.',
                         )}
                       </p>
                     </div>

@@ -177,7 +177,7 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
           </div>
           <div className="lg:col-span-5 text-[15.5px] leading-[1.62] text-[#353431]">
             <p>
-              Сознание <strong className="font-semibold text-[#141413]">не зависит напрямую от числа нейронов</strong> (у африканского слона их 257 млрд — втрое больше, чем у нас). Изучите виды ниже и проведите ползунком красную черту: слева — «биороботы», справа — чувствующие существа.
+              Сознание <strong className="font-semibold text-[#141413]">не зависит напрямую от числа нейронов</strong> (у африканского слона их 257 млрд — втрое больше, чем у нас). Изучите виды ниже и проведите ползунком красную черту: до черты — «биороботы», после черты — чувствующие существа.
             </p>
           </div>
         </div>
@@ -347,7 +347,7 @@ export function Chapter7OtherMinds({ onNextChapter }: Chapter7OtherMindsProps) {
               aria-label="Положение красной закладки-ляссе между видами"
             />
             <div className="flex justify-between font-mono-tech text-[10px] text-[#5E5D59]">
-              <span>← Сместить границу к простейшим (все справа чувствуют)</span>
+              <span>← Ближе к простейшим (больше чувствующих)</span>
               <span>Сместить границу к человеку →</span>
             </div>
           </div>
